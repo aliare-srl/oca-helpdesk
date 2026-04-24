@@ -35,6 +35,9 @@
     ],
     "demo": ["demo/helpdesk_demo.xml"],
     "assets": {
+        "web.assets_backend": [
+            "helpdesk_mgmt/static/src/css/helpdesk_styles.css",
+        ],
         "web.assets_frontend": [
             "helpdesk_mgmt/static/src/js/new_ticket.js",
         ],

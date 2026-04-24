@@ -221,6 +221,7 @@
         <field name="arch" type="xml">
             <tree
                 editable="bottom"
+                class="helpdesk_ticket_list"
                 decoration-muted="stage_name == 'Nuevo'"
                 decoration-info="stage_name == 'En progreso'"
                 decoration-warning="stage_name == 'En espera'"
