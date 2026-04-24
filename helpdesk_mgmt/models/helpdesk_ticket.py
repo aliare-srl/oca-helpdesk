@@ -15,18 +15,24 @@ class HelpdeskTicket(models.Model):
         for ticket in self:
             ticket.stage_id = ticket.team_id._get_applicable_stages()[:1]
 
+    _STAGE_COLOR_MAP = {
+        "Nuevo": 2,
+        "En progreso": 4,
+        "En espera": 3,
+        "Hecho": 10,
+        "Cancelado": 1,
+        "Rechazado": 2,
+    }
+
     @api.depends("stage_id.name")
     def _compute_stage_color(self):
-        color_map = {
-            "Nuevo": 2,
-            "En progreso": 4,
-            "En espera": 3,
-            "Hecho": 10,
-            "Cancelado": 1,
-            "Rechazado": 2,
-        }
         for ticket in self:
-            ticket.stage_color = color_map.get(ticket.stage_id.name, 0)
+            ticket.stage_color = self._STAGE_COLOR_MAP.get(ticket.stage_id.name, 0)
+
+    @api.depends("stage_id.name")
+    def _compute_stage_color_index(self):
+        for ticket in self:
+            ticket.stage_color_index = self._STAGE_COLOR_MAP.get(ticket.stage_id.name, 0)
 
     @api.depends("stage_id.name")
     def _compute_stage_css_class(self):
@@ -94,6 +100,11 @@ class HelpdeskTicket(models.Model):
     stage_name = fields.Char(related="stage_id.name", string="Nombre de Etapa")
     stage_color = fields.Integer(
         string="Color de Etapa", compute="_compute_stage_color"
+    )
+    stage_color_index = fields.Integer(
+        string="Color Index de Etapa",
+        compute="_compute_stage_color_index",
+        store=True,
     )
     stage_id_color = fields.Integer(
         related="stage_id.color", string="Color de Etapa (Etapa)", store=True
