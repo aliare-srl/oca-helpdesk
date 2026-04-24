@@ -66,6 +66,7 @@ class HelpdeskTicket(models.Model):
     planned_date = fields.Datetime(
         string="Fecha y Hora Prevista", help="Compromiso de ejecución"
     )
+    stage_name = fields.Char(related="stage_id.name", string="Nombre de Etapa")
     closed = fields.Boolean(related="stage_id.closed")
     unattended = fields.Boolean(related="stage_id.unattended", store=True)
     tag_ids = fields.Many2many(comodel_name="helpdesk.ticket.tag", string="Tags")

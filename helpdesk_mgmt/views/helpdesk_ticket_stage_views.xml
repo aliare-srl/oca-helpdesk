@@ -58,6 +58,7 @@
                         </group>
                         <group name="main_right">
                             <field name="active" invisible="1" />
+                            <field name="color" />
                             <field name="closed" />
                             <field
                                 name="close_from_portal"

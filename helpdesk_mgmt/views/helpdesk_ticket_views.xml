@@ -219,7 +219,14 @@
         <field name="name">helpdesk.ticket.view.tree</field>
         <field name="model">helpdesk.ticket</field>
         <field name="arch" type="xml">
-            <tree editable="bottom">
+            <tree
+                editable="bottom"
+                decoration-info="stage_name == 'En progreso'"
+                decoration-warning="stage_name == 'En espera'"
+                decoration-success="stage_name == 'Hecho'"
+                decoration-danger="stage_name == 'Cancelado'"
+                decoration-primary="stage_name == 'Rechazado'"
+            >
                 <field name="priority" widget="priority" />
                 <field name="sequence" widget="handle" />
                 <field name="number" decoration-bf="1" readonly="1" />
@@ -233,15 +240,13 @@
                 <field name="channel_id" />
                 <field name="user_id" widget="many2one_avatar_user" />
                 <field name="planned_date" />
+                <field name="stage_name" invisible="1" />
                 <field name="kanban_state" invisible="1" />
                 <field name="unattended" invisible="1" />
                 <field name="closed" invisible="1" />
                 <field
                     name="stage_id"
                     options="{'no_create': True, 'no_open': True}"
-                    decoration-success="not unattended and not closed"
-                    decoration-info="unattended == True"
-                    decoration-muted="closed == True"
                 />
                 <button
                     name="get_formview_action"
@@ -379,7 +384,7 @@
             <calendar
                 string="Tickets"
                 date_start="planned_date"
-                color="user_id"
+                color="stage_id"
                 mode="month"
             >
                 <field name="name" />

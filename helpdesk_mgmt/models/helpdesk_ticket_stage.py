@@ -24,6 +24,7 @@ class HelpdeskTicketStage(models.Model):
         "customer when the ticket"
         "reaches this step.",
     )
+    color = fields.Integer(string="Color Index")
     fold = fields.Boolean(
         string="Folded in Kanban",
         help="This stage is folded in the kanban view "
