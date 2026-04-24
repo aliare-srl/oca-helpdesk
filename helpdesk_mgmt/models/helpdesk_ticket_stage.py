@@ -43,6 +43,21 @@ class HelpdeskTicketStage(models.Model):
         domain="['|', ('company_id', '=', False), ('company_id', '=', company_id)]",
     )
 
+    @api.model
+    def _set_default_stage_colors(self):
+        color_by_xmlid = {
+            "helpdesk_mgmt.helpdesk_ticket_stage_new": 2,
+            "helpdesk_mgmt.helpdesk_ticket_stage_in_progress": 4,
+            "helpdesk_mgmt.helpdesk_ticket_stage_awaiting": 3,
+            "helpdesk_mgmt.helpdesk_ticket_stage_done": 10,
+            "helpdesk_mgmt.helpdesk_ticket_stage_cancelled": 1,
+            "helpdesk_mgmt.helpdesk_ticket_stage_rejected": 2,
+        }
+        for xmlid, color in color_by_xmlid.items():
+            stage = self.env.ref(xmlid, raise_if_not_found=False)
+            if stage:
+                stage.write({"color": color})
+
     @api.onchange("closed")
     def _onchange_closed(self):
         if not self.closed:

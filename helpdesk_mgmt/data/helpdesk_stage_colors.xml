@@ -1,25 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- Sin noupdate: se aplica en cada upgrade del modulo para mantener
-     los colores de etapa alineados con la vista de lista. -->
 <odoo>
     <data>
-        <record id="helpdesk_ticket_stage_new" model="helpdesk.ticket.stage">
-            <field name="color" eval="2"/>
-        </record>
-        <record id="helpdesk_ticket_stage_in_progress" model="helpdesk.ticket.stage">
-            <field name="color" eval="4"/>
-        </record>
-        <record id="helpdesk_ticket_stage_awaiting" model="helpdesk.ticket.stage">
-            <field name="color" eval="3"/>
-        </record>
-        <record id="helpdesk_ticket_stage_done" model="helpdesk.ticket.stage">
-            <field name="color" eval="10"/>
-        </record>
-        <record id="helpdesk_ticket_stage_cancelled" model="helpdesk.ticket.stage">
-            <field name="color" eval="1"/>
-        </record>
-        <record id="helpdesk_ticket_stage_rejected" model="helpdesk.ticket.stage">
-            <field name="color" eval="2"/>
-        </record>
+        <function
+            model="helpdesk.ticket.stage"
+            name="_set_default_stage_colors"
+        />
     </data>
 </odoo>
