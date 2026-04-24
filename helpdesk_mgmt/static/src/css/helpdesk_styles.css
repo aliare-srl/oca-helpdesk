@@ -61,15 +61,18 @@
 .o_helpdesk_aliare .o_data_row.bg_hecho:hover { background-color: #a5d6a7 !important; }
 .o_helpdesk_aliare .o_data_row.bg_cancelado:hover { background-color: #ef9a9a !important; }
 
-/* ── Calendario: crema/blanco para la etapa Nuevo (stage_color_index = 0) ───
- * Odoo 15 OWL aplica o_calendar_color_0 directamente en el elemento fc-event.
- * Se listan varios selectores para cubrir distintas versiones del DOM.
+/* ── Calendario: gris azulado para la etapa Nuevo (stage_color_index = 7) ───
+ * El indice 7 en la paleta Odoo es slate-blue (#475577).
+ * Si el selector CSS toma: se reemplaza por un gris azulado mas suave.
+ * Si no toma: Odoo muestra el slate-blue nativo, que igual es "gris azulado".
+ * Doble fallback: clase en el evento raiz Y en el contenedor interno OWL.
  * ─────────────────────────────────────────────────────────────────────────── */
-.o_calendar_color_0,
-.o_calendar_color_0.fc-event,
-.fc-event.o_calendar_color_0,
-.o_calendar_color_0 .fc-event-main {
-    background-color: #fdf6e3 !important;
-    border-color:     #c8b97a !important;
-    color:            #5a4a00 !important;
+.o_calendar_color_7,
+.o_calendar_color_7.fc-event,
+.fc-event.o_calendar_color_7,
+.o_calendar_color_7 .fc-event-main,
+[class*="o_calendar_color_7"] {
+    background-color: #b0bec5 !important;
+    border-color:     #78909c !important;
+    color:            #1a237e !important;
 }
