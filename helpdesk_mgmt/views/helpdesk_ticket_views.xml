@@ -224,7 +224,8 @@
                 <field name="sequence" widget="handle" />
                 <field name="number" decoration-bf="1" readonly="1" />
                 <field name="name" />
-                <field name="partner_id" widget="many2one" />
+                <field name="description" optional="hide" />
+                <field name="partner_id" string="Cliente" widget="many2one" />
                 <field name="partner_name" />
                 <field name="team_id" />
                 <field name="user_ids" invisible="1" />
@@ -232,7 +233,7 @@
                 <field name="channel_id" />
                 <field name="user_id" widget="many2one_avatar_user" />
                 <field name="planned_date" />
-                <field name="description" optional="hide" />
+                <field name="kanban_state" invisible="1" />
                 <field name="unattended" invisible="1" />
                 <field name="closed" invisible="1" />
                 <field
