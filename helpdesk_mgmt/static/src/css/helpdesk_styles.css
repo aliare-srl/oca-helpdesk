@@ -60,3 +60,15 @@
 .o_helpdesk_aliare .o_data_row.bg_espera:hover { background-color: #fff176 !important; }
 .o_helpdesk_aliare .o_data_row.bg_hecho:hover { background-color: #a5d6a7 !important; }
 .o_helpdesk_aliare .o_data_row.bg_cancelado:hover { background-color: #ef9a9a !important; }
+
+/* ── Calendario: gris claro para la etapa Nuevo (stage_color_index = 0) ─────
+ * El indice 0 en la paleta nativa de Odoo no tiene un gris definido.
+ * Sobreescribimos solo dentro del renderer de calendario para no afectar
+ * otros widgets que usen o_calendar_color_0.
+ * ─────────────────────────────────────────────────────────────────────────── */
+.o_calendar_renderer .o_calendar_color_0,
+.o_calendar_renderer .o_calendar_color_0 .o_event_bg {
+    background-color: #d6d6d6 !important;
+    border-color:     #aaaaaa !important;
+    color:            #444444 !important;
+}
