@@ -413,7 +413,7 @@
             <calendar
                 string="Tickets"
                 date_start="planned_date"
-                color="stage_color_index"
+                color="stage_id"
                 mode="month"
             >
                 <field name="name" />
