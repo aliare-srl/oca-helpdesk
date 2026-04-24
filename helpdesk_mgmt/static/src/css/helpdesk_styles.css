@@ -61,14 +61,15 @@
 .o_helpdesk_aliare .o_data_row.bg_hecho:hover { background-color: #a5d6a7 !important; }
 .o_helpdesk_aliare .o_data_row.bg_cancelado:hover { background-color: #ef9a9a !important; }
 
-/* ── Calendario: gris claro para la etapa Nuevo (stage_color_index = 0) ─────
- * El indice 0 en la paleta nativa de Odoo no tiene un gris definido.
- * Sobreescribimos solo dentro del renderer de calendario para no afectar
- * otros widgets que usen o_calendar_color_0.
+/* ── Calendario: crema/blanco para la etapa Nuevo (stage_color_index = 0) ───
+ * Odoo 15 OWL aplica o_calendar_color_0 directamente en el elemento fc-event.
+ * Se listan varios selectores para cubrir distintas versiones del DOM.
  * ─────────────────────────────────────────────────────────────────────────── */
-.o_calendar_renderer .o_calendar_color_0,
-.o_calendar_renderer .o_calendar_color_0 .o_event_bg {
-    background-color: #d6d6d6 !important;
-    border-color:     #aaaaaa !important;
-    color:            #444444 !important;
+.o_calendar_color_0,
+.o_calendar_color_0.fc-event,
+.fc-event.o_calendar_color_0,
+.o_calendar_color_0 .fc-event-main {
+    background-color: #fdf6e3 !important;
+    border-color:     #c8b97a !important;
+    color:            #5a4a00 !important;
 }
