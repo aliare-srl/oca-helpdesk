@@ -238,7 +238,7 @@
                 <field name="closed" invisible="1" />
                 <field
                     name="stage_id"
-                    widget="badge"
+                    options="{'no_create': True, 'no_open': True}"
                     decoration-success="not unattended and not closed"
                     decoration-info="unattended == True"
                     decoration-muted="closed == True"
