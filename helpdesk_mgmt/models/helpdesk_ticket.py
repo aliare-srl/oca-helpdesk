@@ -15,6 +15,18 @@ class HelpdeskTicket(models.Model):
         for ticket in self:
             ticket.stage_id = ticket.team_id._get_applicable_stages()[:1]
 
+    @api.depends("stage_id.name")
+    def _compute_stage_color(self):
+        color_map = {
+            "En progreso": 4,
+            "En espera": 3,
+            "Hecho": 10,
+            "Cancelado": 1,
+            "Rechazado": 2,
+        }
+        for ticket in self:
+            ticket.stage_color = color_map.get(ticket.stage_id.name, 0)
+
     @api.model
     def _read_group_stage_ids(self, stages, domain, order):
         """Show always the stages without team, or stages of the default team."""
@@ -67,6 +79,9 @@ class HelpdeskTicket(models.Model):
         string="Fecha y Hora Prevista", help="Compromiso de ejecución"
     )
     stage_name = fields.Char(related="stage_id.name", string="Nombre de Etapa")
+    stage_color = fields.Integer(
+        string="Color de Etapa", compute="_compute_stage_color"
+    )
     closed = fields.Boolean(related="stage_id.closed")
     unattended = fields.Boolean(related="stage_id.unattended", store=True)
     tag_ids = fields.Many2many(comodel_name="helpdesk.ticket.tag", string="Tags")

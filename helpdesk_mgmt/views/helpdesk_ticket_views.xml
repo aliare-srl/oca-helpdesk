@@ -221,6 +221,7 @@
         <field name="arch" type="xml">
             <tree
                 editable="bottom"
+                decoration-muted="stage_name == 'Nuevo'"
                 decoration-info="stage_name == 'En progreso'"
                 decoration-warning="stage_name == 'En espera'"
                 decoration-success="stage_name == 'Hecho'"
@@ -384,7 +385,7 @@
             <calendar
                 string="Tickets"
                 date_start="planned_date"
-                color="stage_id"
+                color="stage_color"
                 mode="month"
             >
                 <field name="name" />
