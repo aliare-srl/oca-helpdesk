@@ -27,6 +27,18 @@ class HelpdeskTicket(models.Model):
         for ticket in self:
             ticket.stage_color = color_map.get(ticket.stage_id.name, 0)
 
+    @api.depends("stage_id.name")
+    def _compute_stage_css_class(self):
+        css_map = {
+            "Nuevo": "bg_nuevo",
+            "En progreso": "bg_progreso",
+            "En espera": "bg_espera",
+            "Hecho": "bg_hecho",
+            "Cancelado": "bg_cancelado",
+        }
+        for ticket in self:
+            ticket.stage_css_class = css_map.get(ticket.stage_id.name, "")
+
     @api.model
     def _read_group_stage_ids(self, stages, domain, order):
         """Show always the stages without team, or stages of the default team."""
@@ -82,6 +94,9 @@ class HelpdeskTicket(models.Model):
     stage_color = fields.Integer(
         string="Color de Etapa", compute="_compute_stage_color"
     )
+    stage_css_class = fields.Char(
+        string="Stage CSS Class", compute="_compute_stage_css_class"
+    )
     closed = fields.Boolean(related="stage_id.closed")
     unattended = fields.Boolean(related="stage_id.unattended", store=True)
     tag_ids = fields.Many2many(comodel_name="helpdesk.ticket.tag", string="Tags")
@@ -115,11 +130,12 @@ class HelpdeskTicket(models.Model):
         ],
         default="1",
     )
-    attachment_ids = fields.One2many(
+    attachment_ids = fields.Many2many(
         comodel_name="ir.attachment",
-        inverse_name="res_id",
-        domain=[("res_model", "=", "helpdesk.ticket")],
-        string="Media Attachments",
+        relation="helpdesk_ticket_ir_attachment_rel",
+        column1="ticket_id",
+        column2="attachment_id",
+        string="Attachments",
     )
     color = fields.Integer(string="Color Index")
     kanban_state = fields.Selection(

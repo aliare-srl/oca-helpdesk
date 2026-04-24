@@ -200,18 +200,30 @@
                                     <field name="closed_date" readonly="1" />
                                 </group>
                             </page>
-                            <page string="Adjuntos" name="attachments">
-                                <field
-                                    name="attachment_ids"
-                                    nolabel="1"
-                                    colspan="2"
-                                >
-                                    <tree string="Archivos adjuntos">
-                                        <field name="name" />
-                                        <field name="mimetype" />
-                                        <field name="file_size" />
-                                        <field name="create_date" readonly="1" />
-                                    </tree>
+                            <page string="Adjuntos" name="attachments_tab">
+                                <field name="attachment_ids" widget="many2many_binary" string="Subir archivos"/>
+                                <field name="attachment_ids" nolabel="1" readonly="1" mode="kanban">
+                                    <kanban>
+                                        <field name="id"/>
+                                        <field name="mimetype"/>
+                                        <field name="name"/>
+                                        <templates>
+                                            <t t-name="kanban-box">
+                                                <div class="oe_kanban_global_click">
+                                                    <div class="o_kanban_image">
+                                                        <img t-if="record.mimetype.value.indexOf('image') !== -1"
+                                                             t-att-src="kanban_image('ir.attachment', 'datas', record.id.raw_value)"
+                                                             class="o_image_64_max"
+                                                             t-att-alt="record.name.value"/>
+                                                        <div t-else="" class="o_image" t-att-data-mimetype="record.mimetype.value"/>
+                                                    </div>
+                                                    <div class="oe_kanban_details">
+                                                        <strong><field name="name"/></strong>
+                                                    </div>
+                                                </div>
+                                            </t>
+                                        </templates>
+                                    </kanban>
                                 </field>
                             </page>
                         </notebook>
@@ -234,6 +246,7 @@
         <field name="model">helpdesk.ticket</field>
         <field name="arch" type="xml">
             <tree
+                class="o_helpdesk_aliare"
                 editable="bottom"
                 decoration-muted="stage_name == 'Nuevo'"
                 decoration-info="stage_name == 'En progreso'"
@@ -256,6 +269,7 @@
                 <field name="user_id" widget="many2one_avatar_user" />
                 <field name="planned_date" />
                 <field name="stage_name" invisible="1" />
+                <field name="stage_css_class" invisible="1" />
                 <field name="kanban_state" invisible="1" />
                 <field name="unattended" invisible="1" />
                 <field name="closed" invisible="1" />

@@ -1,45 +1,62 @@
-/* Helpdesk Ticket List — fondo de fila por etapa.
+/* ── Helpdesk Ticket List – colores de fila por etapa ──────────────────────
  *
- * El tag <tree> tiene class="helpdesk_ticket_list" para aislar el scope.
- * Los decoration-* del XML añaden text-muted/info/warning/success/danger/primary
- * a cada <tr class="o_data_row">; aquí pintamos el fondo de sus celdas.
- */
+ * El <tree> tiene class="o_helpdesk_aliare".
+ * Los decoration-* del XML añaden text-muted/info/warning/success/danger a cada
+ * <tr class="o_data_row">; aquí pintamos el fondo de sus celdas (td).
+ *
+ * Las clases bg_* (bg_nuevo, bg_progreso…) provienen del campo stage_css_class
+ * y están listas para cuando se apliquen vía JS o class_expression (Odoo 16+).
+ * ─────────────────────────────────────────────────────────────────────────── */
 
-.helpdesk_ticket_list .o_data_row.text-muted td {
+/* --- Colores activos en Odoo 15 vía decoration-* --- */
+.o_helpdesk_aliare .o_data_row.text-muted td {
     background-color: #f8f9fa !important;
 }
-.helpdesk_ticket_list .o_data_row.text-info td {
+.o_helpdesk_aliare .o_data_row.text-info td {
     background-color: #e1f5fe !important;
 }
-.helpdesk_ticket_list .o_data_row.text-warning td {
+.o_helpdesk_aliare .o_data_row.text-warning td {
     background-color: #fff9c4 !important;
 }
-.helpdesk_ticket_list .o_data_row.text-success td {
+.o_helpdesk_aliare .o_data_row.text-success td {
     background-color: #c8e6c9 !important;
 }
-.helpdesk_ticket_list .o_data_row.text-danger td {
+.o_helpdesk_aliare .o_data_row.text-danger td {
     background-color: #ffcdd2 !important;
 }
-.helpdesk_ticket_list .o_data_row.text-primary td {
+.o_helpdesk_aliare .o_data_row.text-primary td {
     background-color: #ffe0b2 !important;
 }
 
-/* Hover: versión levemente más oscura para mantener la pista visual */
-.helpdesk_ticket_list .o_data_row.text-muted:hover td {
+/* Hover */
+.o_helpdesk_aliare .o_data_row.text-muted:hover td {
     background-color: #e9ecef !important;
 }
-.helpdesk_ticket_list .o_data_row.text-info:hover td {
+.o_helpdesk_aliare .o_data_row.text-info:hover td {
     background-color: #b3e5fc !important;
 }
-.helpdesk_ticket_list .o_data_row.text-warning:hover td {
+.o_helpdesk_aliare .o_data_row.text-warning:hover td {
     background-color: #fff176 !important;
 }
-.helpdesk_ticket_list .o_data_row.text-success:hover td {
+.o_helpdesk_aliare .o_data_row.text-success:hover td {
     background-color: #a5d6a7 !important;
 }
-.helpdesk_ticket_list .o_data_row.text-danger:hover td {
+.o_helpdesk_aliare .o_data_row.text-danger:hover td {
     background-color: #ef9a9a !important;
 }
-.helpdesk_ticket_list .o_data_row.text-primary:hover td {
+.o_helpdesk_aliare .o_data_row.text-primary:hover td {
     background-color: #ffcc80 !important;
 }
+
+/* --- Clases bg_* del campo stage_css_class (Odoo 16+ / JS) --- */
+.o_helpdesk_aliare .o_data_row.bg_nuevo { background-color: #f8f9fa !important; }
+.o_helpdesk_aliare .o_data_row.bg_progreso { background-color: #e1f5fe !important; }
+.o_helpdesk_aliare .o_data_row.bg_espera { background-color: #fff9c4 !important; }
+.o_helpdesk_aliare .o_data_row.bg_hecho { background-color: #c8e6c9 !important; }
+.o_helpdesk_aliare .o_data_row.bg_cancelado { background-color: #ffcdd2 !important; }
+
+.o_helpdesk_aliare .o_data_row.bg_nuevo:hover { background-color: #e9ecef !important; }
+.o_helpdesk_aliare .o_data_row.bg_progreso:hover { background-color: #b3e5fc !important; }
+.o_helpdesk_aliare .o_data_row.bg_espera:hover { background-color: #fff176 !important; }
+.o_helpdesk_aliare .o_data_row.bg_hecho:hover { background-color: #a5d6a7 !important; }
+.o_helpdesk_aliare .o_data_row.bg_cancelado:hover { background-color: #ef9a9a !important; }
