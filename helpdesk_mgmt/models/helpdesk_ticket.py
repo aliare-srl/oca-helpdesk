@@ -16,6 +16,19 @@ class HelpdeskTicket(models.Model):
             ticket.stage_id = ticket.team_id._get_applicable_stages()[:1]
 
     @api.depends("stage_id.name")
+    def _compute_stage_color_index(self):
+        color_map = {
+            "Nuevo": 0,       "New": 0,
+            "En progreso": 4, "In Progress": 4,
+            "En espera": 3,   "Awaiting": 3,
+            "Hecho": 10,      "Done": 10,
+            "Cancelado": 1,   "Cancelled": 1,
+            "Rechazado": 2,   "Rejected": 2,
+        }
+        for ticket in self:
+            ticket.stage_color_index = color_map.get(ticket.stage_id.name, 0)
+
+    @api.depends("stage_id.name")
     def _compute_stage_css_class(self):
         css_map = {
             "Nuevo": "bg_nuevo",
@@ -79,6 +92,11 @@ class HelpdeskTicket(models.Model):
         string="Fecha y Hora Prevista", help="Compromiso de ejecución"
     )
     stage_name = fields.Char(related="stage_id.name", string="Nombre de Etapa")
+    stage_color_index = fields.Integer(
+        string="Color de Calendario",
+        compute="_compute_stage_color_index",
+        store=True,
+    )
     stage_css_class = fields.Char(
         string="Stage CSS Class", compute="_compute_stage_css_class"
     )
