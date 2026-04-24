@@ -18,6 +18,7 @@ class HelpdeskTicket(models.Model):
     @api.depends("stage_id.name")
     def _compute_stage_color(self):
         color_map = {
+            "Nuevo": 2,
             "En progreso": 4,
             "En espera": 3,
             "Hecho": 10,
@@ -93,6 +94,9 @@ class HelpdeskTicket(models.Model):
     stage_name = fields.Char(related="stage_id.name", string="Nombre de Etapa")
     stage_color = fields.Integer(
         string="Color de Etapa", compute="_compute_stage_color"
+    )
+    stage_id_color = fields.Integer(
+        related="stage_id.color", string="Color de Etapa (Etapa)", store=True
     )
     stage_css_class = fields.Char(
         string="Stage CSS Class", compute="_compute_stage_css_class"
