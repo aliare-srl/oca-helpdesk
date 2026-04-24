@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!-- Sin noupdate: se aplica en cada `--update helpdesk_mgmt` para mantener
+<!-- Sin noupdate: se aplica en cada upgrade del modulo para mantener
      los colores de etapa alineados con la vista de lista. -->
 <odoo>
     <data>
