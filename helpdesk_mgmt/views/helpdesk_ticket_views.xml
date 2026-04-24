@@ -200,6 +200,16 @@
                                     <field name="closed_date" readonly="1" />
                                 </group>
                             </page>
+                            <page string="Adjuntos" name="attachments">
+                                <group string="Capturas de pantalla y documentos del error">
+                                    <field
+                                        name="attachment_ids"
+                                        widget="many2many_binary"
+                                        nolabel="1"
+                                        colspan="2"
+                                    />
+                                </group>
+                            </page>
                         </notebook>
                     </group>
                 </sheet>
