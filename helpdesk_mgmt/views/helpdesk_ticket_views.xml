@@ -201,14 +201,18 @@
                                 </group>
                             </page>
                             <page string="Adjuntos" name="attachments">
-                                <group string="Capturas de pantalla y documentos del error">
-                                    <field
-                                        name="attachment_ids"
-                                        widget="many2many_binary"
-                                        nolabel="1"
-                                        colspan="2"
-                                    />
-                                </group>
+                                <field
+                                    name="attachment_ids"
+                                    nolabel="1"
+                                    colspan="2"
+                                >
+                                    <tree string="Archivos adjuntos">
+                                        <field name="name" />
+                                        <field name="mimetype" />
+                                        <field name="file_size" />
+                                        <field name="create_date" readonly="1" />
+                                    </tree>
+                                </field>
                             </page>
                         </notebook>
                     </group>
@@ -231,7 +235,6 @@
         <field name="arch" type="xml">
             <tree
                 editable="bottom"
-                class="helpdesk_ticket_list"
                 decoration-muted="stage_name == 'Nuevo'"
                 decoration-info="stage_name == 'En progreso'"
                 decoration-warning="stage_name == 'En espera'"
