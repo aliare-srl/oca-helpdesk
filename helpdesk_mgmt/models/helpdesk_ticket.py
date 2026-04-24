@@ -18,7 +18,7 @@ class HelpdeskTicket(models.Model):
     @api.depends("stage_id.name")
     def _compute_stage_color_index(self):
         color_map = {
-            "Nuevo": 7,       "New": 7,
+            "Nuevo": 8,       "New": 8,
             "En progreso": 4, "In Progress": 4,
             "En espera": 3,   "Awaiting": 3,
             "Hecho": 10,      "Done": 10,

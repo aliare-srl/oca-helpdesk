@@ -67,12 +67,12 @@
  * Si no toma: Odoo muestra el slate-blue nativo, que igual es "gris azulado".
  * Doble fallback: clase en el evento raiz Y en el contenedor interno OWL.
  * ─────────────────────────────────────────────────────────────────────────── */
-.o_calendar_color_7,
-.o_calendar_color_7.fc-event,
-.fc-event.o_calendar_color_7,
-.o_calendar_color_7 .fc-event-main,
-[class*="o_calendar_color_7"] {
-    background-color: #b0bec5 !important;
-    border-color:     #78909c !important;
-    color:            #1a237e !important;
+.o_calendar_color_8,
+.o_calendar_color_8.fc-event,
+.fc-event.o_calendar_color_8,
+.o_calendar_color_8 .fc-event-main,
+[class*="o_calendar_color_8"] {
+    background-color: #ffe0b2 !important;
+    border-color:     #ffb74d !important;
+    color:            #5d4037 !important;
 }
