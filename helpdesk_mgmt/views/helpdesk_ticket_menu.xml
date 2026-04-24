@@ -11,7 +11,7 @@
         <field name="name">Tickets</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">helpdesk.ticket</field>
-        <field name="view_mode">tree,kanban,form,pivot</field>
+        <field name="view_mode">tree,kanban,form,pivot,graph,calendar</field>
     </record>
     <record id="helpdesk_ticket_reporting_action" model="ir.actions.act_window">
         <field name="name">Reporting</field>
