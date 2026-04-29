@@ -73,10 +73,11 @@ class HelpdeskTicketController(http.Controller):
             int(kw.get("category"))
         )
         company = category.company_id or http.request.env.company
+        raw_description = (kw.get("description") or "").strip()
         vals = {
             "company_id": company.id,
             "category_id": category.id,
-            "description": plaintext2html(kw.get("description")),
+            "description": plaintext2html(raw_description) if raw_description else False,
             "name": kw.get("subject"),
             "attachment_ids": False,
             "channel_id": request.env.ref(
