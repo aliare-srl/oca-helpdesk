@@ -178,7 +178,7 @@
                             <field name="number" />
                         </h1>
                         <h2 class="o_row">
-                            <field name="name" />
+                            <field name="name" default_focus="1" />
                         </h2>
                     </div>
                     <group name="main">
@@ -280,6 +280,7 @@
             <tree
                 class="o_helpdesk_aliare"
                 editable="bottom"
+                default_order="create_date desc"
                 decoration-muted="stage_name == 'Nuevo'"
                 decoration-info="stage_name == 'En progreso'"
                 decoration-warning="stage_name == 'En espera'"
