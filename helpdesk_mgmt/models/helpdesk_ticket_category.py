@@ -20,3 +20,8 @@ class HelpdeskCategory(models.Model):
         string="Company",
         default=lambda self: self.env.company,
     )
+    sla_config_ids = fields.One2many(
+        comodel_name="helpdesk.sla.config",
+        inverse_name="category_id",
+        string="Configuración SLA",
+    )

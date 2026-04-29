@@ -4,7 +4,7 @@
     "name": "Helpdesk Management",
     "summary": """
         Helpdesk""",
-    "version": "15.0.4.4.0",
+    "version": "15.0.4.5.0",
     "license": "AGPL-3",
     "category": "After-Sales",
     "author": "AdaptiveCity, "
@@ -20,6 +20,7 @@
     "data": [
         "data/helpdesk_data.xml",
         "data/helpdesk_stage_colors.xml",
+        "data/helpdesk_sla_cron.xml",
         "security/helpdesk_security.xml",
         "security/ir.model.access.csv",
         "views/res_partner_views.xml",

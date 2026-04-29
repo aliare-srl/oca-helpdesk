@@ -1,3 +1,4 @@
+from . import helpdesk_sla_config
 from . import helpdesk_ticket
 from . import helpdesk_ticket_stage
 from . import helpdesk_ticket_tag

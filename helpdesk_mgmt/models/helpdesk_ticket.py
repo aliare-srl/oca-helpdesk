@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from odoo import _, api, fields, models, tools
 from odoo.exceptions import AccessError
 
@@ -157,6 +159,126 @@ class HelpdeskTicket(models.Model):
     )
     active = fields.Boolean(default=True)
 
+    fecha_limite = fields.Datetime(
+        string="Fecha Límite SLA",
+        compute="_compute_fecha_limite",
+        store=True,
+        readonly=True,
+    )
+    sla_status = fields.Selection(
+        selection=[
+            ("green", "🟢 En Tiempo"),
+            ("yellow", "🟡 Próximo a Vencer"),
+            ("red", "🔴 Vencido"),
+        ],
+        string="Estado SLA",
+        default="green",
+        store=True,
+    )
+    sla_yellow_sent = fields.Boolean(default=False)
+    sla_red_sent = fields.Boolean(default=False)
+
+    @api.depends("category_id", "priority", "create_date")
+    def _compute_fecha_limite(self):
+        for ticket in self:
+            if not ticket.create_date:
+                ticket.fecha_limite = False
+                continue
+            hours = 72.0
+            if ticket.category_id and ticket.category_id.sla_config_ids:
+                config = ticket.category_id.sla_config_ids.filtered(
+                    lambda c: c.priority == ticket.priority
+                )
+                if config:
+                    hours = config[0].hours
+            ticket.fecha_limite = ticket.create_date + timedelta(hours=hours)
+
+    def _update_sla_status(self):
+        now = fields.Datetime.now()
+        for ticket in self:
+            if not ticket.fecha_limite or not ticket.create_date:
+                ticket.with_context(skip_sla_update=True).sla_status = "green"
+                continue
+            total = (ticket.fecha_limite - ticket.create_date).total_seconds()
+            elapsed = (now - ticket.create_date).total_seconds()
+            if total <= 0:
+                status = "yellow" if ticket.stage_id.closed else "red"
+            else:
+                pct = elapsed / total
+                if pct < 0.75:
+                    status = "green"
+                elif pct <= 1.0:
+                    status = "yellow"
+                else:
+                    status = "yellow" if ticket.stage_id.closed else "red"
+            ticket.with_context(skip_sla_update=True).write({"sla_status": status})
+
+    @api.model
+    def _cron_check_sla(self):
+        now = fields.Datetime.now()
+        tickets = self.sudo().search(
+            [("closed", "=", False), ("fecha_limite", "!=", False)]
+        )
+        for ticket in tickets:
+            if not ticket.create_date:
+                continue
+            total = (ticket.fecha_limite - ticket.create_date).total_seconds()
+            elapsed = (now - ticket.create_date).total_seconds()
+            if total <= 0:
+                continue
+            pct = elapsed / total
+
+            if pct < 0.75:
+                new_status = "green"
+            elif pct <= 1.0:
+                new_status = "yellow"
+            else:
+                new_status = "red"
+
+            vals = {"sla_status": new_status}
+
+            if pct >= 0.75 and not ticket.sla_yellow_sent:
+                ticket.message_post(
+                    body=_(
+                        "⚠️ <b>Aviso SLA:</b> Este ticket está próximo a vencer "
+                        "(75%% del tiempo consumido). Responsable: %s"
+                    )
+                    % (ticket.user_id.name or _("Sin asignar")),
+                    message_type="comment",
+                    subtype_xmlid="mail.mt_note",
+                    partner_ids=ticket.user_id.partner_id.ids if ticket.user_id else [],
+                )
+                vals["sla_yellow_sent"] = True
+
+            if pct >= 1.0 and not ticket.sla_red_sent:
+                ticket.message_post(
+                    body=_(
+                        "🚨 <b>Alerta SLA VENCIDO:</b> El ticket ha superado su plazo "
+                        "límite de atención. Responsable: %s"
+                    )
+                    % (ticket.user_id.name or _("Sin asignar")),
+                    message_type="comment",
+                    subtype_xmlid="mail.mt_note",
+                    partner_ids=ticket.user_id.partner_id.ids if ticket.user_id else [],
+                )
+                if ticket.user_id and ticket.user_id.partner_id:
+                    self.env["bus.bus"]._sendone(
+                        ticket.user_id.partner_id,
+                        "simple_notification",
+                        {
+                            "title": _("SLA Vencido"),
+                            "message": _(
+                                "El ticket %s ha superado su plazo de SLA."
+                            )
+                            % ticket.number,
+                            "sticky": True,
+                            "warning": True,
+                        },
+                    )
+                vals["sla_red_sent"] = True
+
+            ticket.with_context(skip_sla_update=True).write(vals)
+
     def name_get(self):
         res = []
         for rec in self:
@@ -190,7 +312,9 @@ class HelpdeskTicket(models.Model):
                 team = self.env["helpdesk.ticket.team"].browse([vals["team_id"]])
                 if team.company_id:
                     vals["company_id"] = team.company_id.id
-        return super().create(vals_list)
+        tickets = super().create(vals_list)
+        tickets.with_context(skip_sla_update=True)._update_sla_status()
+        return tickets
 
     def copy(self, default=None):
         self.ensure_one()
@@ -211,7 +335,12 @@ class HelpdeskTicket(models.Model):
                     vals["closed_date"] = now
             if vals.get("user_id"):
                 vals["assigned_date"] = now
-        return super().write(vals)
+        result = super().write(vals)
+        if not self.env.context.get("skip_sla_update"):
+            sla_triggers = {"stage_id", "category_id", "priority"}
+            if any(f in vals for f in sla_triggers):
+                self.with_context(skip_sla_update=True)._update_sla_status()
+        return result
 
     def action_duplicate_tickets(self):
         for ticket in self.browse(self.env.context["active_ids"]):

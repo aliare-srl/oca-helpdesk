@@ -89,6 +89,22 @@
                     domain="[('activity_ids.date_deadline', '&gt;', context_today().strftime('%Y-%m-%d'))
                   ]"
                 />
+                <separator />
+                <filter
+                    string="🔴 Tickets Vencidos"
+                    name="sla_red"
+                    domain="[('sla_status', '=', 'red')]"
+                />
+                <filter
+                    string="🟡 Próximos a Vencer"
+                    name="sla_yellow"
+                    domain="[('sla_status', '=', 'yellow')]"
+                />
+                <filter
+                    string="🟢 Tickets en Tiempo"
+                    name="sla_green"
+                    domain="[('sla_status', '=', 'green')]"
+                />
                 <group expand="0" string="Group By">
                     <filter
                         string="Partner"
@@ -119,6 +135,12 @@
                         name="group_tag"
                         domain="[]"
                         context="{'group_by':'tag_ids'}"
+                    />
+                    <filter
+                        string="Estado SLA"
+                        name="group_sla_status"
+                        domain="[]"
+                        context="{'group_by':'sla_status'}"
                     />
                 </group>
             </search>
@@ -180,6 +202,8 @@
                             <field name="partner_email" />
                             <field name="category_id" />
                             <field name="planned_date" />
+                            <field name="fecha_limite" readonly="1" />
+                            <field name="sla_status" readonly="1" />
                             <field
                                 name="tag_ids"
                                 widget="many2many_tags"
@@ -273,6 +297,15 @@
                 <field name="kanban_state" invisible="1" />
                 <field name="unattended" invisible="1" />
                 <field name="closed" invisible="1" />
+                <field name="fecha_limite" optional="show" />
+                <field
+                    name="sla_status"
+                    optional="show"
+                    decoration-success="sla_status == 'green'"
+                    decoration-warning="sla_status == 'yellow'"
+                    decoration-danger="sla_status == 'red'"
+                    widget="badge"
+                />
                 <field
                     name="stage_id"
                     options="{'no_create': True, 'no_open': True}"
@@ -302,6 +335,8 @@
                 <field name="stage_id" />
                 <field name="priority" widget="priority" />
                 <field name="assigned_date" />
+                <field name="sla_status" />
+                <field name="fecha_limite" />
                 <progressbar
                     field="activity_state"
                     colors="{&quot;planned&quot;: &quot;success&quot;, &quot;today&quot;: &quot;warning&quot;, &quot;overdue&quot;: &quot;danger&quot;}"
@@ -373,6 +408,12 @@
                                         widget="kanban_activity"
                                         related="activity_state"
                                     />
+                                    <span
+                                        t-attf-class="badge badge-pill ml-1 #{record.sla_status.raw_value == 'green' and 'badge-success' or record.sla_status.raw_value == 'yellow' and 'badge-warning' or 'badge-danger'}"
+                                        t-att-title="record.sla_status.value"
+                                    >
+                                        <t t-esc="record.sla_status.value" />
+                                    </span>
                                 </div>
                                 <div class="oe_kanban_bottom_right">
                                     <field

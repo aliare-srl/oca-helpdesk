@@ -49,6 +49,22 @@
                         <field name="company_id" groups="base.group_multi_company" />
                         <field name="active" invisible="1" />
                     </group>
+                    <notebook>
+                        <page string="Configuración SLA" name="sla_config">
+                            <field
+                                name="sla_config_ids"
+                                nolabel="1"
+                            >
+                                <tree editable="bottom">
+                                    <field name="priority" />
+                                    <field name="hours" string="Horas límite" />
+                                </tree>
+                            </field>
+                            <div class="text-muted">
+                                <i>Si no se configura un plazo para una prioridad, se usarán 72 horas por defecto.</i>
+                            </div>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
