@@ -89,7 +89,9 @@ class HelpdeskTicket(models.Model):
     assigned_date = fields.Datetime()
     closed_date = fields.Datetime()
     planned_date = fields.Datetime(
-        string="Fecha y Hora Prevista", help="Compromiso de ejecución"
+        string="Fecha y Hora Prevista",
+        help="Compromiso de ejecución",
+        default=fields.Datetime.now,
     )
     stage_name = fields.Char(related="stage_id.name", string="Nombre de Etapa")
     stage_color_index = fields.Integer(

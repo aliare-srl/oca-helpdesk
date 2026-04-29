@@ -38,6 +38,7 @@
     "assets": {
         "web.assets_backend": [
             "helpdesk_mgmt/static/src/css/helpdesk_styles.css",
+            "helpdesk_mgmt/static/src/js/helpdesk_tab_fix.js",
         ],
         "web.assets_frontend": [
             "helpdesk_mgmt/static/src/js/new_ticket.js",
