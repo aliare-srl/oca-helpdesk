@@ -202,8 +202,16 @@
                             <field name="partner_email" />
                             <field name="category_id" />
                             <field name="planned_date" />
-                            <field name="fecha_limite" readonly="1" />
-                            <field name="sla_status" readonly="1" />
+                            <field
+                                name="fecha_limite"
+                                readonly="1"
+                                attrs="{'invisible': [('fecha_limite', '=', False)]}"
+                            />
+                            <field
+                                name="sla_status"
+                                readonly="1"
+                                attrs="{'invisible': [('sla_status', '=', False)]}"
+                            />
                             <field
                                 name="tag_ids"
                                 widget="many2many_tags"
@@ -409,6 +417,7 @@
                                         related="activity_state"
                                     />
                                     <span
+                                        t-if="record.sla_status.raw_value"
                                         t-attf-class="badge badge-pill ml-1 #{record.sla_status.raw_value == 'green' and 'badge-success' or record.sla_status.raw_value == 'yellow' and 'badge-warning' or 'badge-danger'}"
                                         t-att-title="record.sla_status.value"
                                     >

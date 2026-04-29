@@ -172,32 +172,35 @@ class HelpdeskTicket(models.Model):
             ("red", "🔴 Vencido"),
         ],
         string="Estado SLA",
-        default="green",
         store=True,
     )
     sla_yellow_sent = fields.Boolean(default=False)
     sla_red_sent = fields.Boolean(default=False)
 
+    _SLA_PRIORITY_MAP = {"0": "normal", "1": "normal", "2": "alta", "3": "urgente"}
+
     @api.depends("category_id", "priority", "create_date")
     def _compute_fecha_limite(self):
         for ticket in self:
-            if not ticket.create_date:
+            if not ticket.create_date or not ticket.category_id:
                 ticket.fecha_limite = False
                 continue
-            hours = 72.0
-            if ticket.category_id and ticket.category_id.sla_config_ids:
-                config = ticket.category_id.sla_config_ids.filtered(
-                    lambda c: c.priority == ticket.priority
+            sla_key = self._SLA_PRIORITY_MAP.get(ticket.priority, "normal")
+            config = ticket.category_id.sla_config_ids.filtered(
+                lambda c, k=sla_key: c.priority == k
+            )
+            if not config:
+                ticket.fecha_limite = False
+            else:
+                ticket.fecha_limite = ticket.create_date + timedelta(
+                    hours=config[0].hours
                 )
-                if config:
-                    hours = config[0].hours
-            ticket.fecha_limite = ticket.create_date + timedelta(hours=hours)
 
     def _update_sla_status(self):
         now = fields.Datetime.now()
         for ticket in self:
             if not ticket.fecha_limite or not ticket.create_date:
-                ticket.with_context(skip_sla_update=True).sla_status = "green"
+                ticket.with_context(skip_sla_update=True).write({"sla_status": False})
                 continue
             total = (ticket.fecha_limite - ticket.create_date).total_seconds()
             elapsed = (now - ticket.create_date).total_seconds()

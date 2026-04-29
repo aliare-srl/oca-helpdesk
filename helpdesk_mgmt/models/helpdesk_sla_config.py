@@ -14,12 +14,11 @@ class HelpdeskSlaConfig(models.Model):
     )
     priority = fields.Selection(
         selection=[
-            ("0", "Baja"),
-            ("1", "Media"),
-            ("2", "Alta"),
-            ("3", "Muy Alta"),
+            ("normal", "Normal (⭐ / sin estrella)"),
+            ("alta", "Alta (⭐⭐)"),
+            ("urgente", "Urgente (⭐⭐⭐)"),
         ],
         string="Prioridad",
         required=True,
     )
-    hours = fields.Float(string="Horas límite", required=True, default=72.0)
+    hours = fields.Float(string="Horas límite", required=True)
