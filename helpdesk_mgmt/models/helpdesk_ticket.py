@@ -58,7 +58,7 @@ class HelpdeskTicket(models.Model):
 
     number = fields.Char(string="Ticket number", default="/", readonly=True)
     name = fields.Char(string="Title", required=True)
-    description = fields.Html(required=True, sanitize_style=True)
+    description = fields.Html(sanitize_style=True)
     user_id = fields.Many2one(
         comodel_name="res.users",
         string="Assigned user",

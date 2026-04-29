@@ -1,48 +1,52 @@
 odoo.define("helpdesk_mgmt.tab_navigation", function (require) {
     "use strict";
 
-    // Intercepta TAB dentro del editor HTML (campo description) para que el foco
-    // salte al siguiente campo del formulario en lugar de insertar indentación.
+    // Intercepta el TAB en el editor HTML de description ANTES de que el editor
+    // Odoo lo consuma (fase de captura). Al salir, enfoca el campo partner_id
+    // (Cliente), ya que ese campo queda ANTES de description en el DOM y la
+    // estrategia genérica de "siguiente en el DOM" no lo alcanza.
     document.addEventListener(
         "keydown",
         function (e) {
-            if (e.key !== "Tab" || e.shiftKey) return;
+            if (e.key !== "Tab" || e.shiftKey) {
+                return;
+            }
             var target = e.target;
-            if (!target.isContentEditable) return;
+            if (!target.isContentEditable) {
+                return;
+            }
             var htmlWidget = target.closest(".o_field_html");
-            if (!htmlWidget) return;
+            if (!htmlWidget) {
+                return;
+            }
             var form = htmlWidget.closest(".o_form_view");
-            if (!form) return;
+            if (!form) {
+                return;
+            }
 
             e.preventDefault();
             e.stopPropagation();
 
-            // Recopilar todos los elementos focuseables fuera del editor html
-            var focusable = Array.from(
-                form.querySelectorAll(
-                    'input:not([disabled]):not([type="hidden"]), ' +
-                    "select:not([disabled]), " +
-                    "textarea:not([disabled]), " +
-                    '.o_input, [tabindex]:not([tabindex="-1"])'
-                )
-            ).filter(function (el) {
-                return !htmlWidget.contains(el) && el.offsetParent !== null;
-            });
+            // Destino principal: campo partner_id (Cliente)
+            var nextInput = form.querySelector(
+                '.o_field_widget[name="partner_id"] input'
+            );
 
-            // Buscar el primero que esté después del campo html en el DOM
-            for (var i = 0; i < focusable.length; i++) {
-                var pos = htmlWidget.compareDocumentPosition(focusable[i]);
-                if (pos & Node.DOCUMENT_POSITION_FOLLOWING) {
-                    focusable[i].focus();
-                    return;
+            // Fallback: primer input editable visible del formulario
+            if (!nextInput || nextInput.offsetParent === null) {
+                nextInput = form.querySelector(
+                    'input.o_input:not([readonly]):not([disabled])'
+                );
+            }
+
+            if (nextInput) {
+                nextInput.focus();
+                // Seleccionar el texto existente para reemplazo inmediato
+                if (nextInput.select) {
+                    nextInput.select();
                 }
             }
-
-            // Si no hay ninguno después, enfocar el primero disponible
-            if (focusable.length > 0) {
-                focusable[0].focus();
-            }
         },
-        true // captura antes de que el editor Odoo consuma el evento
+        true // fase de captura: dispara antes que los listeners del editor Odoo
     );
 });
