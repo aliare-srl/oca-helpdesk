@@ -312,6 +312,7 @@
                     decoration-success="sla_status == 'green'"
                     decoration-warning="sla_status == 'yellow'"
                     decoration-danger="sla_status == 'red'"
+                    decoration-info="sla_status == 'done'"
                     widget="badge"
                 />
                 <field
@@ -418,7 +419,7 @@
                                     />
                                     <span
                                         t-if="record.sla_status.raw_value"
-                                        t-attf-class="badge badge-pill ml-1 #{record.sla_status.raw_value == 'green' and 'badge-success' or record.sla_status.raw_value == 'yellow' and 'badge-warning' or 'badge-danger'}"
+                                        t-attf-class="badge badge-pill ml-1 #{record.sla_status.raw_value == 'green' and 'badge-success' or record.sla_status.raw_value == 'yellow' and 'badge-warning' or record.sla_status.raw_value == 'done' and 'badge-info' or 'badge-danger'}"
                                         t-att-title="record.sla_status.value"
                                     >
                                         <t t-esc="record.sla_status.value" />

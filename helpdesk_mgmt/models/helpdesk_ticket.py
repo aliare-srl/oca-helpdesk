@@ -8,7 +8,7 @@ class HelpdeskTicket(models.Model):
     _name = "helpdesk.ticket"
     _description = "Helpdesk Ticket"
     _rec_name = "number"
-    _order = "priority desc, sequence, number desc, id desc"
+    _order = "create_date desc"
     _mail_post_access = "read"
     _inherit = ["mail.thread.cc", "mail.activity.mixin", "portal.mixin"]
 
@@ -170,6 +170,7 @@ class HelpdeskTicket(models.Model):
             ("green", "🟢 En Tiempo"),
             ("yellow", "🟡 Próximo a Vencer"),
             ("red", "🔴 Vencido"),
+            ("done", "✅ Finalizado"),
         ],
         string="Estado SLA",
         store=True,
@@ -199,13 +200,16 @@ class HelpdeskTicket(models.Model):
     def _update_sla_status(self):
         now = fields.Datetime.now()
         for ticket in self:
+            if ticket.stage_id.closed:
+                ticket.with_context(skip_sla_update=True).write({"sla_status": "done"})
+                continue
             if not ticket.fecha_limite or not ticket.create_date:
                 ticket.with_context(skip_sla_update=True).write({"sla_status": False})
                 continue
             total = (ticket.fecha_limite - ticket.create_date).total_seconds()
             elapsed = (now - ticket.create_date).total_seconds()
             if total <= 0:
-                status = "yellow" if ticket.stage_id.closed else "red"
+                status = "red"
             else:
                 pct = elapsed / total
                 if pct < 0.75:
@@ -213,7 +217,7 @@ class HelpdeskTicket(models.Model):
                 elif pct <= 1.0:
                     status = "yellow"
                 else:
-                    status = "yellow" if ticket.stage_id.closed else "red"
+                    status = "red"
             ticket.with_context(skip_sla_update=True).write({"sla_status": status})
 
     @api.model
