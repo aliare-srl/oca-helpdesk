@@ -2,9 +2,8 @@ odoo.define("helpdesk_mgmt.tab_navigation", function (require) {
     "use strict";
 
     // Intercepta el TAB en el editor HTML de description ANTES de que el editor
-    // Odoo lo consuma (fase de captura). Al salir, enfoca el campo partner_id
-    // (Cliente), ya que ese campo queda ANTES de description en el DOM y la
-    // estrategia genérica de "siguiente en el DOM" no lo alcanza.
+    // Odoo lo consuma (fase de captura). stopImmediatePropagation garantiza que
+    // ningún otro listener en document (incluido web_editor) procese el evento.
     document.addEventListener(
         "keydown",
         function (e) {
@@ -25,9 +24,9 @@ odoo.define("helpdesk_mgmt.tab_navigation", function (require) {
             }
 
             e.preventDefault();
-            e.stopPropagation();
+            e.stopImmediatePropagation();
 
-            // Destino principal: campo partner_id (Cliente)
+            // Destino: campo partner_id (Cliente)
             var nextInput = form.querySelector(
                 '.o_field_widget[name="partner_id"] input'
             );
@@ -41,12 +40,11 @@ odoo.define("helpdesk_mgmt.tab_navigation", function (require) {
 
             if (nextInput) {
                 nextInput.focus();
-                // Seleccionar el texto existente para reemplazo inmediato
                 if (nextInput.select) {
                     nextInput.select();
                 }
             }
         },
-        true // fase de captura: dispara antes que los listeners del editor Odoo
+        true // fase de captura: dispara antes que cualquier listener de burbuja
     );
 });
