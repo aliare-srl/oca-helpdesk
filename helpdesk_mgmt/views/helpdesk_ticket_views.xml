@@ -279,7 +279,7 @@
         <field name="arch" type="xml">
             <tree
                 class="o_helpdesk_aliare"
-                editable="bottom"
+                editable="top"
                 default_order="create_date desc"
                 decoration-muted="stage_name == 'Nuevo'"
                 decoration-info="stage_name == 'En progreso'"
@@ -288,10 +288,10 @@
                 decoration-danger="stage_name == 'Cancelado'"
                 decoration-primary="stage_name == 'Rechazado'"
             >
+                <field name="name" default_focus="1" />
                 <field name="priority" widget="priority" />
                 <field name="sequence" widget="handle" />
                 <field name="number" decoration-bf="1" readonly="1" />
-                <field name="name" />
                 <field name="description" optional="hide" />
                 <field name="partner_id" string="Cliente" widget="many2one" />
                 <field name="partner_name" />
