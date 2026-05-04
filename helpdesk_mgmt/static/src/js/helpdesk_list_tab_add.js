@@ -4,8 +4,7 @@ import { patch } from "@web/core/utils/patch";
 import { ListRenderer } from "@web/views/list/list_renderer";
 
 patch(ListRenderer.prototype, "helpdesk_mgmt.list_tab_add", {
-    onCellKeydownEditMode(hotkey, cell, group, record) {
-        // Solo actuar en nuestra tabla y cuando Tab llega al último campo editable
+    async onCellKeydownEditMode(hotkey, cell, group, record) {
         if (
             hotkey !== "tab" ||
             !this.tableRef.el ||
@@ -15,22 +14,45 @@ patch(ListRenderer.prototype, "helpdesk_mgmt.list_tab_add", {
             return this._super(...arguments);
         }
 
-        // Crear nueva fila arriba (editable="top") en lugar de ir al registro siguiente
+        // 1. Guardar el record actual antes de agregar uno nuevo
+        if (record && typeof record.save === "function") {
+            const saved = await record.save();
+            if (!saved) return false;
+        } else {
+            // Fallback: blur del campo activo para disparar el guardado del campo
+            const activeEl = document.activeElement;
+            if (activeEl) activeEl.blur();
+        }
+
+        // 2. Agregar nueva fila (editable="top" la pone arriba)
         this.add({ group });
 
-        // Forzar foco en el campo Título de la fila nueva (primer tr seleccionado)
-        setTimeout(() => {
-            const firstRow = this.tableRef.el.querySelector(
+        // 3. Esperar a que OWL re-renderice y la nueva fila aparezca PRIMERA y SELECCIONADA
+        let attempts = 0;
+        const focusNewRow = () => {
+            const table = this.tableRef.el;
+            if (!table) return;
+            const allRows = table.querySelectorAll("tbody tr.o_data_row");
+            const selectedRow = table.querySelector(
                 "tbody tr.o_data_row.o_selected_row"
             );
-            if (!firstRow) return;
-            const inp = firstRow.querySelector('.o_field_widget[name="name"] input');
-            if (inp) {
-                inp.focus();
-                inp.select();
+            // La nueva fila debe ser la primera Y estar seleccionada
+            if (selectedRow && allRows.length && selectedRow === allRows[0]) {
+                const inp = selectedRow.querySelector(
+                    '.o_field_widget[name="name"] input'
+                );
+                if (inp) {
+                    inp.focus();
+                    inp.select();
+                    return;
+                }
             }
-        }, 100);
+            if (++attempts < 30) {
+                setTimeout(focusNewRow, 50);
+            }
+        };
+        setTimeout(focusNewRow, 50);
 
-        return true; // le dice a Odoo que ejecute ev.preventDefault() + ev.stopPropagation()
+        return true;
     },
 });
