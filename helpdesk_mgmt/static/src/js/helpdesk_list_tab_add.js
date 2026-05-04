@@ -1,67 +1,70 @@
 odoo.define("helpdesk_mgmt.list_tab_add", function (require) {
     "use strict";
 
-    document.addEventListener(
-        "keydown",
-        function (e) {
-            if (e.key !== "Tab" || e.shiftKey) return;
+    document.addEventListener("keydown", function (e) {
+        if (e.key !== "Tab" || e.shiftKey) return;
 
-            var target = e.target;
-            var cell = target.closest("td.o_data_cell");
-            if (!cell) return;
+        var target = e.target;
 
-            var row = cell.closest("tr.o_data_row");
-            if (!row) return;
+        // Solo actuar dentro de nuestra tabla específica
+        var table = target.closest("table.o_helpdesk_aliare");
+        if (!table) return;
 
-            var table = row.closest("table.o_helpdesk_aliare");
-            if (!table) return;
+        var row = target.closest("tr.o_data_row");
+        if (!row) return;
 
-            var inputs = Array.from(
-                row.querySelectorAll(
-                    "input:not([readonly]):not([disabled]):not([type='hidden'])," +
-                    "select:not([readonly]):not([disabled])"
-                )
-            ).filter(function (el) { return el.offsetParent !== null; });
+        // Todos los elementos focusables visibles en la fila (incluyendo readonly y botones)
+        var focusables = Array.from(
+            row.querySelectorAll(
+                "input:not([type='hidden']), select, textarea, button:not([disabled])"
+            )
+        ).filter(function (el) {
+            return el.offsetParent !== null && el.tabIndex !== -1;
+        });
 
-            if (!inputs.length || inputs.indexOf(target) < inputs.length - 1) return;
+        if (!focusables.length) return;
 
-            e.preventDefault();
-            e.stopImmediatePropagation();
+        var idx = focusables.indexOf(target);
 
-            var btn = document.querySelector(".o_list_button_add");
-            if (!btn) return;
+        // Si el target no se encuentra o no es el último elemento, Tab navega normal
+        if (idx === -1 || idx < focusables.length - 1) return;
 
-            // Registrar el valor actual antes de salir del campo
-            target.dispatchEvent(new Event("change", { bubbles: true }));
-            target.blur();
+        e.preventDefault();
+        e.stopImmediatePropagation();
 
-            setTimeout(function () {
-                btn.click();
-                _focusNewRow(table, 0);
-            }, 80);
-        },
-        true
-    );
+        var btn = document.querySelector(".o_list_button_add");
+        if (!btn) return;
 
-    function _focusNewRow(table, attempt) {
-        if (attempt > 20) return;
+        // Registrar el valor actual. NO llamar blur(): dispara la lógica de OWL
+        // que mueve el foco a la fila siguiente antes de nuestro click.
+        target.dispatchEvent(new Event("input", { bubbles: true }));
+        target.dispatchEvent(new Event("change", { bubbles: true }));
+
         setTimeout(function () {
-            // La nueva fila queda en primer lugar (editable="top") y es la seleccionada
+            btn.click();
+            _waitForNewRow(table, 0);
+        }, 50);
+
+    }, true);
+
+    function _waitForNewRow(table, attempt) {
+        if (attempt > 25) return;
+        setTimeout(function () {
             var tbody = table.querySelector("tbody");
-            if (!tbody) { _focusNewRow(table, attempt + 1); return; }
+            if (!tbody) { _waitForNewRow(table, attempt + 1); return; }
 
-            var selected = tbody.querySelector("tr.o_data_row.o_selected_row");
-            if (!selected) { _focusNewRow(table, attempt + 1); return; }
-
-            // Verificar que es la primera fila (no un registro viejo seleccionado)
+            // Con editable="top" la nueva fila queda primera Y es la seleccionada
             var firstRow = tbody.querySelector("tr.o_data_row");
-            if (selected !== firstRow) { _focusNewRow(table, attempt + 1); return; }
+            if (!firstRow || !firstRow.classList.contains("o_selected_row")) {
+                _waitForNewRow(table, attempt + 1);
+                return;
+            }
 
-            var inp = selected.querySelector('.o_field_widget[name="name"] input');
-            if (!inp) { _focusNewRow(table, attempt + 1); return; }
+            var inp = firstRow.querySelector('.o_field_widget[name="name"] input');
+            if (!inp) { _waitForNewRow(table, attempt + 1); return; }
 
             inp.focus();
             if (inp.select) inp.select();
-        }, 50 + attempt * 40);
+        }, 60 + attempt * 40);
     }
 });
