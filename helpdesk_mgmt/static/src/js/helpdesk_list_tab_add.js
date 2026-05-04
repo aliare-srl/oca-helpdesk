@@ -31,40 +31,37 @@ odoo.define("helpdesk_mgmt.list_tab_add", function (require) {
             var btn = document.querySelector(".o_list_button_add");
             if (!btn) return;
 
-            // MutationObserver: espera que OWL inserte la nueva fila en el DOM
-            // antes de intentar enfocar, evitando la carrera con el foco de OWL.
-            var tbody = table.querySelector("tbody") || table;
-            var observer = new MutationObserver(function (mutations, obs) {
-                var added = false;
-                mutations.forEach(function (m) {
-                    if (m.addedNodes.length) added = true;
-                });
-                if (!added) return;
-
-                // Dar un tick extra para que OWL termine el render de la fila
-                setTimeout(function () {
-                    var selected = table.querySelector(".o_selected_row");
-                    if (!selected) return;
-                    var inp = selected.querySelector(
-                        '.o_field_widget[name="name"] input'
-                    );
-                    if (!inp) return;
-                    obs.disconnect();
-                    inp.scrollIntoView({ block: "nearest" });
-                    inp.focus();
-                    if (inp.select) inp.select();
-                }, 60);
-            });
-            observer.observe(tbody, { childList: true });
-            // Timeout de seguridad: desconectar el observer si no se crea la fila
-            setTimeout(function () { observer.disconnect(); }, 3000);
-
-            // Disparar change para que OWL registre el valor actual antes de blur
+            // Registrar el valor actual antes de salir del campo
             target.dispatchEvent(new Event("change", { bubbles: true }));
             target.blur();
-            // Pequeño delay para que OWL procese el blur antes del click en Nuevo
-            setTimeout(function () { btn.click(); }, 80);
+
+            setTimeout(function () {
+                btn.click();
+                _focusNewRow(table, 0);
+            }, 80);
         },
         true
     );
+
+    function _focusNewRow(table, attempt) {
+        if (attempt > 20) return;
+        setTimeout(function () {
+            // La nueva fila queda en primer lugar (editable="top") y es la seleccionada
+            var tbody = table.querySelector("tbody");
+            if (!tbody) { _focusNewRow(table, attempt + 1); return; }
+
+            var selected = tbody.querySelector("tr.o_data_row.o_selected_row");
+            if (!selected) { _focusNewRow(table, attempt + 1); return; }
+
+            // Verificar que es la primera fila (no un registro viejo seleccionado)
+            var firstRow = tbody.querySelector("tr.o_data_row");
+            if (selected !== firstRow) { _focusNewRow(table, attempt + 1); return; }
+
+            var inp = selected.querySelector('.o_field_widget[name="name"] input');
+            if (!inp) { _focusNewRow(table, attempt + 1); return; }
+
+            inp.focus();
+            if (inp.select) inp.select();
+        }, 50 + attempt * 40);
+    }
 });
