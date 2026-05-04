@@ -5,14 +5,22 @@ odoo.define("helpdesk_mgmt.list_tab_add", function (require) {
         if (e.key !== "Tab" || e.shiftKey) return;
 
         var target = e.target;
+        var row = target.closest("tr.o_data_row");
+        if (!row) return;
 
-        // Debe estar dentro de nuestra tabla
-        var table = target.closest("table.o_helpdesk_aliare");
-        if (!table) return;
+        var table = row.closest("table");
+        if (!table || !table.classList.contains("o_helpdesk_aliare")) return;
 
-        // Debe estar dentro de la celda del campo stage_id (último campo editable)
-        if (!target.closest('[name="stage_id"]')) return;
+        // Todos los focusables visibles de la fila en orden DOM
+        var all = Array.from(row.querySelectorAll(
+            "input:not([type='hidden']), select, textarea, button"
+        )).filter(function (el) { return el.offsetParent !== null; });
 
+        // ¿Hay algún focusable DESPUÉS del target en la fila?
+        var idx = all.indexOf(target);
+        if (idx !== -1 && idx < all.length - 1) return; // no es el último, dejar pasar
+
+        // Si target no está en la lista o es el último → interceptar
         e.preventDefault();
         e.stopImmediatePropagation();
 
@@ -23,27 +31,22 @@ odoo.define("helpdesk_mgmt.list_tab_add", function (require) {
 
         setTimeout(function () {
             btn.click();
-            _waitForNewRow(table, 0);
+            _wait(table, 0);
         }, 60);
+
     }, true);
 
-    function _waitForNewRow(table, attempt) {
-        if (attempt > 20) return;
+    function _wait(table, n) {
+        if (n > 20) return;
         setTimeout(function () {
-            var tbody = table.querySelector("tbody");
-            if (!tbody) { _waitForNewRow(table, attempt + 1); return; }
-
-            var firstRow = tbody.querySelector("tr.o_data_row");
-            if (!firstRow || !firstRow.classList.contains("o_selected_row")) {
-                _waitForNewRow(table, attempt + 1);
-                return;
+            var first = table.querySelector("tbody tr.o_data_row");
+            if (!first || !first.classList.contains("o_selected_row")) {
+                return _wait(table, n + 1);
             }
-
-            var inp = firstRow.querySelector('.o_field_widget[name="name"] input');
-            if (!inp) { _waitForNewRow(table, attempt + 1); return; }
-
+            var inp = first.querySelector('.o_field_widget[name="name"] input');
+            if (!inp) return _wait(table, n + 1);
             inp.focus();
-            if (inp.select) inp.select();
-        }, 60 + attempt * 40);
+            inp.select && inp.select();
+        }, 60 + n * 40);
     }
 });
