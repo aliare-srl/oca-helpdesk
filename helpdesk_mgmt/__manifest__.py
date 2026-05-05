@@ -42,6 +42,7 @@
             "helpdesk_mgmt/static/src/js/helpdesk_tab_fix.js",
             "helpdesk_mgmt/static/src/js/helpdesk_list_tab_add.js",
             "helpdesk_mgmt/static/src/js/helpdesk_list_save_reload.js",
+            "helpdesk_mgmt/static/src/js/helpdesk_sla_notifications.js",
         ],
         "web.assets_frontend": [
             "helpdesk_mgmt/static/src/js/new_ticket.js",
