@@ -292,6 +292,32 @@ class HelpdeskTicket(models.Model):
             res.append((rec.id, rec.number + " - " + rec.name))
         return res
 
+
+    @api.model
+    def get_sla_alerts_for_current_user(self):
+        now = fields.Datetime.now()
+        uid = self.env.user.id
+        tickets = self.sudo().search([
+            ("closed", "=", False),
+            ("user_id", "=", uid),
+            ("sla_status", "in", ["yellow", "red"]),
+            ("fecha_limite", "!=", False),
+        ], order="fecha_limite asc")
+        result = []
+        for ticket in tickets:
+            total = (ticket.fecha_limite - ticket.create_date).total_seconds()
+            elapsed = (now - ticket.create_date).total_seconds()
+            pct = round((elapsed / total * 100), 1) if total > 0 else 100.0
+            result.append({
+                "id": ticket.id,
+                "number": ticket.number or "",
+                "name": ticket.name or "",
+                "sla_status": ticket.sla_status,
+                "fecha_limite": fields.Datetime.to_string(ticket.fecha_limite),
+                "pct": pct,
+            })
+        return result
+
     def assign_to_me(self):
         self.write({"user_id": self.env.user.id})
 
