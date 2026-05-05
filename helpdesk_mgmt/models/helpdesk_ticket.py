@@ -92,7 +92,7 @@ class HelpdeskTicket(models.Model):
     closed_date = fields.Datetime()
     planned_date = fields.Datetime(
         string="Fecha y Hora Prevista",
-        help="Compromiso de ejecución",
+        help="Compromiso de ejecuciÃ³n",
         default=fields.Datetime.now,
     )
     stage_name = fields.Char(related="stage_id.name", string="Nombre de Etapa")
@@ -160,17 +160,17 @@ class HelpdeskTicket(models.Model):
     active = fields.Boolean(default=True)
 
     fecha_limite = fields.Datetime(
-        string="Fecha Límite SLA",
+        string="Fecha LÃ­mite SLA",
         compute="_compute_fecha_limite",
         store=True,
         readonly=True,
     )
     sla_status = fields.Selection(
         selection=[
-            ("green", "🟢 En Tiempo"),
-            ("yellow", "🟡 Próximo a Vencer"),
-            ("red", "🔴 Vencido"),
-            ("done", "✅ Finalizado"),
+            ("green", "ðŸŸ¢ En Tiempo"),
+            ("yellow", "ðŸŸ¡ PrÃ³ximo a Vencer"),
+            ("red", "ðŸ”´ Vencido"),
+            ("done", "âœ… Finalizado"),
         ],
         string="Estado SLA",
         store=True,
@@ -247,7 +247,7 @@ class HelpdeskTicket(models.Model):
             if pct >= 0.75 and not ticket.sla_yellow_sent:
                 ticket.message_post(
                     body=_(
-                        "⚠️ <b>Aviso SLA:</b> Este ticket está próximo a vencer "
+                        "âš ï¸ <b>Aviso SLA:</b> Este ticket estÃ¡ prÃ³ximo a vencer "
                         "(75%% del tiempo consumido). Responsable: %s"
                     )
                     % (ticket.user_id.name or _("Sin asignar")),
@@ -260,8 +260,8 @@ class HelpdeskTicket(models.Model):
             if pct >= 1.0 and not ticket.sla_red_sent:
                 ticket.message_post(
                     body=_(
-                        "🚨 <b>Alerta SLA VENCIDO:</b> El ticket ha superado su plazo "
-                        "límite de atención. Responsable: %s"
+                        "ðŸš¨ <b>Alerta SLA VENCIDO:</b> El ticket ha superado su plazo "
+                        "lÃ­mite de atenciÃ³n. Responsable: %s"
                     )
                     % (ticket.user_id.name or _("Sin asignar")),
                     message_type="comment",
@@ -501,28 +501,3 @@ class HelpdeskTicket(models.Model):
                 )
             )
         return res
-
-    @api.model
-    def get_sla_alerts_for_current_user(self):
-        now = fields.Datetime.now()
-        uid = self.env.user.id
-        tickets = self.sudo().search([
-            ("closed", "=", False),
-            ("user_id", "=", uid),
-            ("sla_status", "in", ["yellow", "red"]),
-            ("fecha_limite", "!=", False),
-        ], order="fecha_limite asc")
-        result = []
-        for ticket in tickets:
-            total = (ticket.fecha_limite - ticket.create_date).total_seconds()
-            elapsed = (now - ticket.create_date).total_seconds()
-            pct = round((elapsed / total * 100), 1) if total > 0 else 100.0
-            result.append({
-                "id": ticket.id,
-                "number": ticket.number or "",
-                "name": ticket.name or "",
-                "sla_status": ticket.sla_status,
-                "fecha_limite": fields.Datetime.to_string(ticket.fecha_limite),
-                "pct": pct,
-            })
-        return result
