@@ -14,17 +14,18 @@ patch(ListRenderer.prototype, "helpdesk_mgmt.list_tab_add", {
             return this._super(...arguments);
         }
 
-        // add() llama internamente a addNewRecord() que ya guarda el record actual
+        const initialRowCount = this.tableRef.el.querySelectorAll(
+            "tbody tr.o_data_row"
+        ).length;
+
         this.add({ group });
 
         let attempts = 0;
         const focusNameField = () => {
             if (!this.tableRef.el) return;
-            const selectedRow = this.tableRef.el.querySelector(
-                "tbody tr.o_data_row.o_selected_row"
-            );
-            if (selectedRow) {
-                const inp = selectedRow.querySelector(
+            const allRows = this.tableRef.el.querySelectorAll("tbody tr.o_data_row");
+            if (allRows.length > initialRowCount) {
+                const inp = allRows[0].querySelector(
                     '.o_field_widget[name="name"] input'
                 );
                 if (inp) {
@@ -33,9 +34,9 @@ patch(ListRenderer.prototype, "helpdesk_mgmt.list_tab_add", {
                     return;
                 }
             }
-            if (++attempts < 20) setTimeout(focusNameField, 50);
+            if (++attempts < 30) setTimeout(focusNameField, 50);
         };
-        setTimeout(focusNameField, 150);
+        setTimeout(focusNameField, 50);
 
         return true;
     },
