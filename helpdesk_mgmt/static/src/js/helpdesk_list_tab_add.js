@@ -58,11 +58,16 @@ patch(ListRenderer.prototype, "helpdesk_mgmt.list_tab_add", {
 
 // ─── PATCH 2: Botón "Guardar" ────────────────────────────────────────────────
 patch(ListController.prototype, "helpdesk_mgmt.list_reload_on_save", {
-    async saveRecord() {
-        const result = await this._super(...arguments);
-        if (result && this.el && this.el.querySelector("table.o_helpdesk_aliare")) {
-            await this.model.root.load();
+    async onClickSave() {
+        if (!this.el || !this.el.querySelector("table.o_helpdesk_aliare")) {
+            return this._super(...arguments);
         }
-        return result;
+        const editedRecord = this.model.root.editedRecord;
+        if (!editedRecord) return;
+        const saved = await editedRecord.save();
+        if (saved) {
+            await this.model.root.load();
+            this.model.notify();
+        }
     },
 });
