@@ -279,7 +279,8 @@
         <field name="arch" type="xml">
             <tree
                 class="o_helpdesk_aliare"
-                editable="top"
+                editable="bottom"
+                limit="20"
                 default_order="create_date desc"
                 decoration-muted="stage_name == 'Nuevo'"
                 decoration-info="stage_name == 'En progreso'"
