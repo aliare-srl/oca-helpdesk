@@ -4,8 +4,6 @@ odoo.define('helpdesk_mgmt.sla_notifications', function (require) {
     var ListController = require('web.ListController');
     var rpc = require('web.rpc');
 
-    var SESSION_KEY = 'helpdesk_sla_notified';
-
     ListController.include({
 
         start: function () {
@@ -24,17 +22,12 @@ odoo.define('helpdesk_mgmt.sla_notifications', function (require) {
         _helpdeskShowSlaNotifications: function () {
             var self = this;
 
-            if (sessionStorage.getItem(SESSION_KEY)) {
-                return;
-            }
-
             rpc.query({
                 model: 'helpdesk.ticket',
                 method: 'get_sla_alerts_for_current_user',
                 args: [],
             }).then(function (tickets) {
                 if (!tickets || tickets.length === 0) {
-                    sessionStorage.setItem(SESSION_KEY, '1');
                     return;
                 }
 
@@ -53,8 +46,6 @@ odoo.define('helpdesk_mgmt.sla_notifications', function (require) {
                         sticky: isRed,
                     });
                 });
-
-                sessionStorage.setItem(SESSION_KEY, '1');
 
             }).catch(function (err) {
                 console.error('[helpdesk_mgmt] Error al obtener alertas SLA:', err);
