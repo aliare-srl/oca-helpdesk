@@ -92,7 +92,7 @@ class HelpdeskTicket(models.Model):
     closed_date = fields.Datetime()
     planned_date = fields.Datetime(
         string="Fecha y Hora Prevista",
-        help="Compromiso de ejecuciÃ³n",
+        help="Compromiso de ejecución",
         default=fields.Datetime.now,
     )
     stage_name = fields.Char(related="stage_id.name", string="Nombre de Etapa")
@@ -160,19 +160,19 @@ class HelpdeskTicket(models.Model):
     active = fields.Boolean(default=True)
 
     fecha_limite = fields.Datetime(
-        string="Fecha LÃ­mite SLA",
+        string="Fecha Límite SLA",
         compute="_compute_fecha_limite",
         store=True,
         readonly=True,
     )
     sla_status = fields.Selection(
         selection=[
-            ("green", "ðŸŸ¢ En Tiempo"),
-            ("yellow", "ðŸŸ¡ PrÃ³ximo a Vencer"),
-            ("red", "ðŸ”´ Vencido"),
-            ("done", "âœ… Finalizado"),
+            (“green”, “\U0001F7E2 En Tiempo”),
+            (“yellow”, “\U0001F7E1 Próximo a Vencer”),
+            (“red”, “\U0001F534 Vencido”),
+            (“done”, “✅ Finalizado”),
         ],
-        string="Estado SLA",
+        string=”Estado SLA”,
         store=True,
     )
     sla_yellow_sent = fields.Boolean(default=False)
@@ -247,7 +247,7 @@ class HelpdeskTicket(models.Model):
             if pct >= 0.75 and not ticket.sla_yellow_sent:
                 ticket.message_post(
                     body=_(
-                        "âš ï¸ <b>Aviso SLA:</b> Este ticket estÃ¡ prÃ³ximo a vencer "
+                        "⚠️ <b>Aviso SLA:</b> Este ticket está próximo a vencer "
                         "(75%% del tiempo consumido). Responsable: %s"
                     )
                     % (ticket.user_id.name or _("Sin asignar")),
@@ -260,8 +260,8 @@ class HelpdeskTicket(models.Model):
             if pct >= 1.0 and not ticket.sla_red_sent:
                 ticket.message_post(
                     body=_(
-                        "ðŸš¨ <b>Alerta SLA VENCIDO:</b> El ticket ha superado su plazo "
-                        "lÃ­mite de atenciÃ³n. Responsable: %s"
+                        "🚨 <b>Alerta SLA VENCIDO:</b> El ticket ha superado su plazo "
+                        "límite de atención. Responsable: %s"
                     )
                     % (ticket.user_id.name or _("Sin asignar")),
                     message_type="comment",
