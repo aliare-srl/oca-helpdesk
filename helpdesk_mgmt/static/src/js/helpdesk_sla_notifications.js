@@ -51,21 +51,6 @@ odoo.define('helpdesk_mgmt.sla_notifications', function (require) {
                         message: message,
                         type: isRed ? 'danger' : 'warning',
                         sticky: isRed,
-                        buttons: [
-                            {
-                                name: 'Ver ticket',
-                                primary: true,
-                                onClick: function () {
-                                    self.do_action({
-                                        type: 'ir.actions.act_window',
-                                        res_model: 'helpdesk.ticket',
-                                        res_id: ticket.id,
-                                        views: [[false, 'form']],
-                                        target: 'current',
-                                    });
-                                },
-                            },
-                        ],
                     });
                 });
 
