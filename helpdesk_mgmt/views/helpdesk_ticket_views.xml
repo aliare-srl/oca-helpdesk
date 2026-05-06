@@ -258,6 +258,10 @@
                                     </kanban>
                                 </field>
                             </page>
+                            <page string="Observaciones" name="observations_tab"
+                                  groups="helpdesk_mgmt.group_helpdesk_manager">
+                                <field name="observations" widget="html" />
+                            </page>
                         </notebook>
                     </group>
                 </sheet>

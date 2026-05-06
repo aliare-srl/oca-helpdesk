@@ -177,6 +177,7 @@ class HelpdeskTicket(models.Model):
     )
     sla_yellow_sent = fields.Boolean(default=False)
     sla_red_sent = fields.Boolean(default=False)
+    observations = fields.Html(string="Observaciones", sanitize_style=True)
 
     _SLA_PRIORITY_MAP = {"0": "normal", "1": "normal", "2": "alta", "3": "urgente"}
 
