@@ -124,12 +124,39 @@ class HelpdeskTicketController(http.Controller):
     @http.route('/helpdesk/suggest_solutions', type='json', auth='user', website=True)
     def suggest_solutions(self, subject='', **kw):
         STOPWORDS = {
+            # Artículos
             'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas',
-            'en', 'de', 'del', 'al', 'que', 'por', 'para', 'con',
-            'sin', 'a', 'y', 'o', 'es', 'se', 'lo', 'su',
-            'the', 'an', 'is', 'are', 'of', 'in', 'to', 'for', 'and',
+            # Preposiciones
+            'a', 'al', 'ante', 'bajo', 'con', 'contra', 'de', 'del',
+            'desde', 'durante', 'en', 'entre', 'hacia', 'hasta',
+            'mediante', 'para', 'por', 'sin', 'sobre', 'tras',
+            # Conjunciones
+            'e', 'ni', 'o', 'u', 'y', 'aunque', 'como', 'cuando',
+            'mas', 'pero', 'porque', 'pues', 'que', 'si', 'sino', 'ya',
+            # Pronombres y determinantes
+            'ese', 'esa', 'eso', 'este', 'esta', 'esto',
+            'le', 'les', 'lo', 'me', 'mi', 'mis', 'nos',
+            'se', 'su', 'sus', 'te', 'tu', 'tus', 'vos', 'yo',
+            # Verbos auxiliares / cópulas
+            'es', 'son', 'fue', 'ser', 'hay', 'ha', 'han', 'he',
+            'hemos', 'sido', 'tiene', 'tienen',
+            # Adverbios comunes
+            'así', 'aquí', 'bien', 'mal', 'más', 'muy', 'no', 'sí',
+            'también', 'hoy', 'ayer',
+            # Inglés básico
+            'and', 'are', 'for', 'from', 'in', 'is', 'not',
+            'of', 'or', 'that', 'the', 'this', 'to', 'with',
         }
-        words = [w for w in subject.lower().split() if len(w) > 2 and w not in STOPWORDS]
+
+        CLOSED_STAGES = {
+            'hecho', 'resuelto', 'cerrado', 'finalizado', 'completado',
+            'done', 'resolved', 'closed', 'completed',
+        }
+
+        words = [
+            w for w in subject.lower().split()
+            if len(w) >= 3 and w not in STOPWORDS
+        ]
         if not words:
             return {'tickets': [], 'slides': []}
 
@@ -145,7 +172,21 @@ class HelpdeskTicketController(http.Controller):
                   ('partner_id', '=', partner_id),
                   ('partner_id', '=', False)] + word_domain
 
-        tickets = request.env['helpdesk.ticket'].sudo().search(domain, limit=5)
+        candidates = request.env['helpdesk.ticket'].sudo().search(domain, limit=50)
+
+        def score_ticket(t):
+            name_lower = t.name.lower()
+            keyword_score = sum(1 for w in words if w in name_lower)
+            stage_lower = (t.stage_id.name or '').lower()
+            stage_bonus = 2 if any(k in stage_lower for k in CLOSED_STAGES) else 0
+            return keyword_score + stage_bonus
+
+        scored = sorted(
+            [(t, score_ticket(t)) for t in candidates],
+            key=lambda x: x[1],
+            reverse=True,
+        )
+
         ticket_results = [
             {
                 'id': t.id,
@@ -154,7 +195,8 @@ class HelpdeskTicketController(http.Controller):
                 'stage': t.stage_id.name,
                 'url': '/my/ticket/%d' % t.id,
             }
-            for t in tickets
+            for t, score in scored[:5]
+            if score > 0
         ]
 
         slide_results = []
@@ -164,10 +206,21 @@ class HelpdeskTicketController(http.Controller):
             else:
                 slide_domain = ['|'] * (len(name_conds) - 1) + name_conds
             slide_domain += [('is_published', '=', True)]
-            slides = request.env['slide.slide'].sudo().search(slide_domain, limit=3)
+            slides = request.env['slide.slide'].sudo().search(slide_domain, limit=20)
+
+            def score_slide(s):
+                name_lower = s.name.lower()
+                return sum(1 for w in words if w in name_lower)
+
+            scored_slides = sorted(
+                [(s, score_slide(s)) for s in slides],
+                key=lambda x: x[1],
+                reverse=True,
+            )
             slide_results = [
                 {'id': s.id, 'name': s.name, 'url': s.website_url}
-                for s in slides
+                for s, score in scored_slides[:5]
+                if score > 0
             ]
 
         return {'tickets': ticket_results, 'slides': slide_results}
