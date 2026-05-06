@@ -115,6 +115,21 @@
     display: block;
 }
 
+/* ── Portal: Título del formulario de nuevo ticket ──────────────────────── */
+
+.hd_portal_title {
+    font-size: 1.85rem;
+    font-weight: 600;
+    color: #2c3e50;
+    text-align: center;
+    padding: 1rem 1.5rem 0.85rem;
+    margin-bottom: 1.75rem;
+    background: linear-gradient(180deg, #f0f7ff 0%, rgba(255, 255, 255, 0) 100%);
+    border-bottom: 2px solid var(--primary, #0d6efd);
+    border-radius: 6px 6px 0 0;
+    transition: all 0.3s ease;
+}
+
 /* ── Calendario: gris azulado para la etapa Nuevo (stage_color_index = 7) ───
  * El indice 7 en la paleta Odoo es slate-blue (#475577).
  * Si el selector CSS toma: se reemplaza por un gris azulado mas suave.

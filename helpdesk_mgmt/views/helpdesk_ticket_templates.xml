@@ -381,7 +381,7 @@
             <div class="container">
                 <div class="row">
                     <div class="col-md-12">
-                        <h1 class="text-center">Send a new ticket</h1>
+                        <h1 class="hd_portal_title">Enviar un nuevo ticket</h1>
                     </div>
                 </div>
                 <div class="row mt32">
@@ -402,7 +402,7 @@
                                     <label
                                         class="col-md-3 col-sm-4 control-label"
                                         for="team"
-                                    ><i class="fa fa-users" /> Team</label>
+                                    ><i class="fa fa-users" /> Equipo</label>
                                     <div class="col-md-7 col-sm-8">
                                         <select
                                             class="form-control"
@@ -423,7 +423,7 @@
                                     <label
                                         class="col-md-3 col-sm-4 control-label"
                                         for="category"
-                                    ><i class="fa fa-folder-o" /> Category</label>
+                                    ><i class="fa fa-folder-o" /> Categoría</label>
                                     <div class="col-md-7 col-sm-8">
                                         <select
                                             class="form-control"
@@ -444,7 +444,7 @@
                                     <label
                                         class="col-md-3 col-sm-4 control-label"
                                         for="ticket_subject"
-                                    ><i class="fa fa-tag" /> Subject</label>
+                                    ><i class="fa fa-tag" /> Asunto</label>
                                     <div class="col-md-7 col-sm-8">
                                         <input
                                             type="text"
@@ -459,7 +459,7 @@
                                     <label
                                         class="col-md-3 col-sm-4 control-label"
                                         for="attachment"
-                                    ><i class="fa fa-paperclip" /> Add Attachments</label>
+                                    ><i class="fa fa-paperclip" /> Adjuntar Archivos</label>
                                     <div class="col-md-7 col-sm-8">
                                         <div class="btn btn-default btn-file col-md-12">
                                             <input
@@ -477,7 +477,7 @@
                                     <label
                                         class="col-md-3 col-dm-4 control-label"
                                         for="description"
-                                    ><i class="fa fa-align-left" /> Description</label>
+                                    ><i class="fa fa-align-left" /> Descripción</label>
                                     <div class="col-md-7 col-sm-8">
                                         <textarea
                                             class="form-control"
@@ -489,7 +489,7 @@
                                 <div class="form-group">
                                     <div class="col-md-offset-3 col-sm-offset-4 col-sm-8 col-md-7">
                                         <button class="btn btn-primary btn-lg hd_portal_submit_btn">
-                                            Submit Ticket
+                                            Enviar Ticket
                                         </button>
                                     </div>
                                 </div>
