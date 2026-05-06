@@ -22,7 +22,9 @@ class CustomerPortalHelpdesk(CustomerPortal):
         if "ticket_count" in counters:
             helpdesk_model = request.env["helpdesk.ticket"]
             ticket_count = (
-                helpdesk_model.search_count([])
+                helpdesk_model.search_count(
+                    [("partner_id", "=", request.env.user.partner_id.id)]
+                )
                 if helpdesk_model.check_access_rights("read", raise_exception=False)
                 else 0
             )
