@@ -167,12 +167,12 @@ class HelpdeskTicket(models.Model):
     )
     sla_status = fields.Selection(
         selection=[
-            (“green”, “\U0001F7E2 En Tiempo”),
-            (“yellow”, “\U0001F7E1 Próximo a Vencer”),
-            (“red”, “\U0001F534 Vencido”),
-            (“done”, “✅ Finalizado”),
+            ("green", "\U0001F7E2 En Tiempo"),
+            ("yellow", "\U0001F7E1 Próximo a Vencer"),
+            ("red", "\U0001F534 Vencido"),
+            ("done", "✅ Finalizado"),
         ],
-        string=”Estado SLA”,
+        string="Estado SLA",
         store=True,
     )
     sla_yellow_sent = fields.Boolean(default=False)
