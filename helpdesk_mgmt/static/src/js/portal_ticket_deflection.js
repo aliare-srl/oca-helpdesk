@@ -27,13 +27,17 @@ odoo.define('helpdesk_mgmt.portal_deflection', function (require) {
 
         _renderSuggestions: function (result) {
             var $panel = $('#helpdesk_suggestions_panel');
+            var $empty = $('#helpdesk_suggestions_empty');
             var hasTickets = result.tickets && result.tickets.length > 0;
             var hasSlides = result.slides && result.slides.length > 0;
 
             if (!hasTickets && !hasSlides) {
-                $panel.hide().empty();
+                $panel.find('.card').remove();
+                $empty.show();
                 return;
             }
+
+            $empty.hide();
 
             var html = '<div class="card border-info shadow-sm">'
                 + '<div class="card-header bg-info text-white py-2">'
@@ -63,7 +67,8 @@ odoo.define('helpdesk_mgmt.portal_deflection', function (require) {
             }
 
             html += '</div></div>';
-            $panel.html(html).show();
+            $panel.find('.card').remove();
+            $panel.append(html);
 
             $panel.find('.helpdesk-suggestion-link').on('click', function (e) {
                 e.preventDefault();
