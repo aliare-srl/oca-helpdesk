@@ -120,3 +120,54 @@ class HelpdeskTicketController(http.Controller):
                         }
                     )
         return werkzeug.utils.redirect("/my/ticket/%s" % new_ticket.id)
+
+    @http.route('/helpdesk/suggest_solutions', type='json', auth='user', website=True)
+    def suggest_solutions(self, subject='', **kw):
+        STOPWORDS = {
+            'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas',
+            'en', 'de', 'del', 'al', 'que', 'por', 'para', 'con',
+            'sin', 'a', 'y', 'o', 'es', 'se', 'lo', 'su',
+            'the', 'an', 'is', 'are', 'of', 'in', 'to', 'for', 'and',
+        }
+        words = [w for w in subject.lower().split() if len(w) > 2 and w not in STOPWORDS]
+        if not words:
+            return {'tickets': [], 'slides': []}
+
+        partner_id = request.env.user.partner_id.id
+
+        name_conds = [('name', 'ilike', w) for w in words]
+        if len(name_conds) == 1:
+            word_domain = list(name_conds)
+        else:
+            word_domain = ['|'] * (len(name_conds) - 1) + name_conds
+
+        domain = ['&', '|',
+                  ('partner_id', '=', partner_id),
+                  ('partner_id', '=', False)] + word_domain
+
+        tickets = request.env['helpdesk.ticket'].sudo().search(domain, limit=5)
+        ticket_results = [
+            {
+                'id': t.id,
+                'name': t.name,
+                'number': t.number,
+                'stage': t.stage_id.name,
+                'url': '/my/ticket/%d' % t.id,
+            }
+            for t in tickets
+        ]
+
+        slide_results = []
+        if request.env['ir.model'].sudo().search([('model', '=', 'slide.slide')], limit=1):
+            if len(name_conds) == 1:
+                slide_domain = list(name_conds)
+            else:
+                slide_domain = ['|'] * (len(name_conds) - 1) + name_conds
+            slide_domain += [('is_published', '=', True)]
+            slides = request.env['slide.slide'].sudo().search(slide_domain, limit=3)
+            slide_results = [
+                {'id': s.id, 'name': s.name, 'url': s.website_url}
+                for s in slides
+            ]
+
+        return {'tickets': ticket_results, 'slides': slide_results}

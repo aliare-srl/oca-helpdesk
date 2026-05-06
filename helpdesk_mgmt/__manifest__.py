@@ -46,6 +46,7 @@
         ],
         "web.assets_frontend": [
             "helpdesk_mgmt/static/src/js/new_ticket.js",
+            "helpdesk_mgmt/static/src/js/portal_ticket_deflection.js",
         ],
     },
     "development_status": "Beta",
