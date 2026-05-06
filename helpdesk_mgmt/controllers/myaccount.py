@@ -99,7 +99,7 @@ class CustomerPortalHelpdesk(CustomerPortal):
         domain = AND(
             [
                 domain,
-                request.env["ir.rule"]._compute_domain(HelpdeskTicket._name, "read"),
+                [("partner_id", "=", request.env.user.partner_id.id)],
             ]
         )
 
