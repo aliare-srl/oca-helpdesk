@@ -22,9 +22,7 @@ class CustomerPortalHelpdesk(CustomerPortal):
         if "ticket_count" in counters:
             helpdesk_model = request.env["helpdesk.ticket"]
             ticket_count = (
-                helpdesk_model.search_count(
-                    [("partner_id", "child_of", request.env.user.partner_id.commercial_partner_id.id)]
-                )
+                helpdesk_model.search_count(self._get_tickets_domain())
                 if helpdesk_model.check_access_rights("read", raise_exception=False)
                 else 0
             )
@@ -98,12 +96,7 @@ class CustomerPortalHelpdesk(CustomerPortal):
         if search:
             domain += self._ticket_get_search_domain(search_in, search)
 
-        domain = AND(
-            [
-                domain,
-                [("partner_id", "child_of", request.env.user.partner_id.commercial_partner_id.id)],
-            ]
-        )
+        domain = AND([domain, self._get_tickets_domain()])
 
         # count for pager
         ticket_count = HelpdeskTicket.search_count(domain)
@@ -205,6 +198,12 @@ class CustomerPortalHelpdesk(CustomerPortal):
         return self._get_page_view_values(
             ticket, access_token, values, "my_tickets_history", False, **kwargs
         )
+
+    def _get_tickets_domain(self):
+        partner = request.env.user.partner_id
+        if partner.id == partner.commercial_partner_id.id:
+            return [("partner_id", "child_of", partner.id)]
+        return [("partner_id", "=", partner.id)]
 
     def _ticket_get_searchbar_sortings(self):
         return {
