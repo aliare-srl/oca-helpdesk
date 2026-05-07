@@ -51,6 +51,8 @@ class HelpdeskTicketController(http.Controller):
         email = http.request.env.user.email
         name = http.request.env.user.name
         company = request.env.company
+        commercial_partner = request.env.user.partner_id.commercial_partner_id
+        branches = commercial_partner.child_ids.filtered(lambda c: c.active)
         return http.request.render(
             "helpdesk_mgmt.portal_create_ticket",
             {
@@ -58,6 +60,7 @@ class HelpdeskTicketController(http.Controller):
                 "teams": self._get_teams(),
                 "email": email,
                 "name": name,
+                "branches": branches,
                 "ticket_team_id_required": (
                     company.helpdesk_mgmt_portal_team_id_required
                 ),
@@ -74,6 +77,13 @@ class HelpdeskTicketController(http.Controller):
         )
         company = category.company_id or http.request.env.company
         raw_description = (kw.get("description") or "").strip()
+        branch_id = kw.get("branch_id")
+        if branch_id:
+            partner = http.request.env["res.partner"].sudo().browse(int(branch_id))
+            if not partner.exists():
+                partner = request.env.user.partner_id
+        else:
+            partner = request.env.user.partner_id
         vals = {
             "company_id": company.id,
             "category_id": category.id,
@@ -83,9 +93,9 @@ class HelpdeskTicketController(http.Controller):
             "channel_id": request.env.ref(
                 "helpdesk_mgmt.helpdesk_ticket_channel_web", False
             ).id,
-            "partner_id": request.env.user.partner_id.id,
-            "partner_name": request.env.user.partner_id.name,
-            "partner_email": request.env.user.partner_id.email,
+            "partner_id": partner.id,
+            "partner_name": partner.name,
+            "partner_email": partner.email,
         }
         team = http.request.env["helpdesk.ticket.team"]
         if company.helpdesk_mgmt_portal_select_team and kw.get("team"):
@@ -106,7 +116,8 @@ class HelpdeskTicketController(http.Controller):
     def submit_ticket(self, **kw):
         vals = self._prepare_submit_ticket_vals(**kw)
         new_ticket = request.env["helpdesk.ticket"].sudo().create(vals)
-        new_ticket.message_subscribe(partner_ids=request.env.user.partner_id.ids)
+        subscriber_ids = list({request.env.user.partner_id.id, vals.get("partner_id", 0)} - {0})
+        new_ticket.message_subscribe(partner_ids=subscriber_ids)
         if kw.get("attachment"):
             for c_file in request.httprequest.files.getlist("attachment"):
                 data = c_file.read()

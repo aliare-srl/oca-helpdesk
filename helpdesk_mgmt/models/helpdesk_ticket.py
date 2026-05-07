@@ -335,6 +335,11 @@ class HelpdeskTicket(models.Model):
     def _creation_subtype(self):
         return self.env.ref("helpdesk_mgmt.hlp_tck_created")
 
+    def _get_parent_cc_email(self):
+        self.ensure_one()
+        parent = self.partner_id.parent_id if self.partner_id else False
+        return parent.email if parent and parent.email else False
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -348,7 +353,35 @@ class HelpdeskTicket(models.Model):
                     vals["company_id"] = team.company_id.id
         tickets = super().create(vals_list)
         tickets.with_context(skip_sla_update=True)._update_sla_status()
+        tickets._notify_new_ticket_bus()
         return tickets
+
+    def _notify_new_ticket_bus(self):
+        for ticket in self:
+            team_users = ticket.team_id.user_ids if ticket.team_id else self.env["res.users"].search([("share", "=", False)])
+            for user in team_users:
+                if not user.partner_id:
+                    continue
+                payload = {
+                    "id": ticket.id,
+                    "number": ticket.number or "",
+                    "name": ticket.name or "",
+                }
+                self.env["bus.bus"]._sendone(
+                    user.partner_id,
+                    "simple_notification",
+                    {
+                        "title": _("Nuevo Ticket"),
+                        "message": _("Ticket %s: %s") % (ticket.number, ticket.name),
+                        "sticky": False,
+                        "warning": False,
+                    },
+                )
+                self.env["bus.bus"]._sendone(
+                    user.partner_id,
+                    "new_helpdesk_ticket",
+                    payload,
+                )
 
     def copy(self, default=None):
         self.ensure_one()
@@ -400,6 +433,8 @@ class HelpdeskTicket(models.Model):
         res = super()._track_template(tracking)
         ticket = self[0]
         if "stage_id" in tracking and ticket.stage_id.mail_template_id:
+            cc_email = ticket._get_parent_cc_email()
+            email_values = {"email_cc": cc_email} if cc_email else {}
             res["stage_id"] = (
                 ticket.stage_id.mail_template_id,
                 {
@@ -410,6 +445,7 @@ class HelpdeskTicket(models.Model):
                         "mail.mt_note"
                     ),
                     "email_layout_xmlid": "mail.mail_notification_light",
+                    "email_values": email_values,
                 },
             )
         return res
@@ -467,9 +503,18 @@ class HelpdeskTicket(models.Model):
         try:
             for ticket in self:
                 if ticket.partner_id:
-                    ticket._message_add_suggested_recipient(
-                        recipients, partner=ticket.partner_id, reason=_("Customer")
-                    )
+                    partner = ticket.partner_id
+                    if partner.parent_id and partner.email:
+                        # Usar email directo para evitar que Odoo enrute al commercial_partner
+                        ticket._message_add_suggested_recipient(
+                            recipients,
+                            email=partner.email,
+                            reason=_("Customer"),
+                        )
+                    else:
+                        ticket._message_add_suggested_recipient(
+                            recipients, partner=partner, reason=_("Customer")
+                        )
                 elif ticket.partner_email:
                     ticket._message_add_suggested_recipient(
                         recipients,
@@ -477,8 +522,6 @@ class HelpdeskTicket(models.Model):
                         reason=_("Customer Email"),
                     )
         except AccessError:
-            # no read access rights -> just ignore suggested recipients because this
-            # imply modifying followers
             return recipients
         return recipients
 

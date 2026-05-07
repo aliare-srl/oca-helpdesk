@@ -440,6 +440,26 @@
                                         </select>
                                     </div>
                                 </div>
+                                <div class="form-group" t-if="branches">
+                                    <label
+                                        class="col-md-3 col-sm-4 control-label"
+                                        for="branch_id"
+                                    ><i class="fa fa-building-o" /> Sucursal</label>
+                                    <div class="col-md-7 col-sm-8">
+                                        <select
+                                            class="form-control"
+                                            id="branch_id"
+                                            name="branch_id"
+                                        >
+                                            <option value="">— Sin sucursal —</option>
+                                            <t t-foreach="branches" t-as="branch">
+                                                <option t-attf-value="#{branch.id}">
+                                                    <t t-esc="branch.name" />
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </div>
                                 <div class="form-group">
                                     <label
                                         class="col-md-3 col-sm-4 control-label"

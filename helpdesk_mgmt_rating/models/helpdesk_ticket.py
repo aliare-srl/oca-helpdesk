@@ -45,7 +45,9 @@ class HelpdeskTicket(models.Model):
             if ticket.rating_status == "stage_change":
                 survey_template = ticket.stage_id.rating_mail_template_id
                 if survey_template:
-                    ticket.rating_send_request(
+                    cc_email = ticket._get_parent_cc_email()
+                    ctx = {"default_email_cc": cc_email} if cc_email else {}
+                    ticket.with_context(**ctx).rating_send_request(
                         survey_template,
                         lang=ticket.partner_id.lang,
                         force_send=force_send,
