@@ -353,7 +353,8 @@ class HelpdeskTicket(models.Model):
                     vals["company_id"] = team.company_id.id
         tickets = super().create(vals_list)
         tickets.with_context(skip_sla_update=True)._update_sla_status()
-        tickets._notify_new_ticket_bus()
+        if self.env.context.get("helpdesk_from_portal"):
+            tickets._notify_new_ticket_bus()
         return tickets
 
     def _notify_new_ticket_bus(self):
@@ -433,21 +434,20 @@ class HelpdeskTicket(models.Model):
         res = super()._track_template(tracking)
         ticket = self[0]
         if "stage_id" in tracking and ticket.stage_id.mail_template_id:
-            cc_email = ticket._get_parent_cc_email()
-            email_values = {"email_cc": cc_email} if cc_email else {}
-            res["stage_id"] = (
-                ticket.stage_id.mail_template_id,
-                {
-                    # Need to set mass_mail so that the email will always be sent
-                    "composition_mode": "mass_mail",
-                    "auto_delete_message": True,
-                    "subtype_id": self.env["ir.model.data"]._xmlid_to_res_id(
-                        "mail.mt_note"
-                    ),
-                    "email_layout_xmlid": "mail.mail_notification_light",
-                    "email_values": email_values,
-                },
-            )
+            options = {
+                # Need to set mass_mail so that the email will always be sent
+                "composition_mode": "mass_mail",
+                "auto_delete_message": True,
+                "subtype_id": self.env["ir.model.data"]._xmlid_to_res_id(
+                    "mail.mt_note"
+                ),
+                "email_layout_xmlid": "mail.mail_notification_light",
+            }
+            # Si el partner es sucursal, agregar la empresa madre como destinatario adicional
+            parent = ticket.partner_id.parent_id if ticket.partner_id else False
+            if parent and parent.email:
+                options["partner_ids"] = [(4, parent.id)]
+            res["stage_id"] = (ticket.stage_id.mail_template_id, options)
         return res
 
     @api.model

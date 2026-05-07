@@ -115,9 +115,20 @@ class HelpdeskTicketController(http.Controller):
     @http.route("/submitted/ticket", type="http", auth="user", website=True, csrf=True)
     def submit_ticket(self, **kw):
         vals = self._prepare_submit_ticket_vals(**kw)
-        new_ticket = request.env["helpdesk.ticket"].sudo().create(vals)
-        subscriber_ids = list({request.env.user.partner_id.id, vals.get("partner_id", 0)} - {0})
-        new_ticket.message_subscribe(partner_ids=subscriber_ids)
+        new_ticket = (
+            request.env["helpdesk.ticket"]
+            .sudo()
+            .with_context(helpdesk_from_portal=True)
+            .create(vals)
+        )
+        # Suscribir al usuario logueado + a la sucursal si es distinta + a la empresa madre
+        ticket_partner = request.env["res.partner"].sudo().browse(vals.get("partner_id", 0))
+        subscriber_ids = {request.env.user.partner_id.id}
+        if ticket_partner.exists():
+            subscriber_ids.add(ticket_partner.id)
+            if ticket_partner.parent_id and ticket_partner.parent_id.email:
+                subscriber_ids.add(ticket_partner.parent_id.id)
+        new_ticket.message_subscribe(partner_ids=list(subscriber_ids))
         if kw.get("attachment"):
             for c_file in request.httprequest.files.getlist("attachment"):
                 data = c_file.read()
