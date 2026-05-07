@@ -359,29 +359,23 @@ class HelpdeskTicket(models.Model):
 
     def _notify_new_ticket_bus(self):
         for ticket in self:
-            team_users = ticket.team_id.user_ids if ticket.team_id else self.env["res.users"].search([("share", "=", False)])
+            team_users = (
+                ticket.team_id.user_ids
+                if ticket.team_id
+                else self.env["res.users"].search([("share", "=", False)])
+            )
             for user in team_users:
                 if not user.partner_id:
                     continue
-                payload = {
-                    "id": ticket.id,
-                    "number": ticket.number or "",
-                    "name": ticket.name or "",
-                }
-                self.env["bus.bus"]._sendone(
-                    user.partner_id,
-                    "simple_notification",
-                    {
-                        "title": _("Nuevo Ticket"),
-                        "message": _("Ticket %s: %s") % (ticket.number, ticket.name),
-                        "sticky": False,
-                        "warning": False,
-                    },
-                )
                 self.env["bus.bus"]._sendone(
                     user.partner_id,
                     "new_helpdesk_ticket",
-                    payload,
+                    {
+                        "id": ticket.id,
+                        "number": ticket.number or "",
+                        "name": ticket.name or "",
+                        "partner": ticket.partner_id.name or "",
+                    },
                 )
 
     def copy(self, default=None):
