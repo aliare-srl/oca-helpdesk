@@ -23,7 +23,7 @@ class CustomerPortalHelpdesk(CustomerPortal):
             helpdesk_model = request.env["helpdesk.ticket"]
             ticket_count = (
                 helpdesk_model.search_count(
-                    [("partner_id", "=", request.env.user.partner_id.id)]
+                    [("partner_id", "child_of", request.env.user.partner_id.commercial_partner_id.id)]
                 )
                 if helpdesk_model.check_access_rights("read", raise_exception=False)
                 else 0
@@ -101,7 +101,7 @@ class CustomerPortalHelpdesk(CustomerPortal):
         domain = AND(
             [
                 domain,
-                [("partner_id", "=", request.env.user.partner_id.id)],
+                [("partner_id", "child_of", request.env.user.partner_id.commercial_partner_id.id)],
             ]
         )
 
