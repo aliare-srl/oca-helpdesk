@@ -20,3 +20,4 @@ access_helpdesk_ticket_category_portal,helpdesk.ticket.category.portal,model_hel
 access_helpdesk_ticket_category_public,helpdesk.ticket.category.public,model_helpdesk_ticket_category,base.group_public,1,0,0,0
 access_helpdesk_sla_config_manager,helpdesk.sla.config.manager,model_helpdesk_sla_config,group_helpdesk_manager,1,1,1,1
 access_helpdesk_sla_config_user,helpdesk.sla.config.user,model_helpdesk_sla_config,base.group_user,1,0,0,0
+access_helpdesk_ticket_team_portal,helpdesk.ticket.team.portal,model_helpdesk_ticket_team,base.group_portal,1,0,0,0
