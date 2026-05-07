@@ -184,11 +184,20 @@ class CustomerPortalHelpdesk(CustomerPortal):
         return request.render("helpdesk_mgmt.portal_helpdesk_ticket_page", values)
 
     def _ticket_get_page_view_values(self, ticket, access_token, **kwargs):
+        partner = request.env.user.partner_id
+        cancel_stage_names = {"Cancelado", "Cancelled"}
+        can_cancel = (
+            ticket.stage_id.sequence <= 1
+            and ticket.create_uid.share
+            and ticket.partner_id == partner
+        )
         closed_stages = ticket.team_id._get_applicable_stages().filtered(
             lambda s: s.close_from_portal
+            and s.name in cancel_stage_names
+            and can_cancel
         )
         values = {
-            "closed_stages": closed_stages,  # used to display close buttons
+            "closed_stages": closed_stages,
             "page_name": "ticket",
             "ticket": ticket,
             "user": request.env.user,
