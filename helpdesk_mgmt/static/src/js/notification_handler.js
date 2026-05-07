@@ -3,12 +3,19 @@ import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
 import { ListController } from "@web/views/list/list_controller";
 import { useEffect } from "@odoo/owl";
+import { session } from "@web/session";
 
 const NOTIF_TYPE = "helpdesk_ticket_portal_notification";
 
 // ---------------------------------------------------------------------------
-// SERVICIO: escucha el bus y muestra la alerta en CUALQUIER vista del backend.
-// La notificación es sticky → el usuario debe cerrarla manualmente.
+// SERVICIO GLOBAL
+//
+// Problema raíz: bus_service.subscribe() registra el handler pero NO activa
+// el polling. Para que el bus haga longpoll/WebSocket en tiempo real, hay que
+// llamar a addChannel(), que inicia la conexión.
+//
+// Solución: suscribir al canal del partner del usuario actual. Ese es
+// exactamente el canal al que el servidor envía con _sendone(user.partner_id).
 // ---------------------------------------------------------------------------
 registry.category("services").add("helpdesk_portal_notifier", {
     dependencies: ["bus_service", "notification"],
@@ -22,23 +29,30 @@ registry.category("services").add("helpdesk_portal_notifier", {
                 || [number && `#${number}`, name].filter(Boolean).join(" – ")
                 || "Nuevo ticket ingresado desde el portal";
 
-            // Alerta sticky: el usuario debe cerrarla con la X
             notification.add(msg, {
                 title: "Nuevo Ticket del Portal",
                 type: "warning",
-                sticky: true,
+                sticky: true,         // no desaparece sola — el usuario la cierra con X
             });
 
-            // Señal para que el ListController (si está abierto) recargue la grilla
             window.dispatchEvent(
                 new CustomEvent("helpdesk_portal_ticket", { detail: payload || {} })
             );
         };
 
-        // Suscripción directa al tipo específico (OWL bus_service v15)
+        // 1. Registrar handler para nuestro tipo
         bus_service.subscribe(NOTIF_TYPE, showAndDispatch);
 
-        // Cobertura adicional: evento genérico 'notification' del bus (filtrado por tipo)
+        // 2. ACTIVAR el polling suscribiendo el canal del partner del usuario.
+        //    Sin esto, el bus no hace longpoll y los mensajes llegan solo al
+        //    reconectar la sesión.
+        //    El servidor envía con: bus.bus._sendone(user.partner_id, ...)
+        //    que internamente usa el canal (dbname, 'res.partner', partner_id).
+        if (session.partner_id && session.db) {
+            bus_service.addChannel([session.db, "res.partner", session.partner_id]);
+        }
+
+        // 3. Cobertura adicional: evento genérico del bus (filtrado por tipo)
         if (typeof bus_service.addEventListener === "function") {
             bus_service.addEventListener("notification", (evt) => {
                 const list = Array.isArray(evt.detail) ? evt.detail : [evt.detail];
@@ -54,8 +68,9 @@ registry.category("services").add("helpdesk_portal_notifier", {
 });
 
 // ---------------------------------------------------------------------------
-// LIST CONTROLLER: cuando la vista helpdesk.ticket está abierta,
-// recarga la grilla al recibir la señal (sin mostrar otra notificación).
+// LIST CONTROLLER
+// Si el usuario tiene la vista helpdesk.ticket abierta, recarga la grilla
+// cuando llega la señal (la notificación ya la mostró el servicio de arriba).
 // ---------------------------------------------------------------------------
 patch(ListController.prototype, "helpdesk_mgmt.portal_grid_reload", {
     setup() {
