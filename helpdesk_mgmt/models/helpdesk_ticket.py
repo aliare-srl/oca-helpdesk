@@ -1,7 +1,10 @@
+import logging
 from datetime import timedelta
 
 from odoo import _, api, fields, models, tools
 from odoo.exceptions import AccessError
+
+_logger = logging.getLogger(__name__)
 
 
 class HelpdeskTicket(models.Model):
@@ -358,24 +361,27 @@ class HelpdeskTicket(models.Model):
         return tickets
 
     def _notify_new_ticket_bus(self):
+        group = self.env.ref("helpdesk_mgmt.group_helpdesk_user", raise_if_not_found=False)
+        if not group:
+            return
         for ticket in self:
-            team_users = (
-                ticket.team_id.user_ids
-                if ticket.team_id
-                else self.env["res.users"].search([("share", "=", False)])
-            )
-            for user in team_users:
-                if not user.partner_id:
+            payload = {
+                "id": ticket.id,
+                "number": ticket.number or "",
+                "name": ticket.name or "",
+                "display_name": "[%s] %s" % (ticket.number or "?", ticket.name or ""),
+            }
+            for user in group.users:
+                if not user.partner_id or not user.active:
                     continue
+                _logger.info(
+                    "[helpdesk] bus notify → usuario=%s ticket=%s",
+                    user.login, ticket.number,
+                )
                 self.env["bus.bus"]._sendone(
                     user.partner_id,
-                    "new_helpdesk_ticket",
-                    {
-                        "id": ticket.id,
-                        "number": ticket.number or "",
-                        "name": ticket.name or "",
-                        "partner": ticket.partner_id.name or "",
-                    },
+                    "helpdesk_ticket_portal_notification",
+                    payload,
                 )
 
     def copy(self, default=None):
