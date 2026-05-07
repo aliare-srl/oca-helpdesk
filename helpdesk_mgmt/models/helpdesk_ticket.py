@@ -365,18 +365,24 @@ class HelpdeskTicket(models.Model):
         if not group:
             return
         for ticket in self:
+            partner_name = ticket.partner_id.name or ticket.partner_name or ""
             payload = {
                 "id": ticket.id,
                 "number": ticket.number or "",
                 "name": ticket.name or "",
-                "display_name": "[%s] %s" % (ticket.number or "?", ticket.name or ""),
+                "partner": partner_name,
+                "display_name": "[%s] %s – %s" % (
+                    ticket.number or "?",
+                    ticket.name or "",
+                    partner_name,
+                ),
             }
             for user in group.users:
                 if not user.partner_id or not user.active:
                     continue
                 _logger.info(
-                    "[helpdesk] bus notify → usuario=%s ticket=%s",
-                    user.login, ticket.number,
+                    "[helpdesk] bus notify → usuario=%s ticket=%s partner=%s",
+                    user.login, ticket.number, partner_name,
                 )
                 self.env["bus.bus"]._sendone(
                     user.partner_id,
