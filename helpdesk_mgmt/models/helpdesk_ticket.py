@@ -180,6 +180,11 @@ class HelpdeskTicket(models.Model):
     )
     sla_yellow_sent = fields.Boolean(default=False)
     sla_red_sent = fields.Boolean(default=False)
+    portal_notification_sent = fields.Boolean(
+        string="Notificación de portal enviada",
+        default=False,
+        copy=False,
+    )
     observations = fields.Html(string="Observaciones", sanitize_style=True)
 
     _SLA_PRIORITY_MAP = {"0": "normal", "1": "normal", "2": "alta", "3": "urgente"}
@@ -389,6 +394,53 @@ class HelpdeskTicket(models.Model):
                     "helpdesk_ticket_portal_notification",
                     payload,
                 )
+
+    @api.model
+    def current_user_is_helpdesk(self):
+        """
+        Devuelve True si el usuario actual pertenece al grupo helpdesk_user.
+        Usado por el JS para decidir si iniciar el polling.
+        """
+        group = self.env.ref(
+            "helpdesk_mgmt.group_helpdesk_user", raise_if_not_found=False
+        )
+        return bool(group and self.env.user in group.users)
+
+    @api.model
+    def get_new_portal_tickets_for_notification(self):
+        """
+        Polling endpoint: devuelve tickets nuevos del portal creados
+        en los últimos 90 segundos que aún no fueron notificados.
+        Solo funciona para usuarios con permiso helpdesk_user.
+        """
+        group = self.env.ref(
+            "helpdesk_mgmt.group_helpdesk_user", raise_if_not_found=False
+        )
+        if not group or self.env.user not in group.users:
+            return []
+
+        cutoff = fields.Datetime.now() - timedelta(seconds=90)
+        tickets = self.search([
+            ("create_date", ">=", cutoff),
+            ("portal_notification_sent", "=", False),
+        ])
+
+        result = []
+        for ticket in tickets:
+            result.append({
+                "id": ticket.id,
+                "number": ticket.number or "",
+                "name": ticket.name or "",
+                "partner": ticket.partner_id.name or ticket.partner_name or "",
+                "display_name": "[%s] %s – %s" % (
+                    ticket.number or "?",
+                    ticket.name or "",
+                    ticket.partner_id.name or ticket.partner_name or "",
+                ),
+            })
+            ticket.sudo().write({"portal_notification_sent": True})
+
+        return result
 
     def copy(self, default=None):
         self.ensure_one()

@@ -3,22 +3,42 @@ import { registry } from "@web/core/registry";
 import { patch } from "@web/core/utils/patch";
 import { ListController } from "@web/views/list/list_controller";
 import { useEffect } from "@odoo/owl";
-import { session } from "@web/session";
-
-const NOTIF_TYPE = "helpdesk_ticket_portal_notification";
 
 registry.category("services").add("helpdesk_portal_notifier", {
-    dependencies: ["bus_service", "notification"],
-    start(env, { bus_service, notification }) {
+    dependencies: ["rpc", "notification"],
+    async start(env, { rpc, notification }) {
+
+        // Verificar primero si el usuario tiene permisos de helpdesk.
+        // Si no los tiene, no iniciamos el polling — no tiene sentido
+        // consultar ni mostrar notificaciones a usuarios sin acceso.
+        let isHelpdeskUser = false;
+        try {
+            isHelpdeskUser = await rpc("/web/dataset/call_kw", {
+                model: "helpdesk.ticket",
+                method: "current_user_is_helpdesk",
+                args: [],
+                kwargs: {},
+            });
+        } catch (e) {
+            console.error("[helpdesk] No se pudo verificar permisos:", e);
+            return {};
+        }
+
+        if (!isHelpdeskUser) {
+            return {};
+        }
 
         const showNotification = (payload) => {
-            const { number, name, display_name } = payload || {};
+            const { number, name, partner, display_name } = payload || {};
             const msg = display_name
-                || [number && `#${number}`, name].filter(Boolean).join(" – ")
+                || [number && `#${number}`, name, partner && `(${partner})`]
+                    .filter(Boolean).join(" – ")
                 || "Nuevo ticket ingresado desde el portal";
 
+            // sticky: true es CRÍTICO — la notificación no desaparece sola.
+            // El operador debe cerrarla manualmente haciendo click en la X.
             notification.add(msg, {
-                title: "Nuevo Ticket del Portal",
+                title: "🎫 Nuevo Ticket del Portal",
                 type: "warning",
                 sticky: true,
             });
@@ -28,13 +48,29 @@ registry.category("services").add("helpdesk_portal_notifier", {
             );
         };
 
-        bus_service.subscribe(NOTIF_TYPE, showNotification);
+        const poll = async () => {
+            try {
+                const tickets = await rpc("/web/dataset/call_kw", {
+                    model: "helpdesk.ticket",
+                    method: "get_new_portal_tickets_for_notification",
+                    args: [],
+                    kwargs: {},
+                });
+                if (tickets && tickets.length) {
+                    tickets.forEach(showNotification);
+                }
+            } catch (e) {
+                console.error("[helpdesk] Error en polling:", e);
+            }
+        };
 
-        // Sin addChannel() el bus no hace longpoll y las notificaciones no llegan.
-        // El servidor envía con _sendone(user.partner_id) → canal (db, 'res.partner', id).
-        if (session.partner_id && session.db) {
-            bus_service.addChannel([session.db, "res.partner", session.partner_id]);
-        }
+        const intervalId = setInterval(poll, 30000);
+
+        return {
+            destroy() {
+                clearInterval(intervalId);
+            },
+        };
     },
 });
 
