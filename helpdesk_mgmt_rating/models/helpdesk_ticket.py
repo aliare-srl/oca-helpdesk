@@ -40,16 +40,29 @@ class HelpdeskTicket(models.Model):
                 self._send_ticket_rating_mail(force_send=False)
         return res
 
+    def _get_parent_cc_email(self):
+        self.ensure_one()
+        if self.partner_id and self.partner_id.parent_id:
+            parent = self.partner_id.commercial_partner_id
+            if parent and parent.email:
+                return parent.email_formatted
+        return None
+
     def _send_ticket_rating_mail(self, force_send=False):
         for ticket in self:
             if ticket.rating_status == "stage_change":
                 survey_template = ticket.stage_id.rating_mail_template_id
                 if survey_template:
                     cc_email = ticket._get_parent_cc_email()
-                    ctx = {"default_email_cc": cc_email} if cc_email else {}
-                    ticket.with_context(**ctx).rating_send_request(
-                        survey_template,
-                        lang=ticket.partner_id.lang,
+                    email_values = {}
+                    if cc_email:
+                        email_values["email_cc"] = cc_email
+                    lang = ticket.partner_id.lang
+                    tmpl = survey_template.with_context(lang=lang) if lang else survey_template
+                    tmpl.send_mail(
+                        ticket.id,
+                        email_values=email_values,
+                        notif_layout=False,
                         force_send=force_send,
                     )
 
