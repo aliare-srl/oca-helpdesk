@@ -40,6 +40,14 @@ class HelpdeskTicket(models.Model):
                 self._send_ticket_rating_mail(force_send=False)
         return res
 
+    def _get_parent_cc_email(self):
+        self.ensure_one()
+        if self.partner_id and self.partner_id.parent_id:
+            parent = self.partner_id.commercial_partner_id
+            if parent and parent.email:
+                return parent.email_formatted
+        return None
+
     def _send_ticket_rating_mail(self, force_send=False):
         for ticket in self:
             if ticket.rating_status == "stage_change":
@@ -50,6 +58,19 @@ class HelpdeskTicket(models.Model):
                         lang=ticket.partner_id.lang,
                         force_send=force_send,
                     )
+                    # Enviar copia a la empresa padre si el contacto es un hijo
+                    # Usa send_mail con email_to override para no crear un segundo
+                    # rating.rating — el token ya existe y se reutiliza al renderizar
+                    if ticket.partner_id and ticket.partner_id.parent_id:
+                        commercial = ticket.partner_id.commercial_partner_id
+                        if commercial and commercial.email and commercial.id != ticket.partner_id.id:
+                            survey_template.with_context(
+                                lang=commercial.lang or ticket.partner_id.lang
+                            ).send_mail(
+                                ticket.id,
+                                force_send=force_send,
+                                email_values={'email_to': commercial.email_formatted},
+                            )
 
     def rating_apply(self, rate, token=None, feedback=None, subtype_xmlid=None):
         return super().rating_apply(
