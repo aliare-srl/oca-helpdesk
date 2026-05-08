@@ -42,7 +42,7 @@ class HelpdeskTicketController(http.Controller):
 
     @http.route("/new/ticket", type="http", auth="user", website=True)
     def create_new_ticket(self, **kw):
-        session_info = http.request.env["ir.http"].session_info()
+        session_info = http.request.env["ir.http"].sudo().session_info()
         company = request.env.company
         category_model = http.request.env["helpdesk.ticket.category"]
         categories = category_model.with_company(company.id).search(
