@@ -53,14 +53,18 @@ class HelpdeskTicket(models.Model):
             if ticket.rating_status == "stage_change":
                 survey_template = ticket.stage_id.rating_mail_template_id
                 if survey_template:
-                    ticket.rating_send_request(
-                        survey_template,
-                        lang=ticket.partner_id.lang,
+                    # Envío directo al contacto — sin pasar por followers
+                    survey_template.with_context(
+                        lang=ticket.partner_id.lang
+                    ).send_mail(
+                        ticket.id,
                         force_send=force_send,
+                        email_values={
+                            'email_to': ticket.partner_id.email_formatted,
+                            'recipient_ids': [],
+                        },
                     )
-                    # Enviar copia a la empresa padre si el contacto es un hijo
-                    # Usa send_mail con email_to override para no crear un segundo
-                    # rating.rating — el token ya existe y se reutiliza al renderizar
+                    # Copia a empresa padre si el ticket es de un contacto hijo
                     if ticket.partner_id and ticket.partner_id.parent_id:
                         commercial = ticket.partner_id.commercial_partner_id
                         if commercial and commercial.email and commercial.id != ticket.partner_id.id:
@@ -69,7 +73,10 @@ class HelpdeskTicket(models.Model):
                             ).send_mail(
                                 ticket.id,
                                 force_send=force_send,
-                                email_values={'email_to': commercial.email_formatted},
+                                email_values={
+                                    'email_to': commercial.email_formatted,
+                                    'recipient_ids': [],
+                                },
                             )
 
     def rating_apply(self, rate, token=None, feedback=None, subtype_xmlid=None):
