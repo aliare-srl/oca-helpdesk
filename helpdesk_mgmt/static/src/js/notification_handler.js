@@ -1,94 +1,121 @@
-/** @odoo-module **/
-import { registry } from "@web/core/registry";
-import { patch } from "@web/core/utils/patch";
-import { ListController } from "@web/views/list/list_controller";
-import { useEffect } from "@odoo/owl";
+odoo.define('helpdesk_mgmt.portal_notifier', function (require) {
+    'use strict';
 
-registry.category("services").add("helpdesk_portal_notifier", {
-    dependencies: ["rpc", "notification"],
-    async start(env, { rpc, notification }) {
+    var AbstractService = require('web.AbstractService');
+    var core = require('web.core');
+    var rpc = require('web.rpc');
+    var ListController = require('web.ListController');
 
-        // Verificar primero si el usuario tiene permisos de helpdesk.
-        // Si no los tiene, no iniciamos el polling — no tiene sentido
-        // consultar ni mostrar notificaciones a usuarios sin acceso.
-        let isHelpdeskUser = false;
-        try {
-            isHelpdeskUser = await rpc("/web/dataset/call_kw", {
-                model: "helpdesk.ticket",
-                method: "current_user_is_helpdesk",
+    // Servicio de polling: verifica cada 30 segundos si hay tickets
+    // nuevos ingresados desde el portal que no fueron notificados todavía.
+    // Solo corre si el usuario logueado pertenece al grupo helpdesk_user.
+    var HelpdeskPortalNotifier = AbstractService.extend({
+        name: 'helpdesk_portal_notifier',
+
+        start: function () {
+            var self = this;
+
+            rpc.query({
+                model: 'helpdesk.ticket',
+                method: 'current_user_is_helpdesk',
                 args: [],
-                kwargs: {},
+            }).then(function (isHelpdeskUser) {
+                if (!isHelpdeskUser) {
+                    return;
+                }
+                self._intervalId = setInterval(function () {
+                    self._poll();
+                }, 30000);
+            }).catch(function (err) {
+                console.error('[helpdesk] No se pudo verificar permisos:', err);
             });
-        } catch (e) {
-            console.error("[helpdesk] No se pudo verificar permisos:", e);
-            return {};
-        }
+        },
 
-        if (!isHelpdeskUser) {
-            return {};
-        }
+        _poll: function () {
+            var self = this;
+            rpc.query({
+                model: 'helpdesk.ticket',
+                method: 'get_new_portal_tickets_for_notification',
+                args: [],
+            }).then(function (tickets) {
+                if (!tickets || !tickets.length) {
+                    return;
+                }
+                tickets.forEach(function (payload) {
+                    self._showNotification(payload);
+                });
+            }).catch(function (err) {
+                console.error('[helpdesk] Error en polling:', err);
+            });
+        },
 
-        const showNotification = (payload) => {
-            const { number, name, partner, display_name } = payload || {};
-            const msg = display_name
-                || [number && `#${number}`, name, partner && `(${partner})`]
-                    .filter(Boolean).join(" – ")
-                || "Nuevo ticket ingresado desde el portal";
+        _showNotification: function (payload) {
+            var number = payload.number || '';
+            var name = payload.name || '';
+            var partner = payload.partner || '';
+            var msg = payload.display_name
+                || [
+                    number && ('#' + number),
+                    name,
+                    partner && ('(' + partner + ')')
+                  ].filter(Boolean).join(' – ')
+                || 'Nuevo ticket ingresado desde el portal';
 
-            // sticky: true es CRÍTICO — la notificación no desaparece sola.
-            // El operador debe cerrarla manualmente haciendo click en la X.
-            notification.add(msg, {
-                title: "🎫 Nuevo Ticket del Portal",
-                type: "warning",
+            // sticky: true — la notificación NO desaparece sola.
+            // El operador debe cerrarla manualmente con la X.
+            this.displayNotification({
+                title: '🎫 Nuevo Ticket del Portal',
+                message: msg,
+                type: 'warning',
                 sticky: true,
             });
 
+            // Señal para que el ListController recargue la grilla
+            // si el usuario tiene abierta la vista de tickets.
             window.dispatchEvent(
-                new CustomEvent("helpdesk_portal_new_ticket", { detail: payload || {} })
+                new CustomEvent('helpdesk_portal_new_ticket', { detail: payload })
             );
-        };
+        },
 
-        const poll = async () => {
-            try {
-                const tickets = await rpc("/web/dataset/call_kw", {
-                    model: "helpdesk.ticket",
-                    method: "get_new_portal_tickets_for_notification",
-                    args: [],
-                    kwargs: {},
-                });
-                if (tickets && tickets.length) {
-                    tickets.forEach(showNotification);
-                }
-            } catch (e) {
-                console.error("[helpdesk] Error en polling:", e);
+        destroy: function () {
+            if (this._intervalId) {
+                clearInterval(this._intervalId);
             }
-        };
+            this._super.apply(this, arguments);
+        },
+    });
 
-        const intervalId = setInterval(poll, 30000);
+    core.serviceRegistry.add('helpdesk_portal_notifier', HelpdeskPortalNotifier);
 
-        return {
-            destroy() {
-                clearInterval(intervalId);
-            },
-        };
-    },
-});
-
-patch(ListController.prototype, "helpdesk_mgmt.portal_ticket_grid_reload", {
-    setup() {
-        this._super();
-        const model = this.model;
-
-        useEffect(
-            () => {
-                if (!model || model.resModel !== "helpdesk.ticket") {
+    // Patch del ListController para recargar la grilla cuando
+    // llega una notificación de ticket nuevo del portal.
+    ListController.include({
+        start: function () {
+            var self = this;
+            return this._super.apply(this, arguments).then(function () {
+                if (self.modelName !== 'helpdesk.ticket') {
                     return;
                 }
-                const handler = () => model.load();
-                window.addEventListener("helpdesk_portal_new_ticket", handler);
-                return () => window.removeEventListener("helpdesk_portal_new_ticket", handler);
-            },
-            () => []
-        );
-    },
+                self._helpdeskPortalHandler = function () {
+                    self.reload();
+                };
+                window.addEventListener(
+                    'helpdesk_portal_new_ticket',
+                    self._helpdeskPortalHandler
+                );
+            });
+        },
+
+        destroy: function () {
+            if (this._helpdeskPortalHandler) {
+                window.removeEventListener(
+                    'helpdesk_portal_new_ticket',
+                    this._helpdeskPortalHandler
+                );
+            }
+            this._super.apply(this, arguments);
+        },
+    });
+
+    return HelpdeskPortalNotifier;
 });
