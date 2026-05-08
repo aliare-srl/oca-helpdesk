@@ -187,7 +187,9 @@ class HelpdeskTicketController(http.Controller):
         if not words:
             return {'tickets': [], 'slides': []}
 
-        partner_id = request.env.user.partner_id.id
+        user_partner = request.env.user.partner_id
+        commercial_partner = user_partner.commercial_partner_id
+        related_partner_ids = (commercial_partner | commercial_partner.child_ids).ids
 
         name_conds = [('name', 'ilike', w) for w in words]
         if len(name_conds) == 1:
@@ -196,7 +198,7 @@ class HelpdeskTicketController(http.Controller):
             word_domain = ['|'] * (len(name_conds) - 1) + name_conds
 
         domain = ['&', '|',
-                  ('partner_id', '=', partner_id),
+                  ('partner_id', 'in', related_partner_ids),
                   ('partner_id', '=', False)] + word_domain
 
         candidates = request.env['helpdesk.ticket'].sudo().search(domain, limit=50)
