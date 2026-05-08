@@ -440,7 +440,7 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="form-group" t-if="branches">
+                                <div class="form-group">
                                     <label
                                         class="col-md-3 col-sm-4 control-label"
                                         for="branch_id"
@@ -450,7 +450,6 @@
                                             class="form-control"
                                             id="branch_id"
                                             name="branch_id"
-                                            required="True"
                                         >
                                             <option value="">— Seleccionar sucursal —</option>
                                             <t t-foreach="branches" t-as="branch">
