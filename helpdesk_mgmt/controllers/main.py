@@ -53,7 +53,10 @@ class HelpdeskTicketController(http.Controller):
         company = request.env.company
         commercial_partner = request.env.user.partner_id.commercial_partner_id
         branches = commercial_partner.child_ids.filtered(
-            lambda c: c.active and c.id != request.env.user.partner_id.id
+            lambda c: c.active
+            and c.type == 'contact'
+            and not c.user_ids
+            and c.id != request.env.user.partner_id.id
         )
         return http.request.render(
             "helpdesk_mgmt.portal_create_ticket",
