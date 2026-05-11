@@ -420,10 +420,23 @@ class HelpdeskTicket(models.Model):
             return []
 
         cutoff = fields.Datetime.now() - timedelta(seconds=90)
-        tickets = self.search([
+
+        portal_group = self.env.ref('base.group_portal')
+        portal_user_ids = portal_group.users.ids
+
+        web_channel = self.env.ref(
+            "helpdesk_mgmt.helpdesk_ticket_channel_web", raise_if_not_found=False
+        )
+
+        domain = [
             ("create_date", ">=", cutoff),
             ("portal_notification_sent", "=", False),
-        ])
+            ("create_uid", "in", portal_user_ids),
+        ]
+        if web_channel:
+            domain.append(("channel_id", "=", web_channel.id))
+
+        tickets = self.search(domain)
 
         result = []
         for ticket in tickets:
@@ -438,7 +451,9 @@ class HelpdeskTicket(models.Model):
                     ticket.partner_id.name or ticket.partner_name or "",
                 ),
             })
-            ticket.sudo().write({"portal_notification_sent": True})
+
+        if result:
+            tickets.write({"portal_notification_sent": True})
 
         return result
 
