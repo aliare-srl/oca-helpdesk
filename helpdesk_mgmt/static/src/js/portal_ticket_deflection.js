@@ -73,13 +73,7 @@ odoo.define('helpdesk_mgmt.portal_deflection', function (require) {
             $panel.find('.helpdesk-suggestion-link').on('click', function (e) {
                 e.preventDefault();
                 var url = $(this).data('url');
-                if (window.confirm(
-                    'Atención: Estás por salir del formulario de alta. ' +
-                    'Los datos cargados no se guardarán. ' +
-                    '¿Deseas ver la solución sugerida de todas formas?'
-                )) {
-                    window.location.href = url;
-                }
+                window.open(url, '_blank');
             });
         },
     });
