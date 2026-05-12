@@ -2,7 +2,7 @@ import logging
 from datetime import timedelta
 
 from odoo import _, api, fields, models, tools
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 
 _logger = logging.getLogger(__name__)
 
@@ -482,6 +482,12 @@ class HelpdeskTicket(models.Model):
             if any(f in vals for f in sla_triggers):
                 self.with_context(skip_sla_update=True)._update_sla_status()
         return result
+
+    def unlink(self):
+        raise UserError(
+            "Los tickets no pueden eliminarse. "
+            "Si desea dar de baja un ticket, utilice la opción Archivar."
+        )
 
     def action_duplicate_tickets(self):
         for ticket in self.browse(self.env.context["active_ids"]):
