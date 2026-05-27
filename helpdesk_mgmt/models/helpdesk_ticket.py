@@ -467,11 +467,6 @@ class HelpdeskTicket(models.Model):
         return res
 
     def write(self, vals):
-        old_user_ids = {}
-        if "user_id" in vals:
-            for ticket in self:
-                old_user_ids[ticket.id] = ticket.user_id.id
-
         for _ticket in self:
             now = fields.Datetime.now()
             if vals.get("stage_id"):
@@ -482,24 +477,6 @@ class HelpdeskTicket(models.Model):
             if vals.get("user_id"):
                 vals["assigned_date"] = now
         result = super().write(vals)
-
-        if "user_id" in vals and vals.get("user_id"):
-            assign_template = self.env.ref(
-                "helpdesk_mgmt.assigned_ticket_template",
-                raise_if_not_found=False,
-            )
-            if assign_template:
-                for ticket in self:
-                    if old_user_ids.get(ticket.id) != ticket.user_id.id:
-                        assign_template.send_mail(
-                            ticket.id,
-                            force_send=True,
-                            email_values={
-                                "email_to": ticket.user_id.partner_id.email,
-                                "recipient_ids": [],
-                            },
-                        )
-
         if not self.env.context.get("skip_sla_update"):
             sla_triggers = {"stage_id", "category_id", "priority"}
             if any(f in vals for f in sla_triggers):
@@ -550,6 +527,20 @@ class HelpdeskTicket(models.Model):
             if parent and parent.email:
                 options["partner_ids"] = [(4, parent.id)]
             res["stage_id"] = (ticket.stage_id.mail_template_id, options)
+        if "user_id" in tracking and ticket.user_id:
+            assign_template = self.env.ref(
+                "helpdesk_mgmt.assigned_ticket_template",
+                raise_if_not_found=False,
+            )
+            if assign_template:
+                res["user_id"] = (assign_template, {
+                    "composition_mode": "mass_mail",
+                    "auto_delete_message": True,
+                    "subtype_id": self.env["ir.model.data"]._xmlid_to_res_id(
+                        "mail.mt_note"
+                    ),
+                    "email_layout_xmlid": "mail.mail_notification_light",
+                })
         return res
 
     @api.model
