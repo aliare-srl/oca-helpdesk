@@ -363,6 +363,21 @@ class HelpdeskTicket(models.Model):
         tickets.with_context(skip_sla_update=True)._update_sla_status()
         if self.env.context.get("helpdesk_from_portal"):
             tickets._notify_new_ticket_bus()
+        assign_template = self.env.ref(
+            "helpdesk_mgmt.assigned_ticket_template",
+            raise_if_not_found=False,
+        )
+        if assign_template:
+            for ticket in tickets:
+                if ticket.user_id and ticket.user_id.partner_id.email:
+                    assign_template.send_mail(
+                        ticket.id,
+                        force_send=True,
+                        email_values={
+                            "email_to": ticket.user_id.partner_id.email,
+                            "recipient_ids": [],
+                        },
+                    )
         return tickets
 
     def _notify_new_ticket_bus(self):
