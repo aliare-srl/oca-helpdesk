@@ -467,6 +467,11 @@ class HelpdeskTicket(models.Model):
         return res
 
     def write(self, vals):
+        old_user_ids = {}
+        if "user_id" in vals:
+            for ticket in self:
+                old_user_ids[ticket.id] = ticket.user_id.id
+
         for _ticket in self:
             now = fields.Datetime.now()
             if vals.get("stage_id"):
@@ -477,6 +482,24 @@ class HelpdeskTicket(models.Model):
             if vals.get("user_id"):
                 vals["assigned_date"] = now
         result = super().write(vals)
+
+        if "user_id" in vals and vals.get("user_id"):
+            assign_template = self.env.ref(
+                "helpdesk_mgmt.assigned_ticket_template",
+                raise_if_not_found=False,
+            )
+            if assign_template:
+                for ticket in self:
+                    if old_user_ids.get(ticket.id) != ticket.user_id.id:
+                        assign_template.send_mail(
+                            ticket.id,
+                            force_send=True,
+                            email_values={
+                                "email_to": ticket.user_id.partner_id.email,
+                                "recipient_ids": [],
+                            },
+                        )
+
         if not self.env.context.get("skip_sla_update"):
             sla_triggers = {"stage_id", "category_id", "priority"}
             if any(f in vals for f in sla_triggers):
