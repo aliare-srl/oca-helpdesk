@@ -369,7 +369,11 @@ class HelpdeskTicket(models.Model):
         )
         if assign_template:
             for ticket in tickets:
-                if ticket.user_id and ticket.user_id.partner_id.email:
+                if (
+                    ticket.user_id
+                    and ticket.user_id.partner_id.email
+                    and ticket.user_id.id != ticket.create_uid.id
+                ):
                     assign_template.send_mail(
                         ticket.id,
                         force_send=True,
