@@ -1,5 +1,6 @@
 import base64
 import logging
+from datetime import datetime, timedelta
 
 import werkzeug
 
@@ -120,6 +121,15 @@ class HelpdeskTicketController(http.Controller):
     @http.route("/submitted/ticket", type="http", auth="user", website=True, csrf=True)
     def submit_ticket(self, **kw):
         vals = self._prepare_submit_ticket_vals(**kw)
+        cutoff = datetime.utcnow() - timedelta(seconds=10)
+        existing = request.env["helpdesk.ticket"].sudo().search([
+            ("name", "=", vals.get("name")),
+            ("partner_id", "=", vals.get("partner_id")),
+            ("create_uid", "=", request.env.user.id),
+            ("create_date", ">=", cutoff.strftime("%Y-%m-%d %H:%M:%S")),
+        ], limit=1)
+        if existing:
+            return werkzeug.utils.redirect("/my/ticket/%s" % existing.id)
         new_ticket = (
             request.env["helpdesk.ticket"]
             .sudo()
