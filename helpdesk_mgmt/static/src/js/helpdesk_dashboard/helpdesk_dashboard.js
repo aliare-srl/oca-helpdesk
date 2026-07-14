@@ -42,6 +42,12 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         return 'critical';
     }
 
+    function truncateLabel(name, maxChars) {
+        if (!name) return '';
+        if (name.length <= maxChars) return name;
+        return name.slice(0, maxChars - 1) + '…';
+    }
+
     var HelpdeskDashboard = AbstractAction.extend({
         contentTemplate: null,
         events: {
@@ -313,6 +319,7 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
                 });
                 return {
                     name: r.name,
+                    nameShort: truncateLabel(r.name, 20),
                     total: withSla,
                     segments: segments,
                     y: y,
@@ -343,6 +350,7 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
                 var y = baseline - h;
                 return {
                     name: r.name,
+                    nameShort: truncateLabel(r.name, 9),
                     count: r.count,
                     x: x,
                     width: barWidth,

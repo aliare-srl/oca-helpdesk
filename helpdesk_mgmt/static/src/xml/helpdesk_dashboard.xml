@@ -136,7 +136,7 @@
                                     <rect t-attf-class="bar #{seg.statusClass}" t-att-x="seg.x" t-att-y="bar.y" t-att-width="seg.width" height="16" rx="2" />
                                 </t>
                                 <text class="data-label" t-att-x="bar.totalLabelX" t-att-y="bar.labelY"><t t-esc="bar.total" /></text>
-                                <text class="axis-label team-name" x="0" t-att-y="bar.labelY"><t t-esc="bar.name" /></text>
+                                <text class="axis-label team-name" x="0" t-att-y="bar.labelY"><t t-esc="bar.nameShort" /><title><t t-esc="bar.name" /></title></text>
                             </t>
                         </svg>
                         <div class="legend">
@@ -163,7 +163,7 @@
                             <t t-foreach="categoryBars.bars" t-as="bar" t-key="bar_index">
                                 <rect t-attf-fill="#{bar.color}" t-att-x="bar.x" t-att-y="bar.y" t-att-width="bar.width" t-att-height="bar.height" rx="3" />
                                 <text class="data-label" text-anchor="middle" t-att-x="bar.centerX" t-att-y="bar.labelY"><t t-esc="bar.count" /></text>
-                                <text class="axis-label" text-anchor="middle" t-att-x="bar.centerX" t-attf-y="#{categoryBars.baseline + 16}"><t t-esc="bar.name" /></text>
+                                <text class="axis-label" text-anchor="middle" t-att-x="bar.centerX" t-attf-y="#{categoryBars.baseline + 16}"><t t-esc="bar.nameShort" /><title><t t-esc="bar.name" /></title></text>
                             </t>
                         </svg>
                     </t>
@@ -273,7 +273,7 @@
                             <t t-foreach="priorityBars.bars" t-as="bar" t-key="bar_index">
                                 <rect t-attf-fill="#{bar.color}" t-att-x="bar.x" t-att-y="bar.y" t-att-width="bar.width" t-att-height="bar.height" rx="3" />
                                 <text class="data-label" text-anchor="middle" t-att-x="bar.centerX" t-att-y="bar.labelY"><t t-esc="bar.count" /></text>
-                                <text class="axis-label" text-anchor="middle" t-att-x="bar.centerX" t-attf-y="#{priorityBars.baseline + 16}"><t t-esc="bar.name" /></text>
+                                <text class="axis-label" text-anchor="middle" t-att-x="bar.centerX" t-attf-y="#{priorityBars.baseline + 16}"><t t-esc="bar.nameShort" /><title><t t-esc="bar.name" /></title></text>
                             </t>
                         </svg>
                     </t>
