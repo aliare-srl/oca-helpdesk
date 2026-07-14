@@ -8,6 +8,46 @@
         </record>
     </data>
     <data noupdate="1">
+        <!-- Horario laboral por defecto para el cálculo de vencimientos SLA -->
+        <record id="helpdesk_default_resource_calendar" model="resource.calendar">
+            <field name="name">Horario Laboral - Mesa de Ayuda</field>
+            <field name="company_id" eval="False" />
+        </record>
+        <record id="helpdesk_default_calendar_attendance_mon" model="resource.calendar.attendance">
+            <field name="name">Lunes</field>
+            <field name="dayofweek">0</field>
+            <field name="hour_from">9</field>
+            <field name="hour_to">18</field>
+            <field name="calendar_id" ref="helpdesk_default_resource_calendar" />
+        </record>
+        <record id="helpdesk_default_calendar_attendance_tue" model="resource.calendar.attendance">
+            <field name="name">Martes</field>
+            <field name="dayofweek">1</field>
+            <field name="hour_from">9</field>
+            <field name="hour_to">18</field>
+            <field name="calendar_id" ref="helpdesk_default_resource_calendar" />
+        </record>
+        <record id="helpdesk_default_calendar_attendance_wed" model="resource.calendar.attendance">
+            <field name="name">Miércoles</field>
+            <field name="dayofweek">2</field>
+            <field name="hour_from">9</field>
+            <field name="hour_to">18</field>
+            <field name="calendar_id" ref="helpdesk_default_resource_calendar" />
+        </record>
+        <record id="helpdesk_default_calendar_attendance_thu" model="resource.calendar.attendance">
+            <field name="name">Jueves</field>
+            <field name="dayofweek">3</field>
+            <field name="hour_from">9</field>
+            <field name="hour_to">18</field>
+            <field name="calendar_id" ref="helpdesk_default_resource_calendar" />
+        </record>
+        <record id="helpdesk_default_calendar_attendance_fri" model="resource.calendar.attendance">
+            <field name="name">Viernes</field>
+            <field name="dayofweek">4</field>
+            <field name="hour_from">9</field>
+            <field name="hour_to">18</field>
+            <field name="calendar_id" ref="helpdesk_default_resource_calendar" />
+        </record>
         <!--Email template -->
         <record id="closed_ticket_template" model="mail.template">
             <field name="name">Helpdesk Closed Ticket Notification Email</field>

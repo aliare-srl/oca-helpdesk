@@ -53,6 +53,22 @@
                             </div>
                         </div>
                     </div>
+                    <h2>Horario Laboral</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="helpdesk_resource_calendar_id" string="Calendario" />
+                                <div class="text-muted">
+                                    Días y horas laborales usados para calcular vencimientos
+                                    de SLA y tiempos de resolución. Abrí el calendario para
+                                    editar los días/horas.
+                                </div>
+                                <div class="content-group">
+                                    <field name="helpdesk_resource_calendar_id" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </xpath>
         </field>

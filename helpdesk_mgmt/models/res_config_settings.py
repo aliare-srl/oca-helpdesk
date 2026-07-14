@@ -18,3 +18,7 @@ class ResConfigSettings(models.TransientModel):
         related="company_id.helpdesk_mgmt_portal_category_id_required",
         readonly=False,
     )
+    helpdesk_resource_calendar_id = fields.Many2one(
+        related="company_id.helpdesk_resource_calendar_id",
+        readonly=False,
+    )

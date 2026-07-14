@@ -25,9 +25,8 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         return String(n).padStart(2, '0');
     }
 
-    function formatDateTime(d) {
-        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
-            + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    function formatDateInput(d) {
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
     }
 
     function formatWeekLabel(isoDate) {
@@ -47,6 +46,8 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         contentTemplate: null,
         events: {
             'click .o_hlp_dash_chip': '_onPresetClick',
+            'change .o_hlp_dash_date_from': '_onDateChange',
+            'change .o_hlp_dash_date_to': '_onDateChange',
             'change .o_hlp_dash_team': '_onFilterChange',
             'change .o_hlp_dash_category': '_onFilterChange',
             'click .o_hlp_dash_trend_toggle': '_onTrendToggle',
@@ -55,7 +56,11 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         init: function (parent, action) {
             this._super.apply(this, arguments);
             this.data = {};
-            this.preset = '30d';
+            var today = new Date();
+            var from = new Date();
+            from.setDate(from.getDate() - PRESET_DAYS['30d']);
+            this.dateFrom = formatDateInput(from);
+            this.dateTo = formatDateInput(today);
             this.teamId = false;
             this.categoryId = false;
             this.teams = [];
@@ -97,24 +102,16 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             });
         },
 
-        _dateRange: function () {
-            var days = PRESET_DAYS[this.preset];
-            var to = new Date();
-            var from = new Date();
-            if (this.preset === 'today') {
-                from.setHours(0, 0, 0, 0);
-            } else {
-                from.setDate(from.getDate() - days);
-            }
+        _rangeKwargs: function () {
             return {
-                date_from: formatDateTime(from),
-                date_to: formatDateTime(to),
+                date_from: this.dateFrom ? this.dateFrom + ' 00:00:00' : false,
+                date_to: this.dateTo ? this.dateTo + ' 23:59:59' : false,
             };
         },
 
         _loadData: function () {
             var self = this;
-            var range = this._dateRange();
+            var range = this._rangeKwargs();
             return rpc.query({
                 model: 'helpdesk.ticket',
                 method: 'get_dashboard_data',
@@ -132,10 +129,30 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
 
         _onPresetClick: function (ev) {
             var preset = $(ev.currentTarget).data('preset');
-            if (!preset || preset === this.preset) {
+            var days = PRESET_DAYS[preset];
+            if (days === undefined) {
                 return;
             }
-            this.preset = preset;
+            var today = new Date();
+            var from = new Date();
+            if (preset === 'today') {
+                // from = today
+            } else {
+                from.setDate(from.getDate() - days);
+            }
+            this.dateFrom = formatDateInput(from);
+            this.dateTo = formatDateInput(today);
+            this._reload();
+        },
+
+        _onDateChange: function () {
+            var from = this.$('.o_hlp_dash_date_from').val();
+            var to = this.$('.o_hlp_dash_date_to').val();
+            if (!from || !to) {
+                return;
+            }
+            this.dateFrom = from;
+            this.dateTo = to;
             this._reload();
         },
 
@@ -168,18 +185,24 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             return {
                 kpis: this._buildKpiTiles(kpis, kpisPrev),
                 trend: this._buildTrend(data.trend || []),
-                slaByTeam: this._buildSlaBars(data.sla_by_team || []),
+                categoryStackedBars: this._buildStackedBars(data.category_breakdown || []),
+                categoryTable: this._buildBreakdownTable(data.category_breakdown || []),
+                userTable: this._buildBreakdownTable(data.user_breakdown || []),
                 categoryBars: this._buildVerticalBars(data.category_volume || [], CATEGORY_COLORS),
                 priorityBars: this._buildVerticalBars(data.priority_volume || [], PRIORITY_COLORS),
-                teamTable: (data.team_table || []).map(function (row) {
-                    return _.extend({}, row, {complianceClass: slaStatusClass(row.compliance_pct)});
-                }),
                 teams: this.teams,
                 categories: this.categories,
-                preset: this.preset,
+                dateFrom: this.dateFrom,
+                dateTo: this.dateTo,
                 teamId: this.teamId,
                 categoryId: this.categoryId,
             };
+        },
+
+        _buildBreakdownTable: function (rows) {
+            return rows.map(function (row) {
+                return _.extend({}, row, {complianceClass: slaStatusClass(row.compliance_pct)});
+            });
         },
 
         _buildKpiTiles: function (kpis, prev) {
@@ -258,26 +281,49 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             };
         },
 
-        _buildSlaBars: function (rows) {
-            var xStart = 140, maxWidth = 260, rowH = 32;
+        _buildStackedBars: function (rows) {
+            if (!rows.length) {
+                return {hasData: false};
+            }
+            var maxTotal = 0;
+            rows.forEach(function (r) {
+                maxTotal = Math.max(maxTotal, r.green + r.yellow + r.red);
+            });
+            var xStart = 150, trackWidth = 250, rowH = 32;
             var bars = rows.map(function (r, i) {
-                var pct = r.compliance_pct;
-                var width = pct / 100 * maxWidth;
+                var withSla = r.green + r.yellow + r.red;
+                var barWidth = maxTotal ? (withSla / maxTotal) * trackWidth : 0;
                 var y = 10 + i * rowH;
+                var segments = [];
+                var cursor = xStart;
+                [
+                    ['good', r.green],
+                    ['warning', r.yellow],
+                    ['critical', r.red],
+                ].forEach(function (pair) {
+                    var segWidth = withSla ? (pair[1] / withSla) * barWidth : 0;
+                    if (segWidth > 0.5) {
+                        segments.push({
+                            x: cursor.toFixed(1),
+                            width: segWidth.toFixed(1),
+                            statusClass: pair[0],
+                        });
+                    }
+                    cursor += segWidth;
+                });
                 return {
-                    name: r.team_name,
-                    pct: pct,
-                    width: width.toFixed(1),
+                    name: r.name,
+                    total: withSla,
+                    segments: segments,
                     y: y,
                     labelY: (y + 12).toFixed(1),
-                    pctLabelX: (xStart + width + 10).toFixed(1),
-                    statusClass: slaStatusClass(pct),
+                    totalLabelX: (xStart + barWidth + 10).toFixed(1),
                 };
             });
             return {
                 bars: bars,
-                hasData: bars.length > 0,
-                height: bars.length ? 10 + bars.length * rowH + 10 : 40,
+                hasData: true,
+                height: 10 + rows.length * rowH + 10,
                 xStart: xStart,
             };
         },

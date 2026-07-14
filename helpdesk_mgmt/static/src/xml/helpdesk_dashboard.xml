@@ -10,10 +10,16 @@
             </header>
 
             <div class="o_hlp_dash_filters">
-                <span t-attf-class="o_hlp_dash_chip #{preset === 'today' ? 'active' : ''}" data-preset="today">Hoy</span>
-                <span t-attf-class="o_hlp_dash_chip #{preset === '7d' ? 'active' : ''}" data-preset="7d">Últimos 7 días</span>
-                <span t-attf-class="o_hlp_dash_chip #{preset === '30d' ? 'active' : ''}" data-preset="30d">Últimos 30 días</span>
-                <span t-attf-class="o_hlp_dash_chip #{preset === 'quarter' ? 'active' : ''}" data-preset="quarter">Este trimestre</span>
+                <span class="o_hlp_dash_chip" data-preset="today">Hoy</span>
+                <span class="o_hlp_dash_chip" data-preset="7d">Últimos 7 días</span>
+                <span class="o_hlp_dash_chip" data-preset="30d">Últimos 30 días</span>
+                <span class="o_hlp_dash_chip" data-preset="quarter">Este trimestre</span>
+                <label class="o_hlp_dash_date_label">Desde
+                    <input type="date" class="o_hlp_dash_select o_hlp_dash_date_from" t-att-value="dateFrom" />
+                </label>
+                <label class="o_hlp_dash_date_label">Hasta
+                    <input type="date" class="o_hlp_dash_select o_hlp_dash_date_to" t-att-value="dateTo" />
+                </label>
                 <select class="o_hlp_dash_select o_hlp_dash_team">
                     <option value="">Todos los equipos</option>
                     <t t-foreach="teams" t-as="team" t-key="team.id">
@@ -118,26 +124,28 @@
                 <div class="o_hlp_dash_card">
                     <div class="card-head">
                         <div>
-                            <h2>Cumplimiento SLA por equipo</h2>
-                            <div class="sub">% de tickets cerrados dentro de plazo</div>
+                            <h2>Cumplimiento por categoría</h2>
+                            <div class="sub">Tickets cerrados en el rango: en tiempo / próximos a vencer / vencidos</div>
                         </div>
                     </div>
-                    <t t-if="slaByTeam.hasData">
-                        <svg t-attf-viewBox="0 0 460 #{slaByTeam.height}" preserveAspectRatio="xMidYMid meet">
-                            <line class="baseline-line" t-att-x1="slaByTeam.xStart" y1="4" t-att-x2="slaByTeam.xStart" t-attf-y2="#{slaByTeam.height - 20}" />
-                            <t t-foreach="slaByTeam.bars" t-as="bar" t-key="bar_index">
-                                <rect t-attf-class="bar #{bar.statusClass}" t-att-x="slaByTeam.xStart" t-att-y="bar.y" t-att-width="bar.width" height="16" rx="3" />
-                                <text class="data-label" t-att-x="bar.pctLabelX" t-att-y="bar.labelY"><t t-esc="bar.pct" />%</text>
+                    <t t-if="categoryStackedBars.hasData">
+                        <svg t-attf-viewBox="0 0 460 #{categoryStackedBars.height}" preserveAspectRatio="xMidYMid meet">
+                            <line class="baseline-line" t-att-x1="categoryStackedBars.xStart" y1="4" t-att-x2="categoryStackedBars.xStart" t-attf-y2="#{categoryStackedBars.height - 20}" />
+                            <t t-foreach="categoryStackedBars.bars" t-as="bar" t-key="bar_index">
+                                <t t-foreach="bar.segments" t-as="seg" t-key="seg_index">
+                                    <rect t-attf-class="bar #{seg.statusClass}" t-att-x="seg.x" t-att-y="bar.y" t-att-width="seg.width" height="16" rx="2" />
+                                </t>
+                                <text class="data-label" t-att-x="bar.totalLabelX" t-att-y="bar.labelY"><t t-esc="bar.total" /></text>
                                 <text class="axis-label team-name" x="0" t-att-y="bar.labelY"><t t-esc="bar.name" /></text>
                             </t>
                         </svg>
                         <div class="legend">
-                            <span class="item"><span class="status-dot good" />En objetivo (≥90%)</span>
-                            <span class="item"><span class="status-dot warning" />Riesgo (75–89%)</span>
-                            <span class="item"><span class="status-dot critical" />Crítico (&lt;75%)</span>
+                            <span class="item"><span class="status-dot good" />En tiempo</span>
+                            <span class="item"><span class="status-dot warning" />Próximo a vencer</span>
+                            <span class="item"><span class="status-dot critical" />Vencido</span>
                         </div>
                     </t>
-                    <t t-if="!slaByTeam.hasData">
+                    <t t-if="!categoryStackedBars.hasData">
                         <div class="o_hlp_dash_empty">No hay tickets cerrados con SLA en el período.</div>
                     </t>
                 </div>
@@ -146,7 +154,7 @@
                     <div class="card-head">
                         <div>
                             <h2>Volumen de tickets por categoría</h2>
-                            <div class="sub">Según filtros seleccionados</div>
+                            <div class="sub">Tickets creados según filtros seleccionados</div>
                         </div>
                     </div>
                     <t t-if="categoryBars.hasData">
@@ -160,6 +168,92 @@
                         </svg>
                     </t>
                     <t t-if="!categoryBars.hasData">
+                        <div class="o_hlp_dash_empty">Sin datos.</div>
+                    </t>
+                </div>
+            </div>
+
+            <div class="o_hlp_dash_grid">
+                <div class="o_hlp_dash_card">
+                    <div class="card-head">
+                        <div>
+                            <h2>Detalle por categoría</h2>
+                            <div class="sub">Tickets cerrados en el rango seleccionado</div>
+                        </div>
+                    </div>
+                    <t t-if="categoryTable.length">
+                        <table class="o_hlp_dash_table">
+                            <thead>
+                                <tr>
+                                    <th>Categoría</th>
+                                    <th class="num">Total</th>
+                                    <th class="num">En tiempo</th>
+                                    <th class="num">Próx. a vencer</th>
+                                    <th class="num">Vencidos</th>
+                                    <th class="num">T. prom.</th>
+                                    <th>Cumplimiento</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="categoryTable" t-as="row" t-key="row.id">
+                                    <td><t t-esc="row.name" /></td>
+                                    <td class="num"><t t-esc="row.total" /></td>
+                                    <td class="num"><t t-esc="row.green" /></td>
+                                    <td class="num"><t t-esc="row.yellow" /></td>
+                                    <td class="num"><t t-esc="row.red" /></td>
+                                    <td class="num"><t t-esc="row.avg_resolution_hours" /> h</td>
+                                    <td>
+                                        <span t-attf-class="pill #{row.complianceClass}">
+                                            ● <t t-esc="row.compliance_pct" />%
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </t>
+                    <t t-if="!categoryTable.length">
+                        <div class="o_hlp_dash_empty">Sin datos.</div>
+                    </t>
+                </div>
+
+                <div class="o_hlp_dash_card">
+                    <div class="card-head">
+                        <div>
+                            <h2>Detalle por usuario asignado</h2>
+                            <div class="sub">Tickets cerrados en el rango seleccionado</div>
+                        </div>
+                    </div>
+                    <t t-if="userTable.length">
+                        <table class="o_hlp_dash_table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th class="num">Total</th>
+                                    <th class="num">En tiempo</th>
+                                    <th class="num">Próx. a vencer</th>
+                                    <th class="num">Vencidos</th>
+                                    <th class="num">T. prom.</th>
+                                    <th>Cumplimiento</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="userTable" t-as="row" t-key="row.id">
+                                    <td><t t-esc="row.name" /></td>
+                                    <td class="num"><t t-esc="row.total" /></td>
+                                    <td class="num"><t t-esc="row.green" /></td>
+                                    <td class="num"><t t-esc="row.yellow" /></td>
+                                    <td class="num"><t t-esc="row.red" /></td>
+                                    <td class="num"><t t-esc="row.avg_resolution_hours" /> h</td>
+                                    <td>
+                                        <span t-attf-class="pill #{row.complianceClass}">
+                                            ● <t t-esc="row.compliance_pct" />%
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </t>
+                    <t t-if="!userTable.length">
                         <div class="o_hlp_dash_empty">Sin datos.</div>
                     </t>
                 </div>
@@ -187,48 +281,10 @@
                         <div class="o_hlp_dash_empty">No hay tickets abiertos.</div>
                     </t>
                 </div>
-
-                <div class="o_hlp_dash_card">
-                    <div class="card-head">
-                        <div>
-                            <h2>Detalle por equipo</h2>
-                            <div class="sub">Según filtros seleccionados</div>
-                        </div>
-                    </div>
-                    <t t-if="teamTable.length">
-                        <table class="o_hlp_dash_table">
-                            <thead>
-                                <tr>
-                                    <th>Equipo</th>
-                                    <th class="num">Total</th>
-                                    <th class="num">Resueltos</th>
-                                    <th class="num">T. prom.</th>
-                                    <th>Cumplimiento</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr t-foreach="teamTable" t-as="row" t-key="row.team_id">
-                                    <td><t t-esc="row.team_name" /></td>
-                                    <td class="num"><t t-esc="row.total" /></td>
-                                    <td class="num"><t t-esc="row.resolved" /></td>
-                                    <td class="num"><t t-esc="row.avg_resolution_hours" /> h</td>
-                                    <td>
-                                        <span t-attf-class="pill #{row.complianceClass}">
-                                            ● <t t-esc="row.compliance_pct" />%
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </t>
-                    <t t-if="!teamTable.length">
-                        <div class="o_hlp_dash_empty">Sin datos.</div>
-                    </t>
-                </div>
             </div>
 
             <p class="o_hlp_dash_note text-muted">
-                Cumplimiento = tickets cerrados sin superar el plazo SLA. Los tiempos promedio se calculan sobre tickets del período seleccionado.
+                Cumplimiento = tickets cerrados sin superar el plazo SLA. Los tiempos se calculan en horas laborales, según el horario configurado en Ajustes de Helpdesk.
             </p>
         </div>
     </t>

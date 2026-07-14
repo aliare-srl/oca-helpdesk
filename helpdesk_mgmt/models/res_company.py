@@ -18,3 +18,16 @@ class Company(models.Model):
         string="Required Category field in Helpdesk portal",
         default=True,
     )
+
+    def _default_helpdesk_resource_calendar(self):
+        return self.env.ref(
+            "helpdesk_mgmt.helpdesk_default_resource_calendar", raise_if_not_found=False
+        )
+
+    helpdesk_resource_calendar_id = fields.Many2one(
+        comodel_name="resource.calendar",
+        string="Horario Laboral Mesa de Ayuda",
+        default=_default_helpdesk_resource_calendar,
+        help="Días y horas laborales usados para calcular los vencimientos de SLA "
+        "y los tiempos de resolución de Helpdesk.",
+    )

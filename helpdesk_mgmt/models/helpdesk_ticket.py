@@ -168,6 +168,13 @@ class HelpdeskTicket(models.Model):
         store=True,
         readonly=True,
     )
+    sla_target_hours = fields.Float(
+        string="Horas Objetivo SLA",
+        compute="_compute_fecha_limite",
+        store=True,
+        help="Horas laborales objetivo según categoría y prioridad, usadas "
+        "para calcular fecha_limite y el % de SLA consumido.",
+    )
     sla_status = fields.Selection(
         selection=[
             ("green", "\U0001F7E2 En Tiempo"),
@@ -210,11 +217,12 @@ class HelpdeskTicket(models.Model):
 
     _SLA_PRIORITY_MAP = {"0": "normal", "1": "normal", "2": "alta", "3": "urgente"}
 
-    @api.depends("category_id", "priority", "create_date")
+    @api.depends("category_id", "priority", "create_date", "company_id")
     def _compute_fecha_limite(self):
         for ticket in self:
             if not ticket.create_date or not ticket.category_id:
                 ticket.fecha_limite = False
+                ticket.sla_target_hours = 0.0
                 continue
             sla_key = self._SLA_PRIORITY_MAP.get(ticket.priority, "normal")
             config = ticket.category_id.sla_config_ids.filtered(
@@ -222,17 +230,41 @@ class HelpdeskTicket(models.Model):
             )
             if not config:
                 ticket.fecha_limite = False
-            else:
-                ticket.fecha_limite = ticket.create_date + timedelta(
-                    hours=config[0].hours
+                ticket.sla_target_hours = 0.0
+                continue
+            hours = config[0].hours
+            calendar = ticket.company_id.helpdesk_resource_calendar_id
+            if calendar:
+                ticket.fecha_limite = calendar.plan_hours(
+                    hours, ticket.create_date, compute_leaves=True
                 )
+            else:
+                ticket.fecha_limite = ticket.create_date + timedelta(hours=hours)
+            ticket.sla_target_hours = hours
+
+    def _work_hours_between(self, start, end):
+        """Horas laborales entre dos datetimes, según el calendario de la
+        compañía. Si no hay calendario configurado, cae a horas corridas."""
+        self.ensure_one()
+        calendar = self.company_id.helpdesk_resource_calendar_id
+        if calendar:
+            return calendar.get_work_hours_count(start, end, compute_leaves=True)
+        return (end - start).total_seconds() / 3600.0
+
+    def _get_sla_hours_progress(self, at_datetime):
+        """Devuelve (horas_transcurridas, horas_objetivo) según el horario
+        laboral configurado, para saber qué % de SLA se consumió."""
+        self.ensure_one()
+        elapsed = self._work_hours_between(self.create_date, at_datetime)
+        return elapsed, self.sla_target_hours
 
     @api.depends("closed_date", "create_date")
     def _compute_resolution_hours(self):
         for ticket in self:
             if ticket.closed_date and ticket.create_date:
-                delta = ticket.closed_date - ticket.create_date
-                ticket.resolution_hours = delta.total_seconds() / 3600.0
+                ticket.resolution_hours = ticket._work_hours_between(
+                    ticket.create_date, ticket.closed_date
+                )
             else:
                 ticket.resolution_hours = 0.0
 
@@ -240,8 +272,9 @@ class HelpdeskTicket(models.Model):
     def _compute_assignment_hours(self):
         for ticket in self:
             if ticket.assigned_date and ticket.create_date:
-                delta = ticket.assigned_date - ticket.create_date
-                ticket.assignment_hours = delta.total_seconds() / 3600.0
+                ticket.assignment_hours = ticket._work_hours_between(
+                    ticket.create_date, ticket.assigned_date
+                )
             else:
                 ticket.assignment_hours = 0.0
 
@@ -261,8 +294,7 @@ class HelpdeskTicket(models.Model):
             if not ticket.fecha_limite or not ticket.create_date:
                 ticket.with_context(skip_sla_update=True).write({"sla_status": False})
                 continue
-            total = (ticket.fecha_limite - ticket.create_date).total_seconds()
-            elapsed = (now - ticket.create_date).total_seconds()
+            elapsed, total = ticket._get_sla_hours_progress(now)
             if total <= 0:
                 status = "red"
             else:
@@ -284,8 +316,7 @@ class HelpdeskTicket(models.Model):
         for ticket in tickets:
             if not ticket.create_date:
                 continue
-            total = (ticket.fecha_limite - ticket.create_date).total_seconds()
-            elapsed = (now - ticket.create_date).total_seconds()
+            elapsed, total = ticket._get_sla_hours_progress(now)
             if total <= 0:
                 continue
             pct = elapsed / total
@@ -436,14 +467,9 @@ class HelpdeskTicket(models.Model):
         )
         trend = self._merge_weekly_trend(created_weekly, closed_weekly)
 
-        # --- Cumplimiento SLA por equipo ---
-        sla_rows = Ticket.read_group(
-            closed_domain + [("sla_status_at_close", "!=", False)],
-            ["team_id", "sla_status_at_close"],
-            ["team_id", "sla_status_at_close"],
-            lazy=False,
-        )
-        sla_by_team = self._build_sla_by_team(sla_rows)
+        # --- Cumplimiento por categoría y por usuario asignado (tickets cerrados en el rango) ---
+        category_breakdown = self._build_breakdown(closed_domain, "category_id", _("Sin categoría"))
+        user_breakdown = self._build_breakdown(closed_domain, "user_id", _("Sin asignar"))
 
         # --- Volumen por categoría ---
         category_data = Ticket.read_group(created_domain, ["id"], ["category_id"], lazy=False)
@@ -477,9 +503,6 @@ class HelpdeskTicket(models.Model):
             else 99,
         )
 
-        # --- Detalle por equipo ---
-        team_table = self._build_team_table(base_domain, created_domain, closed_domain, open_domain)
-
         # --- Variación vs. período anterior de igual duración ---
         kpis_prev = self._get_previous_period_kpis(base_domain, date_from, date_to)
 
@@ -493,10 +516,10 @@ class HelpdeskTicket(models.Model):
             },
             "kpis_prev": kpis_prev,
             "trend": trend,
-            "sla_by_team": sla_by_team,
+            "category_breakdown": category_breakdown,
+            "user_breakdown": user_breakdown,
             "category_volume": category_volume,
             "priority_volume": priority_volume,
-            "team_table": team_table,
         }
 
     def _get_previous_period_kpis(self, base_domain, date_from, date_to):
@@ -571,85 +594,63 @@ class HelpdeskTicket(models.Model):
             for start in starts
         ]
 
-    def _build_sla_by_team(self, sla_rows):
-        teams = {}
-        for row in sla_rows:
-            team = row["team_id"]
-            team_id = team[0] if team else 0
-            team_name = team[1] if team else _("Sin equipo")
-            entry = teams.setdefault(
-                team_id,
-                {"team_id": team_id, "team_name": team_name, "green": 0, "yellow": 0, "red": 0},
-            )
-            entry[row["sla_status_at_close"]] = (
-                entry.get(row["sla_status_at_close"], 0) + row["__count"]
-            )
-        result = []
-        for entry in teams.values():
-            total = entry["green"] + entry["yellow"] + entry["red"]
-            compliant = entry["green"] + entry["yellow"]
-            result.append(
-                {
-                    "team_id": entry["team_id"],
-                    "team_name": entry["team_name"],
-                    "total": total,
-                    "compliance_pct": round(compliant / total * 100, 1) if total else 0.0,
-                }
-            )
-        result.sort(key=lambda r: r["compliance_pct"], reverse=True)
-        return result
-
-    def _build_team_table(self, base_domain, created_domain, closed_domain, open_domain):
+    def _build_breakdown(self, closed_domain, groupby_field, no_group_label):
+        """Para tickets cerrados en closed_domain, agrupados por groupby_field
+        (category_id o user_id): total, cuántos verdes/amarillos/rojos y
+        tiempo promedio de resolución (horas laborales)."""
         Ticket = self.sudo()
 
+        names = {}
         totals = {}
-        team_names = {}
-        for row in Ticket.read_group(created_domain, ["id"], ["team_id"], lazy=False):
-            tid = row["team_id"][0] if row["team_id"] else 0
-            totals[tid] = row["__count"]
-            team_names[tid] = row["team_id"][1] if row["team_id"] else _("Sin equipo")
+        for row in Ticket.read_group(closed_domain, ["id"], [groupby_field], lazy=False):
+            key = row[groupby_field]
+            gid = key[0] if key else 0
+            names[gid] = key[1] if key else no_group_label
+            totals[gid] = row["__count"]
 
-        resolved = {}
+        status_counts = {}
+        for row in Ticket.read_group(
+            closed_domain + [("sla_status_at_close", "!=", False)],
+            [groupby_field, "sla_status_at_close"],
+            [groupby_field, "sla_status_at_close"],
+            lazy=False,
+        ):
+            key = row[groupby_field]
+            gid = key[0] if key else 0
+            names.setdefault(gid, key[1] if key else no_group_label)
+            entry = status_counts.setdefault(gid, {"green": 0, "yellow": 0, "red": 0})
+            entry[row["sla_status_at_close"]] += row["__count"]
+
         avg_hours = {}
         for row in Ticket.read_group(
-            closed_domain, ["resolution_hours:avg"], ["team_id"], lazy=False
+            closed_domain, ["resolution_hours:avg"], [groupby_field], lazy=False
         ):
-            tid = row["team_id"][0] if row["team_id"] else 0
-            resolved[tid] = row["__count"]
-            avg_hours[tid] = round(row["resolution_hours"] or 0.0, 1)
-            team_names.setdefault(tid, row["team_id"][1] if row["team_id"] else _("Sin equipo"))
+            key = row[groupby_field]
+            gid = key[0] if key else 0
+            avg_hours[gid] = round(row["resolution_hours"] or 0.0, 1)
 
-        overdue = {}
-        for row in Ticket.read_group(
-            open_domain + [("sla_status", "=", "red")], ["id"], ["team_id"], lazy=False
-        ):
-            tid = row["team_id"][0] if row["team_id"] else 0
-            overdue[tid] = row["__count"]
-            team_names.setdefault(tid, row["team_id"][1] if row["team_id"] else _("Sin equipo"))
-
-        sla_rows = Ticket.read_group(
-            closed_domain + [("sla_status_at_close", "!=", False)],
-            ["team_id", "sla_status_at_close"],
-            ["team_id", "sla_status_at_close"],
-            lazy=False,
-        )
-        compliance = {r["team_id"]: r["compliance_pct"] for r in self._build_sla_by_team(sla_rows)}
-
-        team_ids = set(totals) | set(resolved) | set(overdue)
-        table = [
-            {
-                "team_id": tid,
-                "team_name": team_names.get(tid, _("Sin equipo")),
-                "total": totals.get(tid, 0),
-                "resolved": resolved.get(tid, 0),
-                "avg_resolution_hours": avg_hours.get(tid, 0.0),
-                "compliance_pct": compliance.get(tid, 0.0),
-                "overdue_now": overdue.get(tid, 0),
-            }
-            for tid in team_ids
-        ]
-        table.sort(key=lambda r: r["total"], reverse=True)
-        return table
+        result = []
+        for gid, total in totals.items():
+            status = status_counts.get(gid, {"green": 0, "yellow": 0, "red": 0})
+            with_sla = status["green"] + status["yellow"] + status["red"]
+            result.append(
+                {
+                    "id": gid,
+                    "name": names.get(gid, no_group_label),
+                    "total": total,
+                    "green": status["green"],
+                    "yellow": status["yellow"],
+                    "red": status["red"],
+                    "compliance_pct": round(
+                        (status["green"] + status["yellow"]) / with_sla * 100, 1
+                    )
+                    if with_sla
+                    else 0.0,
+                    "avg_resolution_hours": avg_hours.get(gid, 0.0),
+                }
+            )
+        result.sort(key=lambda r: r["total"], reverse=True)
+        return result
 
     def assign_to_me(self):
         self.write({"user_id": self.env.user.id})
