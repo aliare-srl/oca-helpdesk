@@ -1,10 +1,11 @@
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-from openupgradelib import openupgrade
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
-@openupgrade.migrate()
-def migrate(env, version):
+def migrate(cr, version):
     """Reconstruye sla_status_at_close para tickets ya cerrados, a partir de
     fecha_limite y closed_date (ya existentes), para que el panel de
     Cumplimiento tenga historial desde el día uno.
@@ -13,8 +14,7 @@ def migrate(env, version):
     solos para los registros existentes al agregar la columna, no requieren
     backfill manual acá.
     """
-    openupgrade.logged_query(
-        env.cr,
+    cr.execute(
         """
         UPDATE helpdesk_ticket t
         SET sla_status_at_close = CASE
@@ -32,5 +32,6 @@ def migrate(env, version):
           AND t.fecha_limite IS NOT NULL
           AND t.fecha_limite > t.create_date
           AND t.sla_status_at_close IS NULL
-        """,
+        """
     )
+    _logger.info("helpdesk_mgmt 15.0.4.6.0: sla_status_at_close backfilled (%s rows)", cr.rowcount)
