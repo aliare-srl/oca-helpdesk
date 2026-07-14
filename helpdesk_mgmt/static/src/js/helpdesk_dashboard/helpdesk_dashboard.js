@@ -235,8 +235,10 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
                 xLabels.push({x: x, label: formatWeekLabel(r.week)});
             });
             var gridLines = [0.25, 0.5, 0.75, 1].map(function (f) {
+                var y = yBottom - f * (yBottom - yTop);
                 return {
-                    y: (yBottom - f * (yBottom - yTop)).toFixed(1),
+                    y: y.toFixed(1),
+                    labelY: (y + 4).toFixed(1),
                     value: Math.round(top * f),
                 };
             });
@@ -260,11 +262,15 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             var xStart = 140, maxWidth = 260, rowH = 32;
             var bars = rows.map(function (r, i) {
                 var pct = r.compliance_pct;
+                var width = pct / 100 * maxWidth;
+                var y = 10 + i * rowH;
                 return {
                     name: r.team_name,
                     pct: pct,
-                    width: (pct / 100 * maxWidth).toFixed(1),
-                    y: 10 + i * rowH,
+                    width: width.toFixed(1),
+                    y: y,
+                    labelY: (y + 12).toFixed(1),
+                    pctLabelX: (xStart + width + 10).toFixed(1),
                     statusClass: slaStatusClass(pct),
                 };
             });
@@ -288,12 +294,14 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             var bars = rows.map(function (r, i) {
                 var h = maxVal ? (r.count / maxVal) * (baseline - chartTop) : 0;
                 var x = xStart + i * (barWidth + gap);
+                var y = baseline - h;
                 return {
                     name: r.name,
                     count: r.count,
                     x: x,
                     width: barWidth,
-                    y: (baseline - h).toFixed(1),
+                    y: y.toFixed(1),
+                    labelY: (y - 6).toFixed(1),
                     height: Math.max(h, 1).toFixed(1),
                     color: colorSlots[i % colorSlots.length],
                     centerX: x + barWidth / 2,
