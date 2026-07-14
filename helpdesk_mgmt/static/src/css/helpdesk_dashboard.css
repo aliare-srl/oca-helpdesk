@@ -33,29 +33,6 @@
     padding: 20px 24px 40px;
     box-sizing: border-box;
 }
-@media (prefers-color-scheme: dark) {
-    .o_hlp_dashboard {
-        --hlp-surface-1: #1a1a19;
-        --hlp-page-plane: #0d0d0d;
-        --hlp-text-primary: #ffffff;
-        --hlp-text-secondary: #c3c2b7;
-        --hlp-text-muted: #898781;
-        --hlp-gridline: #2c2c2a;
-        --hlp-baseline: #383835;
-        --hlp-border: rgba(255, 255, 255, 0.10);
-
-        --hlp-series-1: #3987e5;
-        --hlp-series-2: #199e70;
-        --hlp-series-3: #c98500;
-        --hlp-series-4: #008300;
-        --hlp-series-5: #9085e9;
-        --hlp-series-6: #e66767;
-        --hlp-series-7: #d55181;
-        --hlp-series-8: #d95926;
-        --hlp-delta-good: #0ca30c;
-    }
-}
-
 .o_hlp_dashboard * { box-sizing: border-box; }
 
 .o_hlp_dash_head h1 { font-size: 20px; margin: 0 0 4px; }
