@@ -405,17 +405,22 @@ class HelpdeskTicket(models.Model):
         return result
 
     @api.model
-    def get_dashboard_data(self, date_from=None, date_to=None, team_id=None, category_id=None):
-        """Datos agregados para el panel de Tickets Abiertos: estado SLA
-        (verde/amarillo/rojo), tiempo de espera y desgloses por categoría,
-        usuario asignado y cliente. date_from/date_to filtran por fecha de
-        creación del ticket."""
+    def get_dashboard_data(
+        self, view="open", date_from=None, date_to=None, team_id=None, category_id=None
+    ):
+        """Punto de entrada del panel. view='open' → tickets abiertos (foto
+        actual, date_from/date_to filtran por fecha de creación). view='done'
+        → tickets hechos (date_from/date_to filtran por fecha de cierre)."""
         if not self.env.user.has_group("helpdesk_mgmt.group_helpdesk_manager"):
             raise AccessError(_("No tiene permisos para ver el panel de cumplimiento."))
-        Ticket = self.sudo()
         team_id = int(team_id) if team_id else False
         category_id = int(category_id) if category_id else False
+        if view == "done":
+            return self._get_done_dashboard_data(date_from, date_to, team_id, category_id)
+        return self._get_open_dashboard_data(date_from, date_to, team_id, category_id)
 
+    def _get_open_dashboard_data(self, date_from, date_to, team_id, category_id):
+        Ticket = self.sudo()
         open_domain = [("closed", "=", False)]
         if team_id:
             open_domain.append(("team_id", "=", team_id))
@@ -439,29 +444,20 @@ class HelpdeskTicket(models.Model):
         red = len(open_tickets.filtered(lambda t: t.sla_status == "red"))
         avg_wait = round(sum(waiting_hours.values()) / total, 1) if total else 0.0
 
-        category_breakdown = self._build_open_breakdown(
-            open_domain, "category_id", _("Sin categoría")
+        category_breakdown = self._build_breakdown(
+            open_domain, "category_id", _("Sin categoría"), "sla_status"
         )
-        user_breakdown = self._build_open_breakdown(open_domain, "user_id", _("Sin asignar"))
-        partner_breakdown = self._build_open_breakdown(
-            open_domain, "partner_id", _("Sin cliente")
+        user_breakdown = self._build_breakdown(
+            open_domain, "user_id", _("Sin asignar"), "sla_status"
         )
+        partner_breakdown = self._build_breakdown(
+            open_domain, "partner_id", _("Sin cliente"), "sla_status"
+        )
+        priority_breakdown = self._build_priority_breakdown(open_domain, "sla_status")
 
-        priority_breakdown = self._build_priority_breakdown(open_domain)
-
-        top_delayed = sorted(
-            open_tickets, key=lambda t: waiting_hours[t.id], reverse=True
-        )[:10]
+        top_delayed = sorted(open_tickets, key=lambda t: waiting_hours[t.id], reverse=True)[:10]
         top_delayed_data = [
-            {
-                "number": ticket.number or "",
-                "name": ticket.name or "",
-                "category": ticket.category_id.name or _("Sin categoría"),
-                "partner": ticket.partner_id.name or ticket.partner_name or _("Sin cliente"),
-                "user": ticket.user_id.name or _("Sin asignar"),
-                "waiting_hours": round(waiting_hours[ticket.id], 1),
-                "sla_status": ticket.sla_status or False,
-            }
+            self._ranking_row(ticket, waiting_hours[ticket.id], ticket.sla_status)
             for ticket in top_delayed
         ]
 
@@ -480,15 +476,98 @@ class HelpdeskTicket(models.Model):
             "top_delayed": top_delayed_data,
         }
 
-    def _build_open_breakdown(self, open_domain, groupby_field, no_group_label):
-        """Para tickets abiertos (foto actual, no depende del rango de fechas)
-        agrupados por groupby_field: total y cuántos están verde/amarillo/rojo
-        ahora mismo."""
+    def _get_done_dashboard_data(self, date_from, date_to, team_id, category_id):
+        Ticket = self.sudo()
+        closed_domain = [("closed", "=", True), ("closed_date", "!=", False)]
+        if team_id:
+            closed_domain.append(("team_id", "=", team_id))
+        if category_id:
+            closed_domain.append(("category_id", "=", category_id))
+        if date_from:
+            closed_domain.append(("closed_date", ">=", date_from))
+        if date_to:
+            closed_domain.append(("closed_date", "<=", date_to))
+
+        closed_tickets = Ticket.search(closed_domain)
+        total = len(closed_tickets)
+        green = len(closed_tickets.filtered(lambda t: t.sla_status_at_close == "green"))
+        yellow = len(closed_tickets.filtered(lambda t: t.sla_status_at_close == "yellow"))
+        red = len(closed_tickets.filtered(lambda t: t.sla_status_at_close == "red"))
+        avg_resolution = (
+            round(sum(closed_tickets.mapped("resolution_hours")) / total, 1) if total else 0.0
+        )
+
+        category_breakdown = self._build_breakdown(
+            closed_domain, "category_id", _("Sin categoría"), "sla_status_at_close", with_avg_resolution=True
+        )
+        user_breakdown = self._build_breakdown(
+            closed_domain, "user_id", _("Sin asignar"), "sla_status_at_close", with_avg_resolution=True
+        )
+        partner_breakdown = self._build_breakdown(
+            closed_domain, "partner_id", _("Sin cliente"), "sla_status_at_close", with_avg_resolution=True
+        )
+        priority_breakdown = self._build_priority_breakdown(
+            closed_domain, "sla_status_at_close", with_avg_resolution=True
+        )
+
+        top_resolution = closed_tickets.sorted(key=lambda t: t.resolution_hours, reverse=True)[:10]
+        top_resolution_data = [
+            self._ranking_row(ticket, ticket.resolution_hours, ticket.sla_status_at_close)
+            for ticket in top_resolution
+        ]
+
+        overdue_closed = closed_tickets.filtered(
+            lambda t: t.sla_status_at_close == "red" and t.fecha_limite
+        )
+        overdue_delay = {
+            ticket.id: ticket._work_hours_between(ticket.fecha_limite, ticket.closed_date)
+            for ticket in overdue_closed
+        }
+        top_overdue = sorted(overdue_closed, key=lambda t: overdue_delay[t.id], reverse=True)[:10]
+        top_overdue_data = [
+            self._ranking_row(ticket, overdue_delay[ticket.id], ticket.sla_status_at_close)
+            for ticket in top_overdue
+        ]
+
+        return {
+            "kpis": {
+                "done_count": total,
+                "avg_resolution_hours": avg_resolution,
+                "green": green,
+                "yellow": yellow,
+                "red": red,
+            },
+            "category_breakdown": category_breakdown,
+            "user_breakdown": user_breakdown,
+            "partner_breakdown": partner_breakdown,
+            "priority_breakdown": priority_breakdown,
+            "top_resolution": top_resolution_data,
+            "top_overdue": top_overdue_data,
+        }
+
+    def _ranking_row(self, ticket, hours_value, sla_status):
+        return {
+            "number": ticket.number or "",
+            "name": ticket.name or "",
+            "category": ticket.category_id.name or _("Sin categoría"),
+            "partner": ticket.partner_id.name or ticket.partner_name or _("Sin cliente"),
+            "user": ticket.user_id.name or _("Sin asignar"),
+            "hours": round(hours_value, 1),
+            "sla_status": sla_status or False,
+        }
+
+    def _build_breakdown(
+        self, domain, groupby_field, no_group_label, status_field, with_avg_resolution=False
+    ):
+        """Agrupado por groupby_field (Many2one): total y cuántos están
+        verde/amarillo/rojo según status_field ('sla_status' para abiertos,
+        'sla_status_at_close' para hechos). Si with_avg_resolution, agrega
+        el tiempo promedio de resolución por grupo."""
         Ticket = self.sudo()
 
         names = {}
         totals = {}
-        for row in Ticket.read_group(open_domain, ["id"], [groupby_field], lazy=False):
+        for row in Ticket.read_group(domain, ["id"], [groupby_field], lazy=False):
             key = row[groupby_field]
             gid = key[0] if key else 0
             names[gid] = key[1] if key else no_group_label
@@ -496,69 +575,89 @@ class HelpdeskTicket(models.Model):
 
         status_counts = {}
         for row in Ticket.read_group(
-            open_domain + [("sla_status", "in", ["green", "yellow", "red"])],
-            [groupby_field, "sla_status"],
-            [groupby_field, "sla_status"],
+            domain + [(status_field, "in", ["green", "yellow", "red"])],
+            [groupby_field, status_field],
+            [groupby_field, status_field],
             lazy=False,
         ):
             key = row[groupby_field]
             gid = key[0] if key else 0
             names.setdefault(gid, key[1] if key else no_group_label)
             entry = status_counts.setdefault(gid, {"green": 0, "yellow": 0, "red": 0})
-            entry[row["sla_status"]] += row["__count"]
+            entry[row[status_field]] += row["__count"]
+
+        avg_hours = {}
+        if with_avg_resolution:
+            for row in Ticket.read_group(
+                domain, ["resolution_hours:avg"], [groupby_field], lazy=False
+            ):
+                key = row[groupby_field]
+                gid = key[0] if key else 0
+                avg_hours[gid] = round(row["resolution_hours"] or 0.0, 1)
 
         result = []
         for gid, total in totals.items():
             status = status_counts.get(gid, {"green": 0, "yellow": 0, "red": 0})
-            result.append(
-                {
-                    "id": gid,
-                    "name": names.get(gid, no_group_label),
-                    "total": total,
-                    "green": status["green"],
-                    "yellow": status["yellow"],
-                    "red": status["red"],
-                }
-            )
+            row = {
+                "id": gid,
+                "name": names.get(gid, no_group_label),
+                "total": total,
+                "green": status["green"],
+                "yellow": status["yellow"],
+                "red": status["red"],
+            }
+            if with_avg_resolution:
+                row["avg_resolution_hours"] = avg_hours.get(gid, 0.0)
+            result.append(row)
         result.sort(key=lambda r: r["total"], reverse=True)
         return result
 
-    def _build_priority_breakdown(self, open_domain):
-        """Igual que _build_open_breakdown pero agrupado por prioridad
-        (Selection, no Many2one): mantiene siempre las 4 prioridades, en
-        orden Baja→Muy Alta, incluso con 0 tickets."""
+    def _build_priority_breakdown(self, domain, status_field, with_avg_resolution=False):
+        """Igual que _build_breakdown pero agrupado por prioridad (Selection,
+        no Many2one): mantiene siempre las 4 prioridades, en orden Baja→Muy
+        Alta, incluso con 0 tickets."""
         Ticket = self.sudo()
         priority_labels = dict(self._fields["priority"].selection)
         priority_order = [key for key, _label in self._fields["priority"].selection]
 
         totals = {
             row["priority"]: row["__count"]
-            for row in Ticket.read_group(open_domain, ["id"], ["priority"], lazy=False)
+            for row in Ticket.read_group(domain, ["id"], ["priority"], lazy=False)
         }
 
         status_counts = {}
         for row in Ticket.read_group(
-            open_domain + [("sla_status", "in", ["green", "yellow", "red"])],
-            ["priority", "sla_status"],
-            ["priority", "sla_status"],
+            domain + [(status_field, "in", ["green", "yellow", "red"])],
+            ["priority", status_field],
+            ["priority", status_field],
             lazy=False,
         ):
             entry = status_counts.setdefault(row["priority"], {"green": 0, "yellow": 0, "red": 0})
-            entry[row["sla_status"]] += row["__count"]
+            entry[row[status_field]] += row["__count"]
+
+        avg_hours = {}
+        if with_avg_resolution:
+            avg_hours = {
+                row["priority"]: round(row["resolution_hours"] or 0.0, 1)
+                for row in Ticket.read_group(
+                    domain, ["resolution_hours:avg"], ["priority"], lazy=False
+                )
+            }
 
         result = []
         for key in priority_order:
             status = status_counts.get(key, {"green": 0, "yellow": 0, "red": 0})
-            result.append(
-                {
-                    "id": key,
-                    "name": priority_labels.get(key, key),
-                    "total": totals.get(key, 0),
-                    "green": status["green"],
-                    "yellow": status["yellow"],
-                    "red": status["red"],
-                }
-            )
+            row = {
+                "id": key,
+                "name": priority_labels.get(key, key),
+                "total": totals.get(key, 0),
+                "green": status["green"],
+                "yellow": status["yellow"],
+                "red": status["red"],
+            }
+            if with_avg_resolution:
+                row["avg_resolution_hours"] = avg_hours.get(key, 0.0)
+            result.append(row)
         return result
 
     def assign_to_me(self):

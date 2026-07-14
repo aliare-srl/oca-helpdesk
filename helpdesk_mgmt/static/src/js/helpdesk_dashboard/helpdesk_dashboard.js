@@ -38,6 +38,7 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
     var HelpdeskDashboard = AbstractAction.extend({
         contentTemplate: null,
         events: {
+            'click .o_hlp_dash_view_btn': '_onViewClick',
             'click .o_hlp_dash_chip': '_onPresetClick',
             'change .o_hlp_dash_date_from': '_onDateChange',
             'change .o_hlp_dash_date_to': '_onDateChange',
@@ -48,6 +49,7 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         init: function (parent, action) {
             this._super.apply(this, arguments);
             this.data = {};
+            this.view = 'open';
             var today = new Date();
             var from = new Date();
             from.setDate(from.getDate() - PRESET_DAYS['30d']);
@@ -109,6 +111,7 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
                 method: 'get_dashboard_data',
                 args: [],
                 kwargs: {
+                    view: this.view,
                     date_from: range.date_from,
                     date_to: range.date_to,
                     team_id: this.teamId || false,
@@ -117,6 +120,15 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             }).then(function (data) {
                 self.data = data || {};
             });
+        },
+
+        _onViewClick: function (ev) {
+            var view = $(ev.currentTarget).data('view');
+            if (!view || view === this.view) {
+                return;
+            }
+            this.view = view;
+            this._reload();
         },
 
         _onPresetClick: function (ev) {
@@ -166,11 +178,45 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         _prepareRenderData: function () {
             var data = this.data || {};
             var kpis = data.kpis || {};
+            var common = {
+                view: this.view,
+                categoryTable: this._buildOpenBreakdownTable(data.category_breakdown || []),
+                userTable: this._buildOpenBreakdownTable(data.user_breakdown || []),
+                partnerTable: this._buildOpenBreakdownTable(data.partner_breakdown || []),
+                priorityTable: this._buildOpenBreakdownTable(data.priority_breakdown || []),
+                teams: this.teams,
+                categories: this.categories,
+                dateFrom: this.dateFrom,
+                dateTo: this.dateTo,
+                teamId: this.teamId,
+                categoryId: this.categoryId,
+            };
+            if (this.view === 'done') {
+                var totalDone = kpis.done_count || 0;
+                var pctDone = function (n) {
+                    return totalDone ? Math.round((n / totalDone) * 1000) / 10 : 0;
+                };
+                return _.extend({}, common, {
+                    kpis: {
+                        doneCount: totalDone,
+                        donePct: totalDone ? 100 : 0,
+                        avgResolutionHours: kpis.avg_resolution_hours || 0,
+                        green: kpis.green || 0,
+                        greenPct: pctDone(kpis.green || 0),
+                        yellow: kpis.yellow || 0,
+                        yellowPct: pctDone(kpis.yellow || 0),
+                        red: kpis.red || 0,
+                        redPct: pctDone(kpis.red || 0),
+                    },
+                    topResolution: this._buildTopDelayed(data.top_resolution || []),
+                    topOverdue: this._buildTopDelayed(data.top_overdue || []),
+                });
+            }
             var total = kpis.open_count || 0;
             var pct = function (n) {
                 return total ? Math.round((n / total) * 1000) / 10 : 0;
             };
-            return {
+            return _.extend({}, common, {
                 kpis: {
                     openCount: total,
                     openPct: total ? 100 : 0,
@@ -182,24 +228,23 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
                     redPct: pct(kpis.red || 0),
                     avgWaitHours: kpis.avg_wait_hours || 0,
                 },
-                categoryTable: this._buildOpenBreakdownTable(data.category_breakdown || []),
-                userTable: this._buildOpenBreakdownTable(data.user_breakdown || []),
-                partnerTable: this._buildOpenBreakdownTable(data.partner_breakdown || []),
-                priorityTable: this._buildOpenBreakdownTable(data.priority_breakdown || []),
                 topDelayed: this._buildTopDelayed(data.top_delayed || []),
-                teams: this.teams,
-                categories: this.categories,
-                dateFrom: this.dateFrom,
-                dateTo: this.dateTo,
-                teamId: this.teamId,
-                categoryId: this.categoryId,
-            };
+            });
         },
 
         _buildOpenBreakdownTable: function (rows) {
             return rows.map(function (row) {
                 var riskClass = row.red > 0 ? 'critical' : (row.yellow > 0 ? 'warning' : 'good');
-                return _.extend({}, row, {riskClass: riskClass});
+                var t = row.total || 0;
+                var pct = function (n) {
+                    return t ? Math.round((n / t) * 1000) / 10 : 0;
+                };
+                return _.extend({}, row, {
+                    riskClass: riskClass,
+                    greenPct: pct(row.green),
+                    yellowPct: pct(row.yellow),
+                    redPct: pct(row.red),
+                });
             });
         },
 

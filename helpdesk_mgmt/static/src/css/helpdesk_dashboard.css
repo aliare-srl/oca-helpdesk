@@ -28,6 +28,25 @@
 .o_hlp_dash_head h1 { font-size: 20px; margin: 0 0 4px; }
 .o_hlp_dash_head p { margin: 0 0 12px; font-size: 13px; }
 
+.o_hlp_dash_view_toggle {
+    display: inline-flex;
+    border: 1px solid var(--hlp-border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 14px;
+}
+.o_hlp_dash_view_btn {
+    border: none;
+    background: var(--hlp-surface-1);
+    color: var(--hlp-text-secondary);
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.o_hlp_dash_view_btn + .o_hlp_dash_view_btn { border-left: 1px solid var(--hlp-border); }
+.o_hlp_dash_view_btn.active { background: var(--hlp-text-primary); color: var(--hlp-surface-1); }
+
 .o_hlp_dash_filters {
     display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
     margin: 0 0 18px;

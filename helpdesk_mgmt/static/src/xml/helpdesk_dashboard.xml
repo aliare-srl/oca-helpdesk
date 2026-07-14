@@ -5,16 +5,23 @@
         <div class="o_hlp_dashboard">
 
             <header class="o_hlp_dash_head">
-                <h1>Mesa de Ayuda — Tickets Abiertos</h1>
-                <p class="text-muted">Estado de SLA y tiempos de espera de los tickets abiertos</p>
+                <h1>Mesa de Ayuda</h1>
+                <p class="text-muted">Estado de SLA, tiempos y rankings de la mesa de ayuda</p>
             </header>
+
+            <div class="o_hlp_dash_view_toggle">
+                <button type="button" t-attf-class="o_hlp_dash_view_btn #{view === 'open' ? 'active' : ''}" data-view="open">Abiertos</button>
+                <button type="button" t-attf-class="o_hlp_dash_view_btn #{view === 'done' ? 'active' : ''}" data-view="done">Hechos</button>
+            </div>
 
             <div class="o_hlp_dash_filters">
                 <span class="o_hlp_dash_chip" data-preset="today">Hoy</span>
                 <span class="o_hlp_dash_chip" data-preset="7d">Últimos 7 días</span>
                 <span class="o_hlp_dash_chip" data-preset="30d">Últimos 30 días</span>
                 <span class="o_hlp_dash_chip" data-preset="quarter">Este trimestre</span>
-                <label class="o_hlp_dash_date_label">Creados desde
+                <label class="o_hlp_dash_date_label">
+                    <t t-if="view === 'open'">Creados desde</t>
+                    <t t-if="view === 'done'">Cerrados desde</t>
                     <input type="date" class="o_hlp_dash_select o_hlp_dash_date_from" t-att-value="dateFrom" />
                 </label>
                 <label class="o_hlp_dash_date_label">Hasta
@@ -38,76 +45,181 @@
                 </select>
             </div>
 
-            <div class="o_hlp_dash_kpi_row">
-                <div class="o_hlp_dash_tile">
-                    <div class="label">Tickets abiertos</div>
-                    <div class="value"><t t-esc="kpis.openCount" /> <span class="pct">(<t t-esc="kpis.openPct" />%)</span></div>
-                </div>
-                <div class="o_hlp_dash_tile">
-                    <div class="label">🟢 En tiempo</div>
-                    <div class="value"><t t-esc="kpis.green" /> <span class="pct">(<t t-esc="kpis.greenPct" />%)</span></div>
-                </div>
-                <div class="o_hlp_dash_tile">
-                    <div class="label">🟡 Próx. a vencer</div>
-                    <div class="value"><t t-esc="kpis.yellow" /> <span class="pct">(<t t-esc="kpis.yellowPct" />%)</span></div>
-                </div>
-                <div class="o_hlp_dash_tile">
-                    <div class="label">🔴 Vencidos</div>
-                    <div t-attf-class="value #{kpis.red > 0 ? 'tone-critical' : ''}"><t t-esc="kpis.red" /> <span class="pct">(<t t-esc="kpis.redPct" />%)</span></div>
-                </div>
-                <div class="o_hlp_dash_tile">
-                    <div class="label">Tiempo prom. de espera</div>
-                    <div class="value"><t t-esc="kpis.avgWaitHours" /> h</div>
-                </div>
-            </div>
-
-            <div class="o_hlp_dash_grid">
-                <div class="o_hlp_dash_card full">
-                    <div class="card-head">
-                        <div>
-                            <h2>Top 10 tickets más demorados</h2>
-                            <div class="sub">Tickets abiertos con más horas laborales de espera desde su creación</div>
-                        </div>
+            <t t-if="view === 'open'">
+                <div class="o_hlp_dash_kpi_row">
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">Tickets abiertos</div>
+                        <div class="value"><t t-esc="kpis.openCount" /> <span class="pct">(<t t-esc="kpis.openPct" />%)</span></div>
                     </div>
-                    <t t-if="topDelayed.length">
-                        <table class="o_hlp_dash_table">
-                            <thead>
-                                <tr>
-                                    <th>Número</th>
-                                    <th>Título</th>
-                                    <th>Categoría</th>
-                                    <th>Cliente</th>
-                                    <th>Usuario</th>
-                                    <th class="num">Horas de espera</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr t-foreach="topDelayed" t-as="row" t-key="row.number">
-                                    <td><t t-esc="row.number" /></td>
-                                    <td><t t-esc="row.name" /></td>
-                                    <td><t t-esc="row.category" /></td>
-                                    <td><t t-esc="row.partner" /></td>
-                                    <td><t t-esc="row.user" /></td>
-                                    <td class="num"><t t-esc="row.waiting_hours" /> h</td>
-                                    <td>
-                                        <span t-attf-class="pill #{row.statusClass}"><t t-esc="row.statusLabel" /></span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </t>
-                    <t t-if="!topDelayed.length">
-                        <div class="o_hlp_dash_empty">No hay tickets abiertos.</div>
-                    </t>
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">🟢 En tiempo</div>
+                        <div class="value"><t t-esc="kpis.green" /> <span class="pct">(<t t-esc="kpis.greenPct" />%)</span></div>
+                    </div>
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">🟡 Próx. a vencer</div>
+                        <div class="value"><t t-esc="kpis.yellow" /> <span class="pct">(<t t-esc="kpis.yellowPct" />%)</span></div>
+                    </div>
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">🔴 Vencidos</div>
+                        <div t-attf-class="value #{kpis.red > 0 ? 'tone-critical' : ''}"><t t-esc="kpis.red" /> <span class="pct">(<t t-esc="kpis.redPct" />%)</span></div>
+                    </div>
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">Tiempo prom. de espera</div>
+                        <div class="value"><t t-esc="kpis.avgWaitHours" /> h</div>
+                    </div>
                 </div>
-            </div>
+
+                <div class="o_hlp_dash_grid">
+                    <div class="o_hlp_dash_card full">
+                        <div class="card-head">
+                            <div>
+                                <h2>Top 10 tickets más demorados</h2>
+                                <div class="sub">Tickets abiertos con más horas laborales de espera desde su creación</div>
+                            </div>
+                        </div>
+                        <t t-if="topDelayed.length">
+                            <table class="o_hlp_dash_table">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Título</th>
+                                        <th>Categoría</th>
+                                        <th>Cliente</th>
+                                        <th>Usuario</th>
+                                        <th class="num">Horas de espera</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="topDelayed" t-as="row" t-key="row.number">
+                                        <td><t t-esc="row.number" /></td>
+                                        <td><t t-esc="row.name" /></td>
+                                        <td><t t-esc="row.category" /></td>
+                                        <td><t t-esc="row.partner" /></td>
+                                        <td><t t-esc="row.user" /></td>
+                                        <td class="num"><t t-esc="row.hours" /> h</td>
+                                        <td><span t-attf-class="pill #{row.statusClass}"><t t-esc="row.statusLabel" /></span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+                        <t t-if="!topDelayed.length">
+                            <div class="o_hlp_dash_empty">No hay tickets abiertos.</div>
+                        </t>
+                    </div>
+                </div>
+            </t>
+
+            <t t-if="view === 'done'">
+                <div class="o_hlp_dash_kpi_row">
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">Tickets hechos</div>
+                        <div class="value"><t t-esc="kpis.doneCount" /> <span class="pct">(<t t-esc="kpis.donePct" />%)</span></div>
+                    </div>
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">Tiempo prom. de resolución</div>
+                        <div class="value"><t t-esc="kpis.avgResolutionHours" /> h</div>
+                    </div>
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">🟢 En tiempo</div>
+                        <div class="value"><t t-esc="kpis.green" /> <span class="pct">(<t t-esc="kpis.greenPct" />%)</span></div>
+                    </div>
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">🟡 Próx. a vencer</div>
+                        <div class="value"><t t-esc="kpis.yellow" /> <span class="pct">(<t t-esc="kpis.yellowPct" />%)</span></div>
+                    </div>
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">🔴 Vencidos al cerrar</div>
+                        <div t-attf-class="value #{kpis.red > 0 ? 'tone-critical' : ''}"><t t-esc="kpis.red" /> <span class="pct">(<t t-esc="kpis.redPct" />%)</span></div>
+                    </div>
+                </div>
+
+                <div class="o_hlp_dash_grid">
+                    <div class="o_hlp_dash_card full">
+                        <div class="card-head">
+                            <div>
+                                <h2>Top 10 mayor tiempo de resolución</h2>
+                                <div class="sub">Tickets cerrados con más horas laborales entre creación y cierre</div>
+                            </div>
+                        </div>
+                        <t t-if="topResolution.length">
+                            <table class="o_hlp_dash_table">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Título</th>
+                                        <th>Categoría</th>
+                                        <th>Cliente</th>
+                                        <th>Usuario</th>
+                                        <th class="num">Horas de resolución</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="topResolution" t-as="row" t-key="row.number">
+                                        <td><t t-esc="row.number" /></td>
+                                        <td><t t-esc="row.name" /></td>
+                                        <td><t t-esc="row.category" /></td>
+                                        <td><t t-esc="row.partner" /></td>
+                                        <td><t t-esc="row.user" /></td>
+                                        <td class="num"><t t-esc="row.hours" /> h</td>
+                                        <td><span t-attf-class="pill #{row.statusClass}"><t t-esc="row.statusLabel" /></span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+                        <t t-if="!topResolution.length">
+                            <div class="o_hlp_dash_empty">No hay tickets hechos en el período.</div>
+                        </t>
+                    </div>
+                </div>
+
+                <div class="o_hlp_dash_grid">
+                    <div class="o_hlp_dash_card full">
+                        <div class="card-head">
+                            <div>
+                                <h2>Top 10 vencidos con mayor demora</h2>
+                                <div class="sub">Tickets cerrados fuera de plazo, ordenados por horas laborales desde que vencieron</div>
+                            </div>
+                        </div>
+                        <t t-if="topOverdue.length">
+                            <table class="o_hlp_dash_table">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Título</th>
+                                        <th>Categoría</th>
+                                        <th>Cliente</th>
+                                        <th>Usuario</th>
+                                        <th class="num">Horas de demora</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="topOverdue" t-as="row" t-key="row.number">
+                                        <td><t t-esc="row.number" /></td>
+                                        <td><t t-esc="row.name" /></td>
+                                        <td><t t-esc="row.category" /></td>
+                                        <td><t t-esc="row.partner" /></td>
+                                        <td><t t-esc="row.user" /></td>
+                                        <td class="num"><t t-esc="row.hours" /> h</td>
+                                        <td><span t-attf-class="pill #{row.statusClass}"><t t-esc="row.statusLabel" /></span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </t>
+                        <t t-if="!topOverdue.length">
+                            <div class="o_hlp_dash_empty">No hay tickets vencidos en el período.</div>
+                        </t>
+                    </div>
+                </div>
+            </t>
 
             <div class="o_hlp_dash_grid">
                 <div class="o_hlp_dash_card">
                     <div class="card-head">
                         <div>
-                            <h2>Abiertos por categoría</h2>
+                            <h2>Por categoría</h2>
                             <div class="sub">Según filtros seleccionados</div>
                         </div>
                     </div>
@@ -120,30 +232,32 @@
                                     <th class="num">En tiempo</th>
                                     <th class="num">Próx. a vencer</th>
                                     <th class="num">Vencidos</th>
+                                    <t t-if="view === 'done'"><th class="num">T. prom.</th></t>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr t-foreach="categoryTable" t-as="row" t-key="row.id">
                                     <td><t t-esc="row.name" /></td>
                                     <td class="num"><t t-esc="row.total" /></td>
-                                    <td class="num"><t t-esc="row.green" /></td>
-                                    <td class="num"><t t-esc="row.yellow" /></td>
+                                    <td class="num"><t t-esc="row.green" /> <span class="pct">(<t t-esc="row.greenPct" />%)</span></td>
+                                    <td class="num"><t t-esc="row.yellow" /> <span class="pct">(<t t-esc="row.yellowPct" />%)</span></td>
                                     <td class="num">
-                                        <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /></span>
+                                        <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /> (<t t-esc="row.redPct" />%)</span>
                                     </td>
+                                    <t t-if="view === 'done'"><td class="num"><t t-esc="row.avg_resolution_hours" /> h</td></t>
                                 </tr>
                             </tbody>
                         </table>
                     </t>
                     <t t-if="!categoryTable.length">
-                        <div class="o_hlp_dash_empty">No hay tickets abiertos.</div>
+                        <div class="o_hlp_dash_empty">Sin datos.</div>
                     </t>
                 </div>
 
                 <div class="o_hlp_dash_card">
                     <div class="card-head">
                         <div>
-                            <h2>Abiertos por usuario asignado</h2>
+                            <h2>Por usuario asignado</h2>
                             <div class="sub">Según filtros seleccionados</div>
                         </div>
                     </div>
@@ -156,23 +270,25 @@
                                     <th class="num">En tiempo</th>
                                     <th class="num">Próx. a vencer</th>
                                     <th class="num">Vencidos</th>
+                                    <t t-if="view === 'done'"><th class="num">T. prom.</th></t>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr t-foreach="userTable" t-as="row" t-key="row.id">
                                     <td><t t-esc="row.name" /></td>
                                     <td class="num"><t t-esc="row.total" /></td>
-                                    <td class="num"><t t-esc="row.green" /></td>
-                                    <td class="num"><t t-esc="row.yellow" /></td>
+                                    <td class="num"><t t-esc="row.green" /> <span class="pct">(<t t-esc="row.greenPct" />%)</span></td>
+                                    <td class="num"><t t-esc="row.yellow" /> <span class="pct">(<t t-esc="row.yellowPct" />%)</span></td>
                                     <td class="num">
-                                        <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /></span>
+                                        <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /> (<t t-esc="row.redPct" />%)</span>
                                     </td>
+                                    <t t-if="view === 'done'"><td class="num"><t t-esc="row.avg_resolution_hours" /> h</td></t>
                                 </tr>
                             </tbody>
                         </table>
                     </t>
                     <t t-if="!userTable.length">
-                        <div class="o_hlp_dash_empty">No hay tickets abiertos.</div>
+                        <div class="o_hlp_dash_empty">Sin datos.</div>
                     </t>
                 </div>
             </div>
@@ -181,7 +297,7 @@
                 <div class="o_hlp_dash_card">
                     <div class="card-head">
                         <div>
-                            <h2>Abiertos por cliente</h2>
+                            <h2>Por cliente</h2>
                             <div class="sub">Según filtros seleccionados</div>
                         </div>
                     </div>
@@ -194,30 +310,32 @@
                                     <th class="num">En tiempo</th>
                                     <th class="num">Próx. a vencer</th>
                                     <th class="num">Vencidos</th>
+                                    <t t-if="view === 'done'"><th class="num">T. prom.</th></t>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr t-foreach="partnerTable" t-as="row" t-key="row.id">
                                     <td><t t-esc="row.name" /></td>
                                     <td class="num"><t t-esc="row.total" /></td>
-                                    <td class="num"><t t-esc="row.green" /></td>
-                                    <td class="num"><t t-esc="row.yellow" /></td>
+                                    <td class="num"><t t-esc="row.green" /> <span class="pct">(<t t-esc="row.greenPct" />%)</span></td>
+                                    <td class="num"><t t-esc="row.yellow" /> <span class="pct">(<t t-esc="row.yellowPct" />%)</span></td>
                                     <td class="num">
-                                        <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /></span>
+                                        <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /> (<t t-esc="row.redPct" />%)</span>
                                     </td>
+                                    <t t-if="view === 'done'"><td class="num"><t t-esc="row.avg_resolution_hours" /> h</td></t>
                                 </tr>
                             </tbody>
                         </table>
                     </t>
                     <t t-if="!partnerTable.length">
-                        <div class="o_hlp_dash_empty">No hay tickets abiertos.</div>
+                        <div class="o_hlp_dash_empty">Sin datos.</div>
                     </t>
                 </div>
 
                 <div class="o_hlp_dash_card">
                     <div class="card-head">
                         <div>
-                            <h2>Abiertos por prioridad</h2>
+                            <h2>Por prioridad</h2>
                             <div class="sub">Según filtros seleccionados</div>
                         </div>
                     </div>
@@ -230,29 +348,33 @@
                                     <th class="num">En tiempo</th>
                                     <th class="num">Próx. a vencer</th>
                                     <th class="num">Vencidos</th>
+                                    <t t-if="view === 'done'"><th class="num">T. prom.</th></t>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr t-foreach="priorityTable" t-as="row" t-key="row.id">
                                     <td><t t-esc="row.name" /></td>
                                     <td class="num"><t t-esc="row.total" /></td>
-                                    <td class="num"><t t-esc="row.green" /></td>
-                                    <td class="num"><t t-esc="row.yellow" /></td>
+                                    <td class="num"><t t-esc="row.green" /> <span class="pct">(<t t-esc="row.greenPct" />%)</span></td>
+                                    <td class="num"><t t-esc="row.yellow" /> <span class="pct">(<t t-esc="row.yellowPct" />%)</span></td>
                                     <td class="num">
-                                        <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /></span>
+                                        <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /> (<t t-esc="row.redPct" />%)</span>
                                     </td>
+                                    <t t-if="view === 'done'"><td class="num"><t t-esc="row.avg_resolution_hours" /> h</td></t>
                                 </tr>
                             </tbody>
                         </table>
                     </t>
                     <t t-if="!priorityTable.length">
-                        <div class="o_hlp_dash_empty">No hay tickets abiertos.</div>
+                        <div class="o_hlp_dash_empty">Sin datos.</div>
                     </t>
                 </div>
             </div>
 
             <p class="o_hlp_dash_note text-muted">
-                Los tiempos se calculan en horas laborales, según el horario configurado en Ajustes de Helpdesk. El rango de fechas filtra por fecha de creación del ticket.
+                Los tiempos se calculan en horas laborales, según el horario configurado en Ajustes de Helpdesk.
+                <t t-if="view === 'open'">El rango de fechas filtra por fecha de creación del ticket.</t>
+                <t t-if="view === 'done'">El rango de fechas filtra por fecha de cierre del ticket.</t>
             </p>
         </div>
     </t>
