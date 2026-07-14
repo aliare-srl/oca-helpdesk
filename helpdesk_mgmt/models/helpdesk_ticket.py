@@ -447,22 +447,7 @@ class HelpdeskTicket(models.Model):
             open_domain, "partner_id", _("Sin cliente")
         )
 
-        priority_labels = dict(self._fields["priority"].selection)
-        priority_order = [key for key, _label in self._fields["priority"].selection]
-        priority_data = Ticket.read_group(open_domain, ["id"], ["priority"], lazy=False)
-        priority_volume = sorted(
-            (
-                {
-                    "priority": row["priority"],
-                    "name": priority_labels.get(row["priority"], _("Sin prioridad")),
-                    "count": row["__count"],
-                }
-                for row in priority_data
-            ),
-            key=lambda r: priority_order.index(r["priority"])
-            if r["priority"] in priority_order
-            else 99,
-        )
+        priority_breakdown = self._build_priority_breakdown(open_domain)
 
         top_delayed = sorted(
             open_tickets, key=lambda t: waiting_hours[t.id], reverse=True
@@ -491,7 +476,7 @@ class HelpdeskTicket(models.Model):
             "category_breakdown": category_breakdown,
             "user_breakdown": user_breakdown,
             "partner_breakdown": partner_breakdown,
-            "priority_volume": priority_volume,
+            "priority_breakdown": priority_breakdown,
             "top_delayed": top_delayed_data,
         }
 
@@ -536,6 +521,44 @@ class HelpdeskTicket(models.Model):
                 }
             )
         result.sort(key=lambda r: r["total"], reverse=True)
+        return result
+
+    def _build_priority_breakdown(self, open_domain):
+        """Igual que _build_open_breakdown pero agrupado por prioridad
+        (Selection, no Many2one): mantiene siempre las 4 prioridades, en
+        orden Baja→Muy Alta, incluso con 0 tickets."""
+        Ticket = self.sudo()
+        priority_labels = dict(self._fields["priority"].selection)
+        priority_order = [key for key, _label in self._fields["priority"].selection]
+
+        totals = {
+            row["priority"]: row["__count"]
+            for row in Ticket.read_group(open_domain, ["id"], ["priority"], lazy=False)
+        }
+
+        status_counts = {}
+        for row in Ticket.read_group(
+            open_domain + [("sla_status", "in", ["green", "yellow", "red"])],
+            ["priority", "sla_status"],
+            ["priority", "sla_status"],
+            lazy=False,
+        ):
+            entry = status_counts.setdefault(row["priority"], {"green": 0, "yellow": 0, "red": 0})
+            entry[row["sla_status"]] += row["__count"]
+
+        result = []
+        for key in priority_order:
+            status = status_counts.get(key, {"green": 0, "yellow": 0, "red": 0})
+            result.append(
+                {
+                    "id": key,
+                    "name": priority_labels.get(key, key),
+                    "total": totals.get(key, 0),
+                    "green": status["green"],
+                    "yellow": status["yellow"],
+                    "red": status["red"],
+                }
+            )
         return result
 
     def assign_to_me(self):

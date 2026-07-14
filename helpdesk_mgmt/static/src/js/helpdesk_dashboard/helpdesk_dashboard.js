@@ -13,22 +13,12 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         quarter: 90,
     };
 
-    var PRIORITY_COLORS = [
-        'var(--hlp-seq-250)', 'var(--hlp-seq-350)', 'var(--hlp-seq-450)', 'var(--hlp-seq-550)',
-    ];
-
     function pad(n) {
         return String(n).padStart(2, '0');
     }
 
     function formatDateInput(d) {
         return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-    }
-
-    function truncateLabel(name, maxChars) {
-        if (!name) return '';
-        if (name.length <= maxChars) return name;
-        return name.slice(0, maxChars - 1) + '…';
     }
 
     function statusClass(status) {
@@ -176,18 +166,26 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         _prepareRenderData: function () {
             var data = this.data || {};
             var kpis = data.kpis || {};
+            var total = kpis.open_count || 0;
+            var pct = function (n) {
+                return total ? Math.round((n / total) * 1000) / 10 : 0;
+            };
             return {
                 kpis: {
-                    openCount: kpis.open_count || 0,
+                    openCount: total,
+                    openPct: total ? 100 : 0,
                     green: kpis.green || 0,
+                    greenPct: pct(kpis.green || 0),
                     yellow: kpis.yellow || 0,
+                    yellowPct: pct(kpis.yellow || 0),
                     red: kpis.red || 0,
+                    redPct: pct(kpis.red || 0),
                     avgWaitHours: kpis.avg_wait_hours || 0,
                 },
                 categoryTable: this._buildOpenBreakdownTable(data.category_breakdown || []),
                 userTable: this._buildOpenBreakdownTable(data.user_breakdown || []),
                 partnerTable: this._buildOpenBreakdownTable(data.partner_breakdown || []),
-                priorityBars: this._buildVerticalBars(data.priority_volume || [], PRIORITY_COLORS),
+                priorityTable: this._buildOpenBreakdownTable(data.priority_breakdown || []),
                 topDelayed: this._buildTopDelayed(data.top_delayed || []),
                 teams: this.teams,
                 categories: this.categories,
@@ -214,39 +212,6 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             });
         },
 
-        _buildVerticalBars: function (rows, colorSlots) {
-            if (!rows.length) {
-                return {hasData: false};
-            }
-            var maxVal = 0;
-            rows.forEach(function (r) {
-                maxVal = Math.max(maxVal, r.count);
-            });
-            var chartTop = 20, baseline = 160, barWidth = 42, gap = 20, xStart = 30;
-            var bars = rows.map(function (r, i) {
-                var h = maxVal ? (r.count / maxVal) * (baseline - chartTop) : 0;
-                var x = xStart + i * (barWidth + gap);
-                var y = baseline - h;
-                return {
-                    name: r.name,
-                    nameShort: truncateLabel(r.name, 9),
-                    count: r.count,
-                    x: x,
-                    width: barWidth,
-                    y: y.toFixed(1),
-                    labelY: (y - 6).toFixed(1),
-                    height: Math.max(h, 1).toFixed(1),
-                    color: colorSlots[i % colorSlots.length],
-                    centerX: x + barWidth / 2,
-                };
-            });
-            return {
-                hasData: true,
-                bars: bars,
-                width: xStart + rows.length * (barWidth + gap) + 20,
-                baseline: baseline,
-            };
-        },
     });
 
     core.action_registry.add('helpdesk_mgmt_dashboard', HelpdeskDashboard);

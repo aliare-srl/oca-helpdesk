@@ -41,19 +41,19 @@
             <div class="o_hlp_dash_kpi_row">
                 <div class="o_hlp_dash_tile">
                     <div class="label">Tickets abiertos</div>
-                    <div class="value"><t t-esc="kpis.openCount" /></div>
+                    <div class="value"><t t-esc="kpis.openCount" /> <span class="pct">(<t t-esc="kpis.openPct" />%)</span></div>
                 </div>
                 <div class="o_hlp_dash_tile">
                     <div class="label">🟢 En tiempo</div>
-                    <div class="value"><t t-esc="kpis.green" /></div>
+                    <div class="value"><t t-esc="kpis.green" /> <span class="pct">(<t t-esc="kpis.greenPct" />%)</span></div>
                 </div>
                 <div class="o_hlp_dash_tile">
                     <div class="label">🟡 Próx. a vencer</div>
-                    <div class="value"><t t-esc="kpis.yellow" /></div>
+                    <div class="value"><t t-esc="kpis.yellow" /> <span class="pct">(<t t-esc="kpis.yellowPct" />%)</span></div>
                 </div>
                 <div class="o_hlp_dash_tile">
                     <div class="label">🔴 Vencidos</div>
-                    <div t-attf-class="value #{kpis.red > 0 ? 'tone-critical' : ''}"><t t-esc="kpis.red" /></div>
+                    <div t-attf-class="value #{kpis.red > 0 ? 'tone-critical' : ''}"><t t-esc="kpis.red" /> <span class="pct">(<t t-esc="kpis.redPct" />%)</span></div>
                 </div>
                 <div class="o_hlp_dash_tile">
                     <div class="label">Tiempo prom. de espera</div>
@@ -217,21 +217,35 @@
                 <div class="o_hlp_dash_card">
                     <div class="card-head">
                         <div>
-                            <h2>Tickets abiertos por prioridad</h2>
+                            <h2>Abiertos por prioridad</h2>
                             <div class="sub">Según filtros seleccionados</div>
                         </div>
                     </div>
-                    <t t-if="priorityBars.hasData">
-                        <svg t-attf-viewBox="0 0 #{priorityBars.width} 190" preserveAspectRatio="xMidYMid meet">
-                            <line class="baseline-line" x1="10" t-att-y1="priorityBars.baseline" t-attf-x2="#{priorityBars.width - 10}" t-att-y2="priorityBars.baseline" />
-                            <t t-foreach="priorityBars.bars" t-as="bar" t-key="bar_index">
-                                <rect t-attf-fill="#{bar.color}" t-att-x="bar.x" t-att-y="bar.y" t-att-width="bar.width" t-att-height="bar.height" rx="3" />
-                                <text class="data-label" text-anchor="middle" t-att-x="bar.centerX" t-att-y="bar.labelY"><t t-esc="bar.count" /></text>
-                                <text class="axis-label" text-anchor="middle" t-att-x="bar.centerX" t-attf-y="#{priorityBars.baseline + 16}"><t t-esc="bar.nameShort" /><title><t t-esc="bar.name" /></title></text>
-                            </t>
-                        </svg>
+                    <t t-if="priorityTable.length">
+                        <table class="o_hlp_dash_table">
+                            <thead>
+                                <tr>
+                                    <th>Prioridad</th>
+                                    <th class="num">Total</th>
+                                    <th class="num">En tiempo</th>
+                                    <th class="num">Próx. a vencer</th>
+                                    <th class="num">Vencidos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="priorityTable" t-as="row" t-key="row.id">
+                                    <td><t t-esc="row.name" /></td>
+                                    <td class="num"><t t-esc="row.total" /></td>
+                                    <td class="num"><t t-esc="row.green" /></td>
+                                    <td class="num"><t t-esc="row.yellow" /></td>
+                                    <td class="num">
+                                        <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /></span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </t>
-                    <t t-if="!priorityBars.hasData">
+                    <t t-if="!priorityTable.length">
                         <div class="o_hlp_dash_empty">No hay tickets abiertos.</div>
                     </t>
                 </div>
