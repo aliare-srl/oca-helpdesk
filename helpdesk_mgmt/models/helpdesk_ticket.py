@@ -180,6 +180,27 @@ class HelpdeskTicket(models.Model):
     )
     sla_yellow_sent = fields.Boolean(default=False)
     sla_red_sent = fields.Boolean(default=False)
+    sla_status_at_close = fields.Selection(
+        selection=[
+            ("green", "\U0001F7E2 En Tiempo"),
+            ("yellow", "\U0001F7E1 Próximo a Vencer"),
+            ("red", "\U0001F534 Vencido"),
+        ],
+        string="Estado SLA al Cierre",
+        copy=False,
+        help="Color de SLA que tenía el ticket justo antes de cerrarse. "
+        "Se fija una sola vez y no cambia aunque el ticket se reabra.",
+    )
+    resolution_hours = fields.Float(
+        string="Horas hasta Resolución",
+        compute="_compute_resolution_hours",
+        store=True,
+    )
+    assignment_hours = fields.Float(
+        string="Horas hasta Asignación",
+        compute="_compute_assignment_hours",
+        store=True,
+    )
     portal_notification_sent = fields.Boolean(
         string="Notificación de portal enviada",
         default=False,
@@ -206,11 +227,36 @@ class HelpdeskTicket(models.Model):
                     hours=config[0].hours
                 )
 
+    @api.depends("closed_date", "create_date")
+    def _compute_resolution_hours(self):
+        for ticket in self:
+            if ticket.closed_date and ticket.create_date:
+                delta = ticket.closed_date - ticket.create_date
+                ticket.resolution_hours = delta.total_seconds() / 3600.0
+            else:
+                ticket.resolution_hours = 0.0
+
+    @api.depends("assigned_date", "create_date")
+    def _compute_assignment_hours(self):
+        for ticket in self:
+            if ticket.assigned_date and ticket.create_date:
+                delta = ticket.assigned_date - ticket.create_date
+                ticket.assignment_hours = delta.total_seconds() / 3600.0
+            else:
+                ticket.assignment_hours = 0.0
+
     def _update_sla_status(self):
         now = fields.Datetime.now()
         for ticket in self:
             if ticket.stage_id.closed:
-                ticket.with_context(skip_sla_update=True).write({"sla_status": "done"})
+                vals = {"sla_status": "done"}
+                if not ticket.sla_status_at_close and ticket.sla_status in (
+                    "green",
+                    "yellow",
+                    "red",
+                ):
+                    vals["sla_status_at_close"] = ticket.sla_status
+                ticket.with_context(skip_sla_update=True).write(vals)
                 continue
             if not ticket.fecha_limite or not ticket.create_date:
                 ticket.with_context(skip_sla_update=True).write({"sla_status": False})
@@ -326,6 +372,284 @@ class HelpdeskTicket(models.Model):
                 "pct": pct,
             })
         return result
+
+    @api.model
+    def get_dashboard_data(self, date_from=None, date_to=None, team_id=None, category_id=None):
+        """Datos agregados para el panel de Cumplimiento y Rendimiento."""
+        if not self.env.user.has_group("helpdesk_mgmt.group_helpdesk_manager"):
+            raise AccessError(_("No tiene permisos para ver el panel de cumplimiento."))
+        Ticket = self.sudo()
+        team_id = int(team_id) if team_id else False
+        category_id = int(category_id) if category_id else False
+        base_domain = []
+        if team_id:
+            base_domain.append(("team_id", "=", team_id))
+        if category_id:
+            base_domain.append(("category_id", "=", category_id))
+
+        created_domain = list(base_domain)
+        if date_from:
+            created_domain.append(("create_date", ">=", date_from))
+        if date_to:
+            created_domain.append(("create_date", "<=", date_to))
+
+        closed_domain = list(base_domain) + [("closed_date", "!=", False)]
+        if date_from:
+            closed_domain.append(("closed_date", ">=", date_from))
+        if date_to:
+            closed_domain.append(("closed_date", "<=", date_to))
+
+        open_domain = list(base_domain) + [("closed", "=", False)]
+
+        # --- KPIs ---
+        closed_with_sla = Ticket.search(closed_domain + [("sla_status_at_close", "!=", False)])
+        closed_count = len(closed_with_sla)
+        compliant_count = len(
+            closed_with_sla.filtered(lambda t: t.sla_status_at_close != "red")
+        )
+        sla_compliance_pct = (
+            round(compliant_count / closed_count * 100, 1) if closed_count else 0.0
+        )
+
+        overdue_now = Ticket.search_count(open_domain + [("sla_status", "=", "red")])
+        open_count = Ticket.search_count(open_domain)
+
+        closed_in_range = Ticket.search(closed_domain)
+        avg_resolution = (
+            round(sum(closed_in_range.mapped("resolution_hours")) / len(closed_in_range), 1)
+            if closed_in_range
+            else 0.0
+        )
+        assigned_in_range = Ticket.search(created_domain + [("assigned_date", "!=", False)])
+        avg_assignment = (
+            round(sum(assigned_in_range.mapped("assignment_hours")) / len(assigned_in_range), 1)
+            if assigned_in_range
+            else 0.0
+        )
+
+        # --- Tendencia semanal: creados vs cerrados ---
+        created_weekly = Ticket.read_group(
+            created_domain, ["create_date"], ["create_date:week"], lazy=False
+        )
+        closed_weekly = Ticket.read_group(
+            closed_domain, ["closed_date"], ["closed_date:week"], lazy=False
+        )
+        trend = self._merge_weekly_trend(created_weekly, closed_weekly)
+
+        # --- Cumplimiento SLA por equipo ---
+        sla_rows = Ticket.read_group(
+            closed_domain + [("sla_status_at_close", "!=", False)],
+            ["team_id", "sla_status_at_close"],
+            ["team_id", "sla_status_at_close"],
+            lazy=False,
+        )
+        sla_by_team = self._build_sla_by_team(sla_rows)
+
+        # --- Volumen por categoría ---
+        category_data = Ticket.read_group(created_domain, ["id"], ["category_id"], lazy=False)
+        category_volume = sorted(
+            (
+                {
+                    "name": row["category_id"][1] if row["category_id"] else _("Sin categoría"),
+                    "count": row["__count"],
+                }
+                for row in category_data
+            ),
+            key=lambda r: r["count"],
+            reverse=True,
+        )
+
+        # --- Tickets abiertos por prioridad ---
+        priority_labels = dict(self._fields["priority"].selection)
+        priority_order = [key for key, _label in self._fields["priority"].selection]
+        priority_data = Ticket.read_group(open_domain, ["id"], ["priority"], lazy=False)
+        priority_volume = sorted(
+            (
+                {
+                    "priority": row["priority"],
+                    "name": priority_labels.get(row["priority"], _("Sin prioridad")),
+                    "count": row["__count"],
+                }
+                for row in priority_data
+            ),
+            key=lambda r: priority_order.index(r["priority"])
+            if r["priority"] in priority_order
+            else 99,
+        )
+
+        # --- Detalle por equipo ---
+        team_table = self._build_team_table(base_domain, created_domain, closed_domain, open_domain)
+
+        # --- Variación vs. período anterior de igual duración ---
+        kpis_prev = self._get_previous_period_kpis(base_domain, date_from, date_to)
+
+        return {
+            "kpis": {
+                "sla_compliance_pct": sla_compliance_pct,
+                "overdue_now": overdue_now,
+                "avg_resolution_hours": avg_resolution,
+                "avg_assignment_hours": avg_assignment,
+                "open_count": open_count,
+            },
+            "kpis_prev": kpis_prev,
+            "trend": trend,
+            "sla_by_team": sla_by_team,
+            "category_volume": category_volume,
+            "priority_volume": priority_volume,
+            "team_table": team_table,
+        }
+
+    def _get_previous_period_kpis(self, base_domain, date_from, date_to):
+        """Mismas 3 métricas de período (compliance, t. resolución, t. asignación)
+        para el tramo inmediatamente anterior, de igual duración, para calcular deltas.
+        No aplica a métricas de foto actual (vencidos ahora, abiertos ahora)."""
+        if not date_from or not date_to:
+            return {}
+        Ticket = self.sudo()
+        dt_from = fields.Datetime.from_string(date_from)
+        dt_to = fields.Datetime.from_string(date_to)
+        duration = dt_to - dt_from
+        if duration.total_seconds() <= 0:
+            return {}
+        prev_from = fields.Datetime.to_string(dt_from - duration)
+        prev_to = fields.Datetime.to_string(dt_from)
+
+        prev_closed_domain = list(base_domain) + [
+            ("closed_date", "!=", False),
+            ("closed_date", ">=", prev_from),
+            ("closed_date", "<=", prev_to),
+        ]
+        prev_closed_with_sla = Ticket.search(
+            prev_closed_domain + [("sla_status_at_close", "!=", False)]
+        )
+        prev_closed_count = len(prev_closed_with_sla)
+        prev_compliant = len(
+            prev_closed_with_sla.filtered(lambda t: t.sla_status_at_close != "red")
+        )
+
+        prev_created_domain = list(base_domain) + [
+            ("create_date", ">=", prev_from),
+            ("create_date", "<=", prev_to),
+        ]
+        prev_assigned = Ticket.search(prev_created_domain + [("assigned_date", "!=", False)])
+
+        return {
+            "sla_compliance_pct": round(prev_compliant / prev_closed_count * 100, 1)
+            if prev_closed_count
+            else 0.0,
+            "avg_resolution_hours": round(
+                sum(prev_closed_with_sla.mapped("resolution_hours")) / prev_closed_count, 1
+            )
+            if prev_closed_count
+            else 0.0,
+            "avg_assignment_hours": round(
+                sum(prev_assigned.mapped("assignment_hours")) / len(prev_assigned), 1
+            )
+            if prev_assigned
+            else 0.0,
+        }
+
+    def _merge_weekly_trend(self, created_weekly, closed_weekly):
+        def as_map(rows, range_key):
+            result = {}
+            for row in rows:
+                date_range = (row.get("__range") or {}).get(range_key)
+                start = date_range["from"] if date_range else None
+                if start:
+                    result[start] = row["__count"]
+            return result
+
+        created_map = as_map(created_weekly, "create_date:week")
+        closed_map = as_map(closed_weekly, "closed_date:week")
+        starts = sorted(set(created_map) | set(closed_map))
+        return [
+            {
+                "week": start[:10],
+                "created": created_map.get(start, 0),
+                "closed": closed_map.get(start, 0),
+            }
+            for start in starts
+        ]
+
+    def _build_sla_by_team(self, sla_rows):
+        teams = {}
+        for row in sla_rows:
+            team = row["team_id"]
+            team_id = team[0] if team else 0
+            team_name = team[1] if team else _("Sin equipo")
+            entry = teams.setdefault(
+                team_id,
+                {"team_id": team_id, "team_name": team_name, "green": 0, "yellow": 0, "red": 0},
+            )
+            entry[row["sla_status_at_close"]] = (
+                entry.get(row["sla_status_at_close"], 0) + row["__count"]
+            )
+        result = []
+        for entry in teams.values():
+            total = entry["green"] + entry["yellow"] + entry["red"]
+            compliant = entry["green"] + entry["yellow"]
+            result.append(
+                {
+                    "team_id": entry["team_id"],
+                    "team_name": entry["team_name"],
+                    "total": total,
+                    "compliance_pct": round(compliant / total * 100, 1) if total else 0.0,
+                }
+            )
+        result.sort(key=lambda r: r["compliance_pct"], reverse=True)
+        return result
+
+    def _build_team_table(self, base_domain, created_domain, closed_domain, open_domain):
+        Ticket = self.sudo()
+
+        totals = {}
+        team_names = {}
+        for row in Ticket.read_group(created_domain, ["id"], ["team_id"], lazy=False):
+            tid = row["team_id"][0] if row["team_id"] else 0
+            totals[tid] = row["__count"]
+            team_names[tid] = row["team_id"][1] if row["team_id"] else _("Sin equipo")
+
+        resolved = {}
+        avg_hours = {}
+        for row in Ticket.read_group(
+            closed_domain, ["resolution_hours:avg"], ["team_id"], lazy=False
+        ):
+            tid = row["team_id"][0] if row["team_id"] else 0
+            resolved[tid] = row["__count"]
+            avg_hours[tid] = round(row["resolution_hours"] or 0.0, 1)
+            team_names.setdefault(tid, row["team_id"][1] if row["team_id"] else _("Sin equipo"))
+
+        overdue = {}
+        for row in Ticket.read_group(
+            open_domain + [("sla_status", "=", "red")], ["id"], ["team_id"], lazy=False
+        ):
+            tid = row["team_id"][0] if row["team_id"] else 0
+            overdue[tid] = row["__count"]
+            team_names.setdefault(tid, row["team_id"][1] if row["team_id"] else _("Sin equipo"))
+
+        sla_rows = Ticket.read_group(
+            closed_domain + [("sla_status_at_close", "!=", False)],
+            ["team_id", "sla_status_at_close"],
+            ["team_id", "sla_status_at_close"],
+            lazy=False,
+        )
+        compliance = {r["team_id"]: r["compliance_pct"] for r in self._build_sla_by_team(sla_rows)}
+
+        team_ids = set(totals) | set(resolved) | set(overdue)
+        table = [
+            {
+                "team_id": tid,
+                "team_name": team_names.get(tid, _("Sin equipo")),
+                "total": totals.get(tid, 0),
+                "resolved": resolved.get(tid, 0),
+                "avg_resolution_hours": avg_hours.get(tid, 0.0),
+                "compliance_pct": compliance.get(tid, 0.0),
+                "overdue_now": overdue.get(tid, 0),
+            }
+            for tid in team_ids
+        ]
+        table.sort(key=lambda r: r["total"], reverse=True)
+        return table
 
     def assign_to_me(self):
         self.write({"user_id": self.env.user.id})

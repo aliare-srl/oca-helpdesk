@@ -4,7 +4,7 @@
     "name": "Helpdesk Management",
     "summary": """
         Helpdesk""",
-    "version": "15.0.4.5.1",
+    "version": "15.0.4.6.0",
     "license": "AGPL-3",
     "category": "After-Sales",
     "author": "AdaptiveCity, "
@@ -39,11 +39,16 @@
     "assets": {
         "web.assets_backend": [
             "helpdesk_mgmt/static/src/css/helpdesk_styles.css",
+            "helpdesk_mgmt/static/src/css/helpdesk_dashboard.css",
             "helpdesk_mgmt/static/src/js/helpdesk_tab_fix.js",
             "helpdesk_mgmt/static/src/js/helpdesk_list_tab_add.js",
             "helpdesk_mgmt/static/src/js/helpdesk_list_save_reload.js",
             "helpdesk_mgmt/static/src/js/helpdesk_sla_notifications.js",
             "helpdesk_mgmt/static/src/js/notification_handler.js",
+            "helpdesk_mgmt/static/src/js/helpdesk_dashboard/helpdesk_dashboard.js",
+        ],
+        "web.assets_qweb": [
+            "helpdesk_mgmt/static/src/xml/helpdesk_dashboard.xml",
         ],
         "web.assets_frontend": [
             "helpdesk_mgmt/static/src/js/new_ticket.js",

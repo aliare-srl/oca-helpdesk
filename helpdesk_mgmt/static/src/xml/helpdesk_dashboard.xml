@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <t t-name="helpdesk_mgmt.Dashboard">
+        <div class="o_hlp_dashboard">
+
+            <header class="o_hlp_dash_head">
+                <h1>Mesa de Ayuda — Cumplimiento y Rendimiento</h1>
+                <p class="text-muted">Panel de KPIs sobre helpdesk.ticket</p>
+            </header>
+
+            <div class="o_hlp_dash_filters">
+                <span t-attf-class="o_hlp_dash_chip #{preset === 'today' ? 'active' : ''}" data-preset="today">Hoy</span>
+                <span t-attf-class="o_hlp_dash_chip #{preset === '7d' ? 'active' : ''}" data-preset="7d">Últimos 7 días</span>
+                <span t-attf-class="o_hlp_dash_chip #{preset === '30d' ? 'active' : ''}" data-preset="30d">Últimos 30 días</span>
+                <span t-attf-class="o_hlp_dash_chip #{preset === 'quarter' ? 'active' : ''}" data-preset="quarter">Este trimestre</span>
+                <select class="o_hlp_dash_select o_hlp_dash_team">
+                    <option value="">Todos los equipos</option>
+                    <t t-foreach="teams" t-as="team" t-key="team.id">
+                        <option t-att-value="team.id" t-att-selected="teamId and teamId == String(team.id) ? 'selected' : undefined">
+                            <t t-esc="team.name" />
+                        </option>
+                    </t>
+                </select>
+                <select class="o_hlp_dash_select o_hlp_dash_category">
+                    <option value="">Todas las categorías</option>
+                    <t t-foreach="categories" t-as="cat" t-key="cat.id">
+                        <option t-att-value="cat.id" t-att-selected="categoryId and categoryId == String(cat.id) ? 'selected' : undefined">
+                            <t t-esc="cat.name" />
+                        </option>
+                    </t>
+                </select>
+            </div>
+
+            <div class="o_hlp_dash_kpi_row">
+                <div class="o_hlp_dash_tile">
+                    <div class="label">Cumplimiento SLA</div>
+                    <div class="value"><t t-esc="kpis.slaCompliance" />%</div>
+                    <t t-if="kpis.slaComplianceDelta">
+                        <div t-attf-class="delta #{kpis.slaComplianceDelta.good ? 'good' : 'bad'}">
+                            <t t-esc="kpis.slaComplianceDelta.label" />
+                        </div>
+                    </t>
+                </div>
+                <div class="o_hlp_dash_tile">
+                    <div class="label">Tickets vencidos (ahora)</div>
+                    <div t-attf-class="value #{kpis.overdueNow > 0 ? 'tone-critical' : ''}"><t t-esc="kpis.overdueNow" /></div>
+                </div>
+                <div class="o_hlp_dash_tile">
+                    <div class="label">Tiempo prom. resolución</div>
+                    <div class="value"><t t-esc="kpis.avgResolution" /> h</div>
+                    <t t-if="kpis.avgResolutionDelta">
+                        <div t-attf-class="delta #{kpis.avgResolutionDelta.good ? 'good' : 'bad'}">
+                            <t t-esc="kpis.avgResolutionDelta.label" />
+                        </div>
+                    </t>
+                </div>
+                <div class="o_hlp_dash_tile">
+                    <div class="label">Tiempo prom. asignación</div>
+                    <div class="value"><t t-esc="kpis.avgAssignment" /> h</div>
+                    <t t-if="kpis.avgAssignmentDelta">
+                        <div t-attf-class="delta #{kpis.avgAssignmentDelta.good ? 'good' : 'bad'}">
+                            <t t-esc="kpis.avgAssignmentDelta.label" />
+                        </div>
+                    </t>
+                </div>
+                <div class="o_hlp_dash_tile">
+                    <div class="label">Tickets abiertos</div>
+                    <div class="value"><t t-esc="kpis.openCount" /></div>
+                </div>
+            </div>
+
+            <div class="o_hlp_dash_grid">
+                <div class="o_hlp_dash_card full">
+                    <div class="card-head">
+                        <div>
+                            <h2>Tickets creados vs. cerrados</h2>
+                            <div class="sub">Tendencia semanal según filtros seleccionados</div>
+                        </div>
+                        <button type="button" class="o_hlp_dash_toggle_btn o_hlp_dash_trend_toggle">Ver tabla</button>
+                    </div>
+                    <t t-if="trend.hasData">
+                        <div class="legend">
+                            <span class="item"><span class="swatch line series-1" />Creados</span>
+                            <span class="item"><span class="swatch line series-2" />Cerrados</span>
+                        </div>
+                        <svg class="o_hlp_dash_trend_svg" viewBox="0 0 620 230" preserveAspectRatio="xMidYMid meet">
+                            <t t-foreach="trend.gridLines" t-as="gl" t-key="gl_index">
+                                <line class="grid-line" x1="40" t-att-y1="gl.y" x2="580" t-att-y2="gl.y" />
+                                <text class="axis-label" x="8" t-att-y="Number(gl.y) + 4"><t t-esc="gl.value" /></text>
+                            </t>
+                            <polyline class="series-line series-1" fill="none" stroke-width="2" t-att-points="trend.createdPoints" />
+                            <polyline class="series-line series-2" fill="none" stroke-width="2" t-att-points="trend.closedPoints" />
+                            <circle class="dot series-1" t-att-cx="trend.lastX" t-att-cy="trend.lastCreatedY" r="3" />
+                            <circle class="dot series-2" t-att-cx="trend.lastX" t-att-cy="trend.lastClosedY" r="3" />
+                            <t t-foreach="trend.xLabels" t-as="xl" t-key="xl_index">
+                                <text class="axis-label" t-att-x="xl.x" y="216"><t t-esc="xl.label" /></text>
+                            </t>
+                        </svg>
+                        <table class="o_hlp_dash_table o_hlp_dash_trend_table d-none">
+                            <thead><tr><th>Semana</th><th class="num">Creados</th><th class="num">Cerrados</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="trend.rows" t-as="row" t-key="row_index">
+                                    <td><t t-esc="row.week" /></td>
+                                    <td class="num"><t t-esc="row.created" /></td>
+                                    <td class="num"><t t-esc="row.closed" /></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </t>
+                    <t t-if="!trend.hasData">
+                        <div class="o_hlp_dash_empty">No hay datos para el período seleccionado.</div>
+                    </t>
+                </div>
+            </div>
+
+            <div class="o_hlp_dash_grid">
+                <div class="o_hlp_dash_card">
+                    <div class="card-head">
+                        <div>
+                            <h2>Cumplimiento SLA por equipo</h2>
+                            <div class="sub">% de tickets cerrados dentro de plazo</div>
+                        </div>
+                    </div>
+                    <t t-if="slaByTeam.hasData">
+                        <svg t-attf-viewBox="0 0 460 #{slaByTeam.height}" preserveAspectRatio="xMidYMid meet">
+                            <line class="baseline-line" t-att-x1="slaByTeam.xStart" y1="4" t-att-x2="slaByTeam.xStart" t-attf-y2="#{slaByTeam.height - 20}" />
+                            <t t-foreach="slaByTeam.bars" t-as="bar" t-key="bar_index">
+                                <rect t-attf-class="bar #{bar.statusClass}" t-att-x="slaByTeam.xStart" t-att-y="bar.y" t-att-width="bar.width" height="16" rx="3" />
+                                <text class="data-label" t-attf-x="#{slaByTeam.xStart + Number(bar.width) + 10}" t-attf-y="#{Number(bar.y) + 12}"><t t-esc="bar.pct" />%</text>
+                                <text class="axis-label team-name" x="0" t-attf-y="#{Number(bar.y) + 12}"><t t-esc="bar.name" /></text>
+                            </t>
+                        </svg>
+                        <div class="legend">
+                            <span class="item"><span class="status-dot good" />En objetivo (≥90%)</span>
+                            <span class="item"><span class="status-dot warning" />Riesgo (75–89%)</span>
+                            <span class="item"><span class="status-dot critical" />Crítico (&lt;75%)</span>
+                        </div>
+                    </t>
+                    <t t-if="!slaByTeam.hasData">
+                        <div class="o_hlp_dash_empty">No hay tickets cerrados con SLA en el período.</div>
+                    </t>
+                </div>
+
+                <div class="o_hlp_dash_card">
+                    <div class="card-head">
+                        <div>
+                            <h2>Volumen de tickets por categoría</h2>
+                            <div class="sub">Según filtros seleccionados</div>
+                        </div>
+                    </div>
+                    <t t-if="categoryBars.hasData">
+                        <svg t-attf-viewBox="0 0 #{categoryBars.width} 190" preserveAspectRatio="xMidYMid meet">
+                            <line class="baseline-line" x1="10" t-att-y1="categoryBars.baseline" t-attf-x2="#{categoryBars.width - 10}" t-att-y2="categoryBars.baseline" />
+                            <t t-foreach="categoryBars.bars" t-as="bar" t-key="bar_index">
+                                <rect t-attf-fill="#{bar.color}" t-att-x="bar.x" t-att-y="bar.y" t-att-width="bar.width" t-att-height="bar.height" rx="3" />
+                                <text class="data-label" text-anchor="middle" t-att-x="bar.centerX" t-attf-y="#{Number(bar.y) - 6}"><t t-esc="bar.count" /></text>
+                                <text class="axis-label" text-anchor="middle" t-att-x="bar.centerX" t-attf-y="#{categoryBars.baseline + 16}"><t t-esc="bar.name" /></text>
+                            </t>
+                        </svg>
+                    </t>
+                    <t t-if="!categoryBars.hasData">
+                        <div class="o_hlp_dash_empty">Sin datos.</div>
+                    </t>
+                </div>
+            </div>
+
+            <div class="o_hlp_dash_grid">
+                <div class="o_hlp_dash_card">
+                    <div class="card-head">
+                        <div>
+                            <h2>Tickets abiertos por prioridad</h2>
+                            <div class="sub">Foto actual</div>
+                        </div>
+                    </div>
+                    <t t-if="priorityBars.hasData">
+                        <svg t-attf-viewBox="0 0 #{priorityBars.width} 190" preserveAspectRatio="xMidYMid meet">
+                            <line class="baseline-line" x1="10" t-att-y1="priorityBars.baseline" t-attf-x2="#{priorityBars.width - 10}" t-att-y2="priorityBars.baseline" />
+                            <t t-foreach="priorityBars.bars" t-as="bar" t-key="bar_index">
+                                <rect t-attf-fill="#{bar.color}" t-att-x="bar.x" t-att-y="bar.y" t-att-width="bar.width" t-att-height="bar.height" rx="3" />
+                                <text class="data-label" text-anchor="middle" t-att-x="bar.centerX" t-attf-y="#{Number(bar.y) - 6}"><t t-esc="bar.count" /></text>
+                                <text class="axis-label" text-anchor="middle" t-att-x="bar.centerX" t-attf-y="#{priorityBars.baseline + 16}"><t t-esc="bar.name" /></text>
+                            </t>
+                        </svg>
+                    </t>
+                    <t t-if="!priorityBars.hasData">
+                        <div class="o_hlp_dash_empty">No hay tickets abiertos.</div>
+                    </t>
+                </div>
+
+                <div class="o_hlp_dash_card">
+                    <div class="card-head">
+                        <div>
+                            <h2>Detalle por equipo</h2>
+                            <div class="sub">Según filtros seleccionados</div>
+                        </div>
+                    </div>
+                    <t t-if="teamTable.length">
+                        <table class="o_hlp_dash_table">
+                            <thead>
+                                <tr>
+                                    <th>Equipo</th>
+                                    <th class="num">Total</th>
+                                    <th class="num">Resueltos</th>
+                                    <th class="num">T. prom.</th>
+                                    <th>Cumplimiento</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="teamTable" t-as="row" t-key="row.team_id">
+                                    <td><t t-esc="row.team_name" /></td>
+                                    <td class="num"><t t-esc="row.total" /></td>
+                                    <td class="num"><t t-esc="row.resolved" /></td>
+                                    <td class="num"><t t-esc="row.avg_resolution_hours" /> h</td>
+                                    <td>
+                                        <span t-attf-class="pill #{row.complianceClass}">
+                                            ● <t t-esc="row.compliance_pct" />%
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </t>
+                    <t t-if="!teamTable.length">
+                        <div class="o_hlp_dash_empty">Sin datos.</div>
+                    </t>
+                </div>
+            </div>
+
+            <p class="o_hlp_dash_note text-muted">
+                Cumplimiento = tickets cerrados sin superar el plazo SLA. Los tiempos promedio se calculan sobre tickets del período seleccionado.
+            </p>
+        </div>
+    </t>
+
+</templates>
