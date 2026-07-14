@@ -13,10 +13,6 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         quarter: 90,
     };
 
-    var CATEGORY_COLORS = [
-        'var(--hlp-series-1)', 'var(--hlp-series-2)', 'var(--hlp-series-3)',
-        'var(--hlp-series-4)', 'var(--hlp-series-5)', 'var(--hlp-series-8)',
-    ];
     var PRIORITY_COLORS = [
         'var(--hlp-seq-250)', 'var(--hlp-seq-350)', 'var(--hlp-seq-450)', 'var(--hlp-seq-550)',
     ];
@@ -29,23 +25,24 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
     }
 
-    function formatWeekLabel(isoDate) {
-        if (!isoDate) return '';
-        var parts = isoDate.split('-');
-        if (parts.length !== 3) return isoDate;
-        return parts[2] + '/' + parts[1];
-    }
-
-    function slaStatusClass(pct) {
-        if (pct >= 90) return 'good';
-        if (pct >= 75) return 'warning';
-        return 'critical';
-    }
-
     function truncateLabel(name, maxChars) {
         if (!name) return '';
         if (name.length <= maxChars) return name;
         return name.slice(0, maxChars - 1) + '…';
+    }
+
+    function statusClass(status) {
+        if (status === 'green') return 'good';
+        if (status === 'yellow') return 'warning';
+        if (status === 'red') return 'critical';
+        return '';
+    }
+
+    function statusLabel(status) {
+        if (status === 'green') return 'En tiempo';
+        if (status === 'yellow') return 'Próx. a vencer';
+        if (status === 'red') return 'Vencido';
+        return 'Sin SLA';
     }
 
     var HelpdeskDashboard = AbstractAction.extend({
@@ -56,7 +53,6 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             'change .o_hlp_dash_date_to': '_onDateChange',
             'change .o_hlp_dash_team': '_onFilterChange',
             'change .o_hlp_dash_category': '_onFilterChange',
-            'click .o_hlp_dash_trend_toggle': '_onTrendToggle',
         },
 
         init: function (parent, action) {
@@ -141,9 +137,7 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             }
             var today = new Date();
             var from = new Date();
-            if (preset === 'today') {
-                // from = today
-            } else {
+            if (preset !== 'today') {
                 from.setDate(from.getDate() - days);
             }
             this.dateFrom = formatDateInput(from);
@@ -168,11 +162,6 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             this._reload();
         },
 
-        _onTrendToggle: function () {
-            this.$('.o_hlp_dash_trend_svg').toggleClass('d-none');
-            this.$('.o_hlp_dash_trend_table').toggleClass('d-none');
-        },
-
         _reload: function () {
             var self = this;
             return this._loadData().then(function () {
@@ -187,15 +176,19 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
         _prepareRenderData: function () {
             var data = this.data || {};
             var kpis = data.kpis || {};
-            var kpisPrev = data.kpis_prev || {};
             return {
-                kpis: this._buildKpiTiles(kpis, kpisPrev),
-                trend: this._buildTrend(data.trend || []),
-                categoryStackedBars: this._buildStackedBars(data.category_breakdown || []),
-                categoryTable: this._buildBreakdownTable(data.category_breakdown || []),
-                userTable: this._buildBreakdownTable(data.user_breakdown || []),
-                categoryBars: this._buildVerticalBars(data.category_volume || [], CATEGORY_COLORS),
+                kpis: {
+                    openCount: kpis.open_count || 0,
+                    green: kpis.green || 0,
+                    yellow: kpis.yellow || 0,
+                    red: kpis.red || 0,
+                    avgWaitHours: kpis.avg_wait_hours || 0,
+                },
+                categoryTable: this._buildOpenBreakdownTable(data.category_breakdown || []),
+                userTable: this._buildOpenBreakdownTable(data.user_breakdown || []),
+                partnerTable: this._buildOpenBreakdownTable(data.partner_breakdown || []),
                 priorityBars: this._buildVerticalBars(data.priority_volume || [], PRIORITY_COLORS),
+                topDelayed: this._buildTopDelayed(data.top_delayed || []),
                 teams: this.teams,
                 categories: this.categories,
                 dateFrom: this.dateFrom,
@@ -205,134 +198,20 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
             };
         },
 
-        _buildBreakdownTable: function (rows) {
+        _buildOpenBreakdownTable: function (rows) {
             return rows.map(function (row) {
-                return _.extend({}, row, {complianceClass: slaStatusClass(row.compliance_pct)});
+                var riskClass = row.red > 0 ? 'critical' : (row.yellow > 0 ? 'warning' : 'good');
+                return _.extend({}, row, {riskClass: riskClass});
             });
         },
 
-        _buildKpiTiles: function (kpis, prev) {
-            function delta(key, lowerIsBetter) {
-                if (!(key in prev)) {
-                    return null;
-                }
-                var diff = Math.round((kpis[key] - prev[key]) * 10) / 10;
-                if (diff === 0) {
-                    return {label: 'Sin cambios vs. período anterior', good: true};
-                }
-                var good = lowerIsBetter ? diff < 0 : diff > 0;
-                var arrow = diff > 0 ? '▲' : '▼';
-                return {
-                    label: arrow + ' ' + Math.abs(diff) + ' vs. período anterior',
-                    good: good,
-                };
-            }
-            return {
-                slaCompliance: kpis.sla_compliance_pct || 0,
-                slaComplianceDelta: delta('sla_compliance_pct', false),
-                overdueNow: kpis.overdue_now || 0,
-                avgResolution: kpis.avg_resolution_hours || 0,
-                avgResolutionDelta: delta('avg_resolution_hours', true),
-                avgAssignment: kpis.avg_assignment_hours || 0,
-                avgAssignmentDelta: delta('avg_assignment_hours', true),
-                openCount: kpis.open_count || 0,
-            };
-        },
-
-        _buildTrend: function (rows) {
-            if (!rows.length) {
-                return {hasData: false};
-            }
-            var maxVal = 1;
-            rows.forEach(function (r) {
-                maxVal = Math.max(maxVal, r.created, r.closed);
-            });
-            var top = Math.ceil(maxVal / 5) * 5 || 5;
-            var xStart = 40, xEnd = 580, yTop = 20, yBottom = 200;
-            var n = rows.length;
-            var stepX = n > 1 ? (xEnd - xStart) / (n - 1) : 0;
-            var scaleY = function (v) {
-                return (yBottom - (v / top) * (yBottom - yTop)).toFixed(1);
-            };
-            var createdPts = [];
-            var closedPts = [];
-            var xLabels = [];
-            rows.forEach(function (r, i) {
-                var x = (xStart + stepX * i).toFixed(1);
-                createdPts.push(x + ',' + scaleY(r.created));
-                closedPts.push(x + ',' + scaleY(r.closed));
-                xLabels.push({x: x, label: formatWeekLabel(r.week)});
-            });
-            var gridLines = [0.25, 0.5, 0.75, 1].map(function (f) {
-                var y = yBottom - f * (yBottom - yTop);
-                return {
-                    y: y.toFixed(1),
-                    labelY: (y + 4).toFixed(1),
-                    value: Math.round(top * f),
-                };
-            });
-            var last = rows[rows.length - 1];
-            return {
-                hasData: true,
-                createdPoints: createdPts.join(' '),
-                closedPoints: closedPts.join(' '),
-                xLabels: xLabels,
-                gridLines: gridLines,
-                lastX: (xStart + stepX * (n - 1)).toFixed(1),
-                lastCreatedY: scaleY(last.created),
-                lastClosedY: scaleY(last.closed),
-                lastCreated: last.created,
-                lastClosed: last.closed,
-                rows: rows,
-            };
-        },
-
-        _buildStackedBars: function (rows) {
-            if (!rows.length) {
-                return {hasData: false};
-            }
-            var maxTotal = 0;
-            rows.forEach(function (r) {
-                maxTotal = Math.max(maxTotal, r.green + r.yellow + r.red);
-            });
-            var xStart = 150, trackWidth = 250, rowH = 32;
-            var bars = rows.map(function (r, i) {
-                var withSla = r.green + r.yellow + r.red;
-                var barWidth = maxTotal ? (withSla / maxTotal) * trackWidth : 0;
-                var y = 10 + i * rowH;
-                var segments = [];
-                var cursor = xStart;
-                [
-                    ['good', r.green],
-                    ['warning', r.yellow],
-                    ['critical', r.red],
-                ].forEach(function (pair) {
-                    var segWidth = withSla ? (pair[1] / withSla) * barWidth : 0;
-                    if (segWidth > 0.5) {
-                        segments.push({
-                            x: cursor.toFixed(1),
-                            width: segWidth.toFixed(1),
-                            statusClass: pair[0],
-                        });
-                    }
-                    cursor += segWidth;
+        _buildTopDelayed: function (rows) {
+            return rows.map(function (row) {
+                return _.extend({}, row, {
+                    statusClass: statusClass(row.sla_status),
+                    statusLabel: statusLabel(row.sla_status),
                 });
-                return {
-                    name: r.name,
-                    nameShort: truncateLabel(r.name, 20),
-                    total: withSla,
-                    segments: segments,
-                    y: y,
-                    labelY: (y + 12).toFixed(1),
-                    totalLabelX: (xStart + barWidth + 10).toFixed(1),
-                };
             });
-            return {
-                bars: bars,
-                hasData: true,
-                height: 10 + rows.length * rowH + 10,
-                xStart: xStart,
-            };
         },
 
         _buildVerticalBars: function (rows, colorSlots) {

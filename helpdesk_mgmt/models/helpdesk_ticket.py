@@ -406,86 +406,47 @@ class HelpdeskTicket(models.Model):
 
     @api.model
     def get_dashboard_data(self, date_from=None, date_to=None, team_id=None, category_id=None):
-        """Datos agregados para el panel de Cumplimiento y Rendimiento."""
+        """Datos agregados para el panel de Tickets Abiertos: estado SLA
+        (verde/amarillo/rojo), tiempo de espera y desgloses por categoría,
+        usuario asignado y cliente. date_from/date_to filtran por fecha de
+        creación del ticket."""
         if not self.env.user.has_group("helpdesk_mgmt.group_helpdesk_manager"):
             raise AccessError(_("No tiene permisos para ver el panel de cumplimiento."))
         Ticket = self.sudo()
         team_id = int(team_id) if team_id else False
         category_id = int(category_id) if category_id else False
-        base_domain = []
+
+        open_domain = [("closed", "=", False)]
         if team_id:
-            base_domain.append(("team_id", "=", team_id))
+            open_domain.append(("team_id", "=", team_id))
         if category_id:
-            base_domain.append(("category_id", "=", category_id))
-
-        created_domain = list(base_domain)
+            open_domain.append(("category_id", "=", category_id))
         if date_from:
-            created_domain.append(("create_date", ">=", date_from))
+            open_domain.append(("create_date", ">=", date_from))
         if date_to:
-            created_domain.append(("create_date", "<=", date_to))
+            open_domain.append(("create_date", "<=", date_to))
 
-        closed_domain = list(base_domain) + [("closed_date", "!=", False)]
-        if date_from:
-            closed_domain.append(("closed_date", ">=", date_from))
-        if date_to:
-            closed_domain.append(("closed_date", "<=", date_to))
+        now = fields.Datetime.now()
+        open_tickets = Ticket.search(open_domain)
+        waiting_hours = {
+            ticket.id: ticket._work_hours_between(ticket.create_date, now)
+            for ticket in open_tickets
+        }
 
-        open_domain = list(base_domain) + [("closed", "=", False)]
+        total = len(open_tickets)
+        green = len(open_tickets.filtered(lambda t: t.sla_status == "green"))
+        yellow = len(open_tickets.filtered(lambda t: t.sla_status == "yellow"))
+        red = len(open_tickets.filtered(lambda t: t.sla_status == "red"))
+        avg_wait = round(sum(waiting_hours.values()) / total, 1) if total else 0.0
 
-        # --- KPIs ---
-        closed_with_sla = Ticket.search(closed_domain + [("sla_status_at_close", "!=", False)])
-        closed_count = len(closed_with_sla)
-        compliant_count = len(
-            closed_with_sla.filtered(lambda t: t.sla_status_at_close != "red")
+        category_breakdown = self._build_open_breakdown(
+            open_domain, "category_id", _("Sin categoría")
         )
-        sla_compliance_pct = (
-            round(compliant_count / closed_count * 100, 1) if closed_count else 0.0
-        )
-
-        overdue_now = Ticket.search_count(open_domain + [("sla_status", "=", "red")])
-        open_count = Ticket.search_count(open_domain)
-
-        closed_in_range = Ticket.search(closed_domain)
-        avg_resolution = (
-            round(sum(closed_in_range.mapped("resolution_hours")) / len(closed_in_range), 1)
-            if closed_in_range
-            else 0.0
-        )
-        assigned_in_range = Ticket.search(created_domain + [("assigned_date", "!=", False)])
-        avg_assignment = (
-            round(sum(assigned_in_range.mapped("assignment_hours")) / len(assigned_in_range), 1)
-            if assigned_in_range
-            else 0.0
+        user_breakdown = self._build_open_breakdown(open_domain, "user_id", _("Sin asignar"))
+        partner_breakdown = self._build_open_breakdown(
+            open_domain, "partner_id", _("Sin cliente")
         )
 
-        # --- Tendencia semanal: creados vs cerrados ---
-        created_weekly = Ticket.read_group(
-            created_domain, ["create_date"], ["create_date:week"], lazy=False
-        )
-        closed_weekly = Ticket.read_group(
-            closed_domain, ["closed_date"], ["closed_date:week"], lazy=False
-        )
-        trend = self._merge_weekly_trend(created_weekly, closed_weekly)
-
-        # --- Cumplimiento por categoría y por usuario asignado (tickets cerrados en el rango) ---
-        category_breakdown = self._build_breakdown(closed_domain, "category_id", _("Sin categoría"))
-        user_breakdown = self._build_breakdown(closed_domain, "user_id", _("Sin asignar"))
-
-        # --- Volumen por categoría ---
-        category_data = Ticket.read_group(created_domain, ["id"], ["category_id"], lazy=False)
-        category_volume = sorted(
-            (
-                {
-                    "name": row["category_id"][1] if row["category_id"] else _("Sin categoría"),
-                    "count": row["__count"],
-                }
-                for row in category_data
-            ),
-            key=lambda r: r["count"],
-            reverse=True,
-        )
-
-        # --- Tickets abiertos por prioridad ---
         priority_labels = dict(self._fields["priority"].selection)
         priority_order = [key for key, _label in self._fields["priority"].selection]
         priority_data = Ticket.read_group(open_domain, ["id"], ["priority"], lazy=False)
@@ -503,106 +464,46 @@ class HelpdeskTicket(models.Model):
             else 99,
         )
 
-        # --- Variación vs. período anterior de igual duración ---
-        kpis_prev = self._get_previous_period_kpis(base_domain, date_from, date_to)
+        top_delayed = sorted(
+            open_tickets, key=lambda t: waiting_hours[t.id], reverse=True
+        )[:10]
+        top_delayed_data = [
+            {
+                "number": ticket.number or "",
+                "name": ticket.name or "",
+                "category": ticket.category_id.name or _("Sin categoría"),
+                "partner": ticket.partner_id.name or ticket.partner_name or _("Sin cliente"),
+                "user": ticket.user_id.name or _("Sin asignar"),
+                "waiting_hours": round(waiting_hours[ticket.id], 1),
+                "sla_status": ticket.sla_status or False,
+            }
+            for ticket in top_delayed
+        ]
 
         return {
             "kpis": {
-                "sla_compliance_pct": sla_compliance_pct,
-                "overdue_now": overdue_now,
-                "avg_resolution_hours": avg_resolution,
-                "avg_assignment_hours": avg_assignment,
-                "open_count": open_count,
+                "open_count": total,
+                "green": green,
+                "yellow": yellow,
+                "red": red,
+                "avg_wait_hours": avg_wait,
             },
-            "kpis_prev": kpis_prev,
-            "trend": trend,
             "category_breakdown": category_breakdown,
             "user_breakdown": user_breakdown,
-            "category_volume": category_volume,
+            "partner_breakdown": partner_breakdown,
             "priority_volume": priority_volume,
+            "top_delayed": top_delayed_data,
         }
 
-    def _get_previous_period_kpis(self, base_domain, date_from, date_to):
-        """Mismas 3 métricas de período (compliance, t. resolución, t. asignación)
-        para el tramo inmediatamente anterior, de igual duración, para calcular deltas.
-        No aplica a métricas de foto actual (vencidos ahora, abiertos ahora)."""
-        if not date_from or not date_to:
-            return {}
-        Ticket = self.sudo()
-        dt_from = fields.Datetime.from_string(date_from)
-        dt_to = fields.Datetime.from_string(date_to)
-        duration = dt_to - dt_from
-        if duration.total_seconds() <= 0:
-            return {}
-        prev_from = fields.Datetime.to_string(dt_from - duration)
-        prev_to = fields.Datetime.to_string(dt_from)
-
-        prev_closed_domain = list(base_domain) + [
-            ("closed_date", "!=", False),
-            ("closed_date", ">=", prev_from),
-            ("closed_date", "<=", prev_to),
-        ]
-        prev_closed_with_sla = Ticket.search(
-            prev_closed_domain + [("sla_status_at_close", "!=", False)]
-        )
-        prev_closed_count = len(prev_closed_with_sla)
-        prev_compliant = len(
-            prev_closed_with_sla.filtered(lambda t: t.sla_status_at_close != "red")
-        )
-
-        prev_created_domain = list(base_domain) + [
-            ("create_date", ">=", prev_from),
-            ("create_date", "<=", prev_to),
-        ]
-        prev_assigned = Ticket.search(prev_created_domain + [("assigned_date", "!=", False)])
-
-        return {
-            "sla_compliance_pct": round(prev_compliant / prev_closed_count * 100, 1)
-            if prev_closed_count
-            else 0.0,
-            "avg_resolution_hours": round(
-                sum(prev_closed_with_sla.mapped("resolution_hours")) / prev_closed_count, 1
-            )
-            if prev_closed_count
-            else 0.0,
-            "avg_assignment_hours": round(
-                sum(prev_assigned.mapped("assignment_hours")) / len(prev_assigned), 1
-            )
-            if prev_assigned
-            else 0.0,
-        }
-
-    def _merge_weekly_trend(self, created_weekly, closed_weekly):
-        def as_map(rows, range_key):
-            result = {}
-            for row in rows:
-                date_range = (row.get("__range") or {}).get(range_key)
-                start = date_range["from"] if date_range else None
-                if start:
-                    result[start] = row["__count"]
-            return result
-
-        created_map = as_map(created_weekly, "create_date:week")
-        closed_map = as_map(closed_weekly, "closed_date:week")
-        starts = sorted(set(created_map) | set(closed_map))
-        return [
-            {
-                "week": start[:10],
-                "created": created_map.get(start, 0),
-                "closed": closed_map.get(start, 0),
-            }
-            for start in starts
-        ]
-
-    def _build_breakdown(self, closed_domain, groupby_field, no_group_label):
-        """Para tickets cerrados en closed_domain, agrupados por groupby_field
-        (category_id o user_id): total, cuántos verdes/amarillos/rojos y
-        tiempo promedio de resolución (horas laborales)."""
+    def _build_open_breakdown(self, open_domain, groupby_field, no_group_label):
+        """Para tickets abiertos (foto actual, no depende del rango de fechas)
+        agrupados por groupby_field: total y cuántos están verde/amarillo/rojo
+        ahora mismo."""
         Ticket = self.sudo()
 
         names = {}
         totals = {}
-        for row in Ticket.read_group(closed_domain, ["id"], [groupby_field], lazy=False):
+        for row in Ticket.read_group(open_domain, ["id"], [groupby_field], lazy=False):
             key = row[groupby_field]
             gid = key[0] if key else 0
             names[gid] = key[1] if key else no_group_label
@@ -610,29 +511,20 @@ class HelpdeskTicket(models.Model):
 
         status_counts = {}
         for row in Ticket.read_group(
-            closed_domain + [("sla_status_at_close", "!=", False)],
-            [groupby_field, "sla_status_at_close"],
-            [groupby_field, "sla_status_at_close"],
+            open_domain + [("sla_status", "in", ["green", "yellow", "red"])],
+            [groupby_field, "sla_status"],
+            [groupby_field, "sla_status"],
             lazy=False,
         ):
             key = row[groupby_field]
             gid = key[0] if key else 0
             names.setdefault(gid, key[1] if key else no_group_label)
             entry = status_counts.setdefault(gid, {"green": 0, "yellow": 0, "red": 0})
-            entry[row["sla_status_at_close"]] += row["__count"]
-
-        avg_hours = {}
-        for row in Ticket.read_group(
-            closed_domain, ["resolution_hours:avg"], [groupby_field], lazy=False
-        ):
-            key = row[groupby_field]
-            gid = key[0] if key else 0
-            avg_hours[gid] = round(row["resolution_hours"] or 0.0, 1)
+            entry[row["sla_status"]] += row["__count"]
 
         result = []
         for gid, total in totals.items():
             status = status_counts.get(gid, {"green": 0, "yellow": 0, "red": 0})
-            with_sla = status["green"] + status["yellow"] + status["red"]
             result.append(
                 {
                     "id": gid,
@@ -641,12 +533,6 @@ class HelpdeskTicket(models.Model):
                     "green": status["green"],
                     "yellow": status["yellow"],
                     "red": status["red"],
-                    "compliance_pct": round(
-                        (status["green"] + status["yellow"]) / with_sla * 100, 1
-                    )
-                    if with_sla
-                    else 0.0,
-                    "avg_resolution_hours": avg_hours.get(gid, 0.0),
                 }
             )
         result.sort(key=lambda r: r["total"], reverse=True)
