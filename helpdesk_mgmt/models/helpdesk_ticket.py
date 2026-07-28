@@ -442,6 +442,7 @@ class HelpdeskTicket(models.Model):
         green = len(open_tickets.filtered(lambda t: t.sla_status == "green"))
         yellow = len(open_tickets.filtered(lambda t: t.sla_status == "yellow"))
         red = len(open_tickets.filtered(lambda t: t.sla_status == "red"))
+        no_sla = total - green - yellow - red
         avg_wait = round(sum(waiting_hours.values()) / total, 1) if total else 0.0
 
         category_breakdown = self._build_breakdown(
@@ -467,6 +468,7 @@ class HelpdeskTicket(models.Model):
                 "green": green,
                 "yellow": yellow,
                 "red": red,
+                "no_sla": no_sla,
                 "avg_wait_hours": avg_wait,
             },
             "category_breakdown": category_breakdown,
@@ -493,6 +495,7 @@ class HelpdeskTicket(models.Model):
         green = len(closed_tickets.filtered(lambda t: t.sla_status_at_close == "green"))
         yellow = len(closed_tickets.filtered(lambda t: t.sla_status_at_close == "yellow"))
         red = len(closed_tickets.filtered(lambda t: t.sla_status_at_close == "red"))
+        no_sla = total - green - yellow - red
         avg_resolution = (
             round(sum(closed_tickets.mapped("resolution_hours")) / total, 1) if total else 0.0
         )
@@ -536,6 +539,7 @@ class HelpdeskTicket(models.Model):
                 "green": green,
                 "yellow": yellow,
                 "red": red,
+                "no_sla": no_sla,
             },
             "category_breakdown": category_breakdown,
             "user_breakdown": user_breakdown,
@@ -605,6 +609,7 @@ class HelpdeskTicket(models.Model):
                 "green": status["green"],
                 "yellow": status["yellow"],
                 "red": status["red"],
+                "no_sla": total - status["green"] - status["yellow"] - status["red"],
             }
             if with_avg_resolution:
                 row["avg_resolution_hours"] = avg_hours.get(gid, 0.0)
@@ -647,13 +652,15 @@ class HelpdeskTicket(models.Model):
         result = []
         for key in priority_order:
             status = status_counts.get(key, {"green": 0, "yellow": 0, "red": 0})
+            total = totals.get(key, 0)
             row = {
                 "id": key,
                 "name": priority_labels.get(key, key),
-                "total": totals.get(key, 0),
+                "total": total,
                 "green": status["green"],
                 "yellow": status["yellow"],
                 "red": status["red"],
+                "no_sla": total - status["green"] - status["yellow"] - status["red"],
             }
             if with_avg_resolution:
                 row["avg_resolution_hours"] = avg_hours.get(key, 0.0)

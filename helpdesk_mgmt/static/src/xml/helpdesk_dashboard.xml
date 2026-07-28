@@ -64,6 +64,10 @@
                         <div t-attf-class="value #{kpis.red > 0 ? 'tone-critical' : ''}"><t t-esc="kpis.red" /> <span class="pct">(<t t-esc="kpis.redPct" />%)</span></div>
                     </div>
                     <div class="o_hlp_dash_tile">
+                        <div class="label">⚪ Sin SLA</div>
+                        <div class="value tone-muted"><t t-esc="kpis.noSla" /> <span class="pct">(<t t-esc="kpis.noSlaPct" />%)</span></div>
+                    </div>
+                    <div class="o_hlp_dash_tile">
                         <div class="label">Tiempo prom. de espera</div>
                         <div class="value"><t t-esc="kpis.avgWaitHours" /> h</div>
                     </div>
@@ -131,6 +135,10 @@
                     <div class="o_hlp_dash_tile">
                         <div class="label">🔴 Vencidos al cerrar</div>
                         <div t-attf-class="value #{kpis.red > 0 ? 'tone-critical' : ''}"><t t-esc="kpis.red" /> <span class="pct">(<t t-esc="kpis.redPct" />%)</span></div>
+                    </div>
+                    <div class="o_hlp_dash_tile">
+                        <div class="label">⚪ Sin SLA</div>
+                        <div class="value tone-muted"><t t-esc="kpis.noSla" /> <span class="pct">(<t t-esc="kpis.noSlaPct" />%)</span></div>
                     </div>
                 </div>
 
@@ -232,6 +240,7 @@
                                     <th class="num">En tiempo</th>
                                     <th class="num">Próx. a vencer</th>
                                     <th class="num">Vencidos</th>
+                                    <th class="num">Sin SLA</th>
                                     <t t-if="view === 'done'"><th class="num">T. prom.</th></t>
                                 </tr>
                             </thead>
@@ -244,6 +253,7 @@
                                     <td class="num">
                                         <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /> (<t t-esc="row.redPct" />%)</span>
                                     </td>
+                                    <td class="num text-muted"><t t-esc="row.no_sla" /> (<t t-esc="row.noSlaPct" />%)</td>
                                     <t t-if="view === 'done'"><td class="num"><t t-esc="row.avg_resolution_hours" /> h</td></t>
                                 </tr>
                             </tbody>
@@ -270,6 +280,7 @@
                                     <th class="num">En tiempo</th>
                                     <th class="num">Próx. a vencer</th>
                                     <th class="num">Vencidos</th>
+                                    <th class="num">Sin SLA</th>
                                     <t t-if="view === 'done'"><th class="num">T. prom.</th></t>
                                 </tr>
                             </thead>
@@ -282,6 +293,7 @@
                                     <td class="num">
                                         <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /> (<t t-esc="row.redPct" />%)</span>
                                     </td>
+                                    <td class="num text-muted"><t t-esc="row.no_sla" /> (<t t-esc="row.noSlaPct" />%)</td>
                                     <t t-if="view === 'done'"><td class="num"><t t-esc="row.avg_resolution_hours" /> h</td></t>
                                 </tr>
                             </tbody>
@@ -310,6 +322,7 @@
                                     <th class="num">En tiempo</th>
                                     <th class="num">Próx. a vencer</th>
                                     <th class="num">Vencidos</th>
+                                    <th class="num">Sin SLA</th>
                                     <t t-if="view === 'done'"><th class="num">T. prom.</th></t>
                                 </tr>
                             </thead>
@@ -322,6 +335,7 @@
                                     <td class="num">
                                         <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /> (<t t-esc="row.redPct" />%)</span>
                                     </td>
+                                    <td class="num text-muted"><t t-esc="row.no_sla" /> (<t t-esc="row.noSlaPct" />%)</td>
                                     <t t-if="view === 'done'"><td class="num"><t t-esc="row.avg_resolution_hours" /> h</td></t>
                                 </tr>
                             </tbody>
@@ -348,6 +362,7 @@
                                     <th class="num">En tiempo</th>
                                     <th class="num">Próx. a vencer</th>
                                     <th class="num">Vencidos</th>
+                                    <th class="num">Sin SLA</th>
                                     <t t-if="view === 'done'"><th class="num">T. prom.</th></t>
                                 </tr>
                             </thead>
@@ -360,6 +375,7 @@
                                     <td class="num">
                                         <span t-attf-class="pill #{row.riskClass}"><t t-esc="row.red" /> (<t t-esc="row.redPct" />%)</span>
                                     </td>
+                                    <td class="num text-muted"><t t-esc="row.no_sla" /> (<t t-esc="row.noSlaPct" />%)</td>
                                     <t t-if="view === 'done'"><td class="num"><t t-esc="row.avg_resolution_hours" /> h</td></t>
                                 </tr>
                             </tbody>

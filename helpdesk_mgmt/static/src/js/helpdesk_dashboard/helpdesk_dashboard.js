@@ -207,6 +207,8 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
                         yellowPct: pctDone(kpis.yellow || 0),
                         red: kpis.red || 0,
                         redPct: pctDone(kpis.red || 0),
+                        noSla: kpis.no_sla || 0,
+                        noSlaPct: pctDone(kpis.no_sla || 0),
                     },
                     topResolution: this._buildTopDelayed(data.top_resolution || []),
                     topOverdue: this._buildTopDelayed(data.top_overdue || []),
@@ -226,6 +228,8 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
                     yellowPct: pct(kpis.yellow || 0),
                     red: kpis.red || 0,
                     redPct: pct(kpis.red || 0),
+                    noSla: kpis.no_sla || 0,
+                    noSlaPct: pct(kpis.no_sla || 0),
                     avgWaitHours: kpis.avg_wait_hours || 0,
                 },
                 topDelayed: this._buildTopDelayed(data.top_delayed || []),
@@ -244,6 +248,7 @@ odoo.define('helpdesk_mgmt.Dashboard', function (require) {
                     greenPct: pct(row.green),
                     yellowPct: pct(row.yellow),
                     redPct: pct(row.red),
+                    noSlaPct: pct(row.no_sla),
                 });
             });
         },
