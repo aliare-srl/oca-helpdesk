@@ -57,6 +57,7 @@
                     <field name="status" widget="statusbar" statusbar_visible="ai,waiting_human,human,closed" />
                 </header>
                 <sheet>
+                    <field name="is_urgent" invisible="1" />
                     <widget name="web_ribbon" title="Urgente" bg_color="bg-danger" attrs="{'invisible': [('is_urgent', '=', False)]}" />
                     <div class="oe_title">
                         <h1>
