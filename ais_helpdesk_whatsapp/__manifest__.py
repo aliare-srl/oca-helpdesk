@@ -19,6 +19,8 @@
     "assets": {
         "web.assets_backend": [
             "ais_helpdesk_whatsapp/static/src/js/whatsapp_dashboard.js",
+        ],
+        "web.assets_qweb": [
             "ais_helpdesk_whatsapp/static/src/xml/whatsapp_dashboard.xml",
         ],
     },
