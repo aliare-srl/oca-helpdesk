@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.ais.whatsapp</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('settings')]" position="inside">
+                <div
+                    class="app_settings_block"
+                    data-string="Mesa de Ayuda WhatsApp"
+                    string="Mesa de Ayuda WhatsApp"
+                    data-key="ais_helpdesk_whatsapp"
+                    groups="helpdesk_mgmt.group_helpdesk_manager"
+                >
+                    <h2>Conexión con el servicio</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_service_url" string="URL del servicio" />
+                                <div class="text-muted">
+                                    URL del servicio AgenteIA-MesadeAyuda-Odoo, sin la barra final.
+                                </div>
+                                <div class="content-group">
+                                    <field
+                                        name="ais_whatsapp_service_url"
+                                        placeholder="https://mesaayuda.mochipa.com.ar"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_panel_api_key" string="Clave de la API" />
+                                <div class="text-muted">Header X-Panel-Key que exige el servicio.</div>
+                                <div class="content-group">
+                                    <field name="ais_whatsapp_panel_api_key" password="True" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

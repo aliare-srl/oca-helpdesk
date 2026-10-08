@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mesa de Ayuda - WhatsApp</title>
+<style>
+  body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.6;color:#211c26;background:#faf8f6;margin:0;padding:32px 20px}
+  main{max-width:720px;margin:0 auto}
+  h1{font-size:1.8rem;margin:0 0 6px}
+  h2{font-size:1.2rem;margin:32px 0 8px;color:#714b67}
+  .lead{color:#655d6c;margin:0 0 8px}
+  ul{padding-left:20px}
+  li{margin:6px 0}
+  .aviso{background:#f1e6ee;border-left:3px solid #714b67;border-radius:6px;padding:12px 16px;margin:20px 0}
+  @media (prefers-color-scheme: dark){
+    body{background:#18141b;color:#f0eaf1}
+    .lead{color:#b0a3b3}
+    h2{color:#d9a7cb}
+    .aviso{background:#332a37;border-left-color:#d9a7cb}
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Mesa de Ayuda - WhatsApp</h1>
+  <p class="lead">Desde Odoo, el equipo de soporte ve y atiende las conversaciones de WhatsApp que el agente de inteligencia artificial de Aliare mantiene con los clientes.</p>
+
+  <div class="aviso">
+    <strong>Estado actual:</strong> primera versión, con las pantallas estándar de Odoo. La lista se actualiza sola cada dos minutos; los mensajes de una conversación se traen al abrirla o al apretar "Actualizar".
+  </div>
+
+  <h2>Qué permite hacer</h2>
+  <ul>
+    <li>Ver todas las conversaciones de WhatsApp, con las urgentes y las que esperan a una persona resaltadas primero.</li>
+    <li>Leer el historial completo de cada conversación: lo que dijo el cliente, lo que respondió la inteligencia artificial y lo que escribió el equipo.</li>
+    <li>Tomar una conversación para responder en persona. Mientras tanto, la inteligencia artificial no contesta.</li>
+    <li>Devolver la conversación a la inteligencia artificial cuando ya no hace falta una persona.</li>
+    <li>Si nadie respondió en dos horas, la conversación vuelve sola a la inteligencia artificial.</li>
+    <li>Cerrar una conversación terminada.</li>
+    <li>Escribirle primero a un cliente, con un mensaje ya aprobado por WhatsApp.</li>
+    <li>Ver el ticket de la mesa de ayuda relacionado, con un clic.</li>
+  </ul>
+
+  <h2>Configuración</h2>
+  <ul>
+    <li>Un administrador carga, una sola vez, la dirección y la clave del servicio de inteligencia artificial, en Ajustes.</li>
+    <li>Después de eso, no hace falta tocar nada más para usarlo.</li>
+  </ul>
+
+  <h2>Cómo se usa</h2>
+  <ul>
+    <li>Las conversaciones aparecen solas en el menú "Conversaciones de WhatsApp" de la Mesa de Ayuda.</li>
+    <li>Se abre la que haga falta y se usan los botones de arriba: Tomar, Responder, Devolver a la IA, Cerrar.</li>
+    <li>Para escribirle a un cliente sin esperar a que escriba primero, se usa "Iniciar conversación".</li>
+  </ul>
+</main>
+</body>
+</html>
