@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from odoo import api, fields, models
 from odoo.tools import html_escape
 
@@ -52,8 +54,13 @@ class WhatsappConversation(models.Model):
 
     @staticmethod
     def _parse_remote_datetime(value):
-        # El servicio manda ISO 8601 ("...+00:00"); Datetime.to_datetime no entiende el offset, se lo sacamos.
-        return fields.Datetime.to_datetime(value[:19]) if value else False
+        # El servicio manda ISO 8601 en UTC ("...T...+00:00"); Odoo 15 guarda datetimes naive en UTC.
+        if not value:
+            return False
+        parsed = datetime.fromisoformat(value)
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        return parsed
 
     @api.model
     def _vals_from_remote(self, data):
