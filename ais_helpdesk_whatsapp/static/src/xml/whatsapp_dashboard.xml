@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+<t t-name="ais_helpdesk_whatsapp.WhatsappDashboard" owl="1">
+    <div class="o_ais_whatsapp_dashboard d-flex h-100">
+        <div class="o_ais_whatsapp_list border-end" style="width: 320px; overflow-y: auto;">
+            <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                <h5 class="m-0">Conversaciones</h5>
+                <button class="btn btn-sm btn-secondary" t-on-click="loadConversations">Actualizar</button>
+            </div>
+            <div t-if="state.loading" class="p-3 text-muted">Cargando...</div>
+            <div t-if="state.error" class="alert alert-danger m-2" t-esc="state.error" />
+            <div t-if="!state.loading and !state.error and !state.conversations.length" class="p-3 text-muted">
+                No hay conversaciones.
+            </div>
+            <div
+                t-foreach="state.conversations"
+                t-as="conversation"
+                t-key="conversation.id"
+                t-on-click="() => this.selectConversation(conversation.id)"
+                t-attf-class="o_ais_whatsapp_item p-2 border-bottom {{ conversation.id === state.selectedId ? 'bg-primary text-white' : '' }}"
+                style="cursor: pointer;"
+            >
+                <div class="d-flex justify-content-between">
+                    <strong t-esc="this.contactLabel(conversation)" />
+                    <span t-if="conversation.is_urgent" class="badge bg-danger">Urgente</span>
+                </div>
+                <div class="small" t-esc="this.statusLabel(conversation.status)" />
+            </div>
+        </div>
+        <div class="o_ais_whatsapp_detail flex-grow-1 p-3">
+            <div t-if="!selectedConversation" class="text-muted">
+                Elegí una conversación de la izquierda.
+            </div>
+            <div t-else="">
+                <h4 t-esc="this.contactLabel(selectedConversation)" />
+                <p>Estado: <t t-esc="this.statusLabel(selectedConversation.status)" /></p>
+                <p t-if="selectedConversation.helpdesk_ticket_id">
+                    Ticket: #<t t-esc="selectedConversation.helpdesk_ticket_id" />
+                </p>
+                <p class="text-muted">(el chat y las acciones se agregan en la próxima etapa)</p>
+            </div>
+        </div>
+    </div>
+</t>
+
+</templates>

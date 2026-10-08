@@ -120,11 +120,16 @@
         </field>
     </record>
 
+    <record id="whatsapp_dashboard_action" model="ir.actions.client">
+        <field name="name">Conversaciones de WhatsApp</field>
+        <field name="tag">ais_whatsapp_dashboard</field>
+    </record>
+
     <menuitem
         id="whatsapp_conversation_menu"
         name="Conversaciones de WhatsApp"
         parent="helpdesk_mgmt.helpdesk_ticket_main_menu"
-        action="whatsapp_conversation_action"
+        action="whatsapp_dashboard_action"
         sequence="5"
         groups="helpdesk_mgmt.group_helpdesk_user_own"
     />
