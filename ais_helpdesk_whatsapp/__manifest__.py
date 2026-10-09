@@ -1,6 +1,6 @@
 {
     "name": "Mesa de Ayuda - WhatsApp",
-    "version": "15.0.1.5.0",
+    "version": "15.0.1.6.0",
     "category": "Helpdesk",
     "summary": "Ver y atender desde Odoo las conversaciones de WhatsApp del agente de IA",
     "author": "Aliare SRL",
@@ -19,6 +19,7 @@
     "assets": {
         "web.assets_backend": [
             "ais_helpdesk_whatsapp/static/src/js/whatsapp_dashboard.js",
+            "ais_helpdesk_whatsapp/static/src/scss/whatsapp_dashboard.scss",
         ],
         "web.assets_qweb": [
             "ais_helpdesk_whatsapp/static/src/xml/whatsapp_dashboard.xml",
