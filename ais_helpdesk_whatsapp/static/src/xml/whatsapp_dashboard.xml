@@ -77,7 +77,7 @@
                     >
                         <div class="o_ais_whatsapp_item_row">
                             <strong t-esc="contactLabel(conversation)" />
-                            <span class="o_ais_whatsapp_time" t-esc="timeLabel(conversation.last_message_at)" />
+                            <span class="o_ais_whatsapp_time" t-esc="dateTimeLabel(conversation.last_message_at)" />
                         </div>
                         <span class="o_ais_whatsapp_item_company" t-esc="(conversation.contact and conversation.contact.company) or ''" />
                         <span class="o_ais_whatsapp_item_preview" t-esc="conversation.last_message_preview" />

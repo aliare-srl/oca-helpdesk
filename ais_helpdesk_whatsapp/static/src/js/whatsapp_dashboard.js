@@ -310,6 +310,16 @@ export class WhatsappDashboard extends Component {
         return new Date(iso).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
     }
 
+    dateTimeLabel(iso) {
+        if (!iso) {
+            return "";
+        }
+        const d = new Date(iso);
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        return `${day}/${month} ${this.timeLabel(iso)}`;
+    }
+
     async selectConversation(id) {
         this.state.selectedId = id;
         this.state.replyText = "";
