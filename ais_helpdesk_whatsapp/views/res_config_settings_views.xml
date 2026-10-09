@@ -13,6 +13,21 @@
                     data-key="ais_helpdesk_whatsapp"
                     groups="helpdesk_mgmt.group_helpdesk_manager"
                 >
+                    <h2>Agente de IA</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="ais_whatsapp_agent_enabled" />
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_agent_enabled" string="Agente de IA activo" />
+                                <div class="text-muted">
+                                    Si se apaga, ninguna conversación nueva la contesta la IA: pasan directo a esperar a una persona.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <h2>Conexión con el servicio</h2>
                     <div class="row mt16 o_settings_container">
                         <div class="col-12 col-lg-8 o_setting_box">

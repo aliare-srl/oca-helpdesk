@@ -4,6 +4,14 @@ from odoo import fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
+    ais_whatsapp_agent_enabled = fields.Boolean(
+        string="Agente de IA activo",
+        config_parameter="ais_helpdesk_whatsapp.agent_enabled",
+        default=True,
+        help="Si se apaga, ninguna conversación nueva la contesta la IA: pasan directo a esperar "
+        "a una persona, avisándole al cliente. No afecta a las conversaciones que ya está "
+        "atendiendo una persona.",
+    )
     ais_whatsapp_service_url = fields.Char(
         string="URL del servicio de WhatsApp",
         config_parameter="ais_helpdesk_whatsapp.service_url",

@@ -21,6 +21,7 @@ Depende de `helpdesk_mgmt`. Sin configuración adicional en el `__manifest__`; u
 
 **Ajustes → Mesa de Ayuda** (solo administradores de Helpdesk):
 
+- **Agente de IA activo**: si se apaga, ninguna conversación nueva la contesta la IA, pasan directo a esperar a una persona (avisándole al cliente). No afecta a las que ya está atendiendo alguien.
 - **URL del servicio** y **clave de la API**: las del `AgenteIA-MesadeAyuda-Odoo` desplegado y su `PANEL_API_KEY`.
 - **Usuario de la IA**: a nombre de quién queda un ticket mientras lo atiende la IA.
 - **Minutos de inactividad del cliente para cerrar solo**: por defecto 30.
