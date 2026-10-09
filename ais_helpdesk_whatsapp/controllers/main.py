@@ -8,7 +8,7 @@ from odoo.tools import html_escape
 
 from odoo.addons.ais_helpdesk_whatsapp.services import agent_client
 
-_GROUP = "helpdesk_mgmt.group_helpdesk_user_team"
+_GROUP = "helpdesk_mgmt.group_helpdesk_user"
 
 
 def _check_access():
