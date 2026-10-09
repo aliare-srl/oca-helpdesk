@@ -6,6 +6,7 @@ Agrega a la Mesa de Ayuda de Odoo la pantalla donde el equipo ve y atiende las c
 
 - Menú **Helpdesk → Conversaciones de WhatsApp**: pantalla propia (OWL) de tres columnas — lista, chat, ficha del cliente/ticket.
 - Lista de conversaciones con búsqueda, filtro por rango de fecha (por defecto, hoy) y 5 pestañas de estado: **Esperando**, **IA**, **Persona**, **Cerradas**, **Todas**. Dentro de cada estado, ordenadas por hora de ingreso más reciente primero; al cerrarse, una conversación pasa a "Cerradas".
+- El panel de mensajes baja solo al último mensaje cuando entran o salen mensajes (si estás leyendo mensajes viejos, no te mueve).
 - Por conversación: **Tomar** (pausa la IA y asigna el ticket a quien la toma, con historial de reasignaciones), **Responder** (solo mientras la tiene tomada una persona), **Devolver a la IA**, **Cerrar con resolución** (la resolución queda en la descripción del ticket, como base de casos resueltos).
 - Las imágenes que manda el cliente se ven directo en el chat (no solo como adjunto genérico); otros archivos quedan como link para abrir.
 - Si el cliente no vuelve a escribir dentro del tiempo configurado, la conversación se cierra sola y se avisa por WhatsApp.

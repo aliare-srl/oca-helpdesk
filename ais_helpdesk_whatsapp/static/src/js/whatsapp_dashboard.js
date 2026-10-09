@@ -4,7 +4,7 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
 const { Component, hooks } = owl;
-const { useState, onWillStart, onWillUnmount } = hooks;
+const { useState, useRef, onWillStart, onWillUnmount, onWillPatch, onPatched } = hooks;
 
 const DEFAULT_POLL_INTERVAL_MS = 4000;
 
@@ -75,6 +75,28 @@ export class WhatsappDashboard extends Component {
         });
 
         this.pollIntervalMs = DEFAULT_POLL_INTERVAL_MS;
+
+        // Los mensajes nuevos bajan solos el scroll, salvo que se esté leyendo más arriba.
+        this.messagesRef = useRef("messages");
+        this.stickToBottom = true;
+        this.lastScrolledId = null;
+        onWillPatch(() => {
+            const el = this.messagesRef.el;
+            if (el) {
+                this.stickToBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+            }
+        });
+        onPatched(() => {
+            const el = this.messagesRef.el;
+            if (!el) {
+                this.lastScrolledId = null;
+                return;
+            }
+            if (this.stickToBottom || this.lastScrolledId !== this.state.selectedId) {
+                el.scrollTop = el.scrollHeight;
+            }
+            this.lastScrolledId = this.state.selectedId;
+        });
 
         onWillStart(async () => {
             await this.loadConfig();

@@ -141,7 +141,7 @@
                         </button>
                     </div>
 
-                    <div class="o_ais_whatsapp_messages">
+                    <div class="o_ais_whatsapp_messages" t-ref="messages">
                         <div t-if="state.messagesLoading" class="o_ais_whatsapp_muted">Cargando mensajes...</div>
                         <div
                             t-foreach="state.messages"
