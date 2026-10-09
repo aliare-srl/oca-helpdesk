@@ -331,7 +331,8 @@ export class WhatsappDashboard extends Component {
 
     onSearchInput(ev) {
         // La lista se filtra al instante por cliente o número; en los mensajes se busca al dejar de escribir.
-        const query = ev.target.value.trim();
+        this.state.searchQuery = ev.target.value;
+        const query = this.state.searchQuery.trim();
         clearTimeout(this.globalSearchTimer);
         if (query.length < GLOBAL_SEARCH_MIN_CHARS) {
             this.state.globalMatches = {};

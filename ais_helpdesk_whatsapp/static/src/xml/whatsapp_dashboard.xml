@@ -25,7 +25,7 @@
                     <input
                         type="text"
                         placeholder="Buscar cliente, número o texto de los mensajes"
-                        t-model="state.searchQuery"
+                        t-att-value="state.searchQuery"
                         t-on-input="onSearchInput"
                     />
                 </div>
