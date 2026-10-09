@@ -1,6 +1,8 @@
 """Rutas JSON para la pantalla OWL del panel. Proxy fino a services/agent_client: la lógica
 y la autenticación contra el servicio viven ahí, esto solo expone esas funciones al navegador."""
 
+import logging
+
 from odoo import http
 from odoo.exceptions import AccessError
 from odoo.http import request
@@ -9,6 +11,7 @@ from odoo.tools import html_escape
 from odoo.addons.ais_helpdesk_whatsapp.services import agent_client
 
 _GROUP = "helpdesk_mgmt.group_helpdesk_user"
+_logger = logging.getLogger(__name__)
 
 
 def _check_access():
@@ -21,26 +24,35 @@ def _config_param(key, default=""):
 
 
 def _reassign_ticket(ticket_id, user_id):
+    # La conversación en el servicio ya se actualizó antes de llamar a esto: si tocar el ticket
+    # falla (ej. el usuario asignado no tiene email y Odoo no puede notificarlo), no hay que
+    # devolver error, la acción principal ya funcionó. Queda solo en el log para revisar.
     if not ticket_id or not user_id:
         return
-    request.env["helpdesk.ticket"].browse(int(ticket_id)).user_id = int(user_id)
+    try:
+        request.env["helpdesk.ticket"].browse(int(ticket_id)).user_id = int(user_id)
+    except Exception:  # noqa: BLE001
+        _logger.exception("No se pudo reasignar el ticket %s al usuario %s", ticket_id, user_id)
 
 
 def _close_ticket_with_resolution(ticket_id, resolution):
     if not ticket_id:
         return
-    ticket = request.env["helpdesk.ticket"].browse(int(ticket_id))
-    if not ticket.exists():
-        return
-    stage = request.env["helpdesk.ticket.stage"].search([("name", "=", "Hecho")], limit=1)
-    vals = {"stage_id": stage.id} if stage else {}
-    if resolution:
-        safe = html_escape(resolution).replace("\n", "<br/>")
-        # ticket.description es un Markup: sumarle un string plano lo escapa (markupsafe lo trata
-        # como texto no confiable). Se pasa a str primero para armar HTML real, no texto escapado.
-        vals["description"] = f"{str(ticket.description or '')}<p><b>Resolución:</b> {safe}</p>"
-    if vals:
-        ticket.write(vals)
+    try:
+        ticket = request.env["helpdesk.ticket"].browse(int(ticket_id))
+        if not ticket.exists():
+            return
+        stage = request.env["helpdesk.ticket.stage"].search([("name", "=", "Hecho")], limit=1)
+        vals = {"stage_id": stage.id} if stage else {}
+        if resolution:
+            safe = html_escape(resolution).replace("\n", "<br/>")
+            # ticket.description es un Markup: sumarle un string plano lo escapa (markupsafe lo
+            # trata como texto no confiable). Se pasa a str primero para armar HTML real.
+            vals["description"] = f"{str(ticket.description or '')}<p><b>Resolución:</b> {safe}</p>"
+        if vals:
+            ticket.write(vals)
+    except Exception:  # noqa: BLE001
+        _logger.exception("No se pudo cerrar el ticket %s con la resolución", ticket_id)
 
 
 class WhatsappDashboardController(http.Controller):
