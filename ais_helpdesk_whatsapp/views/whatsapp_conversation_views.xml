@@ -131,6 +131,6 @@
         parent="helpdesk_mgmt.helpdesk_ticket_main_menu"
         action="whatsapp_dashboard_action"
         sequence="5"
-        groups="helpdesk_mgmt.group_helpdesk_user_own"
+        groups="helpdesk_mgmt.group_helpdesk_user_team"
     />
 </odoo>

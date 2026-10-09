@@ -1,5 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_ais_whatsapp_conversation_user,ais.whatsapp.conversation.user,model_ais_whatsapp_conversation,helpdesk_mgmt.group_helpdesk_user_own,1,1,1,0
+access_ais_whatsapp_conversation_user,ais.whatsapp.conversation.user,model_ais_whatsapp_conversation,helpdesk_mgmt.group_helpdesk_user_team,1,1,1,0
 access_ais_whatsapp_conversation_manager,ais.whatsapp.conversation.manager,model_ais_whatsapp_conversation,helpdesk_mgmt.group_helpdesk_manager,1,1,1,1
-access_ais_whatsapp_reply_wizard,ais.whatsapp.reply.wizard,model_ais_whatsapp_reply_wizard,helpdesk_mgmt.group_helpdesk_user_own,1,1,1,1
-access_ais_whatsapp_start_wizard,ais.whatsapp.start.wizard,model_ais_whatsapp_start_wizard,helpdesk_mgmt.group_helpdesk_user_own,1,1,1,1
+access_ais_whatsapp_reply_wizard,ais.whatsapp.reply.wizard,model_ais_whatsapp_reply_wizard,helpdesk_mgmt.group_helpdesk_user_team,1,1,1,1
+access_ais_whatsapp_start_wizard,ais.whatsapp.start.wizard,model_ais_whatsapp_start_wizard,helpdesk_mgmt.group_helpdesk_user_team,1,1,1,1
