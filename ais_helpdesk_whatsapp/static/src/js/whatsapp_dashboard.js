@@ -13,13 +13,25 @@ const STATUS_LABEL = {
     closed: "Cerrada",
 };
 
+const SENDER_LABEL = { customer: "Cliente", ai: "IA", human: "Persona" };
+
 // Primero las que esperan o están con una persona, después la IA, al final las cerradas.
 const STATUS_ORDER = { waiting_human: 0, human: 1, ai: 2, closed: 3 };
 
 export class WhatsappDashboard extends Component {
     setup() {
         this.rpc = useService("rpc");
-        this.state = useState({ conversations: [], loading: true, error: "", selectedId: null });
+        this.state = useState({
+            conversations: [],
+            loading: true,
+            error: "",
+            selectedId: null,
+            messages: [],
+            messagesLoading: false,
+            messagesError: "",
+            replyText: "",
+            sending: false,
+        });
         onWillStart(() => this.loadConversations());
     }
 
@@ -53,10 +65,59 @@ export class WhatsappDashboard extends Component {
 
     selectConversation(id) {
         this.state.selectedId = id;
+        this.state.replyText = "";
+        this.loadMessages();
+    }
+
+    async loadMessages() {
+        const id = this.state.selectedId;
+        this.state.messagesLoading = true;
+        this.state.messagesError = "";
+        try {
+            this.state.messages = await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/messages`, {});
+        } catch (error) {
+            this.state.messagesError = error.message || "No se pudo leer la conversación.";
+        } finally {
+            this.state.messagesLoading = false;
+        }
+    }
+
+    async sendReply() {
+        const text = this.state.replyText.trim();
+        const id = this.state.selectedId;
+        if (!text || !id || this.state.sending) {
+            return;
+        }
+        this.state.sending = true;
+        this.state.messagesError = "";
+        try {
+            await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/reply`, { text });
+            this.state.replyText = "";
+            await this.loadMessages();
+        } catch (error) {
+            this.state.messagesError = error.message || "No se pudo mandar la respuesta.";
+        } finally {
+            this.state.sending = false;
+        }
+    }
+
+    onReplyKeydown(ev) {
+        if (ev.key === "Enter" && !ev.shiftKey) {
+            ev.preventDefault();
+            this.sendReply();
+        }
+    }
+
+    senderLabel(sender) {
+        return SENDER_LABEL[sender] || sender;
     }
 
     get selectedConversation() {
         return this.state.conversations.find((c) => c.id === this.state.selectedId) || null;
+    }
+
+    get canReply() {
+        return !!this.selectedConversation && this.selectedConversation.status !== "closed";
     }
 }
 

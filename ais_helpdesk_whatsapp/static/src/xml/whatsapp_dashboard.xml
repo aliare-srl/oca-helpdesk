@@ -28,19 +28,53 @@
                 <div class="small" t-esc="this.statusLabel(conversation.status)" />
             </div>
         </div>
-        <div class="o_ais_whatsapp_detail flex-grow-1 p-3">
-            <div t-if="!selectedConversation" class="text-muted">
-                Elegí una conversación de la izquierda.
+        <div t-if="!selectedConversation" class="o_ais_whatsapp_detail flex-grow-1 p-3 text-muted">
+            Elegí una conversación de la izquierda.
+        </div>
+        <t t-else="">
+            <div class="o_ais_whatsapp_chat d-flex flex-column flex-grow-1 p-2">
+                <div class="o_ais_whatsapp_messages flex-grow-1 overflow-auto p-2">
+                    <div t-if="state.messagesLoading" class="text-muted">Cargando mensajes...</div>
+                    <div
+                        t-foreach="state.messages"
+                        t-as="message"
+                        t-key="message.id"
+                        t-attf-class="o_ais_whatsapp_message mb-2 p-2 rounded {{ message.sender === 'customer' ? 'bg-light' : 'bg-primary text-white ms-auto' }}"
+                        style="max-width: 75%;"
+                    >
+                        <div class="small fw-bold" t-esc="this.senderLabel(message.sender)" />
+                        <div t-esc="message.body" style="white-space: pre-wrap;" />
+                        <div t-if="message.has_media" class="small text-muted">[adjunto]</div>
+                    </div>
+                </div>
+                <div t-if="state.messagesError" class="alert alert-danger m-2" t-esc="state.messagesError" />
+                <div class="o_ais_whatsapp_reply d-flex p-2 border-top">
+                    <textarea
+                        class="form-control me-2"
+                        rows="2"
+                        placeholder="Escribí una respuesta..."
+                        t-model="state.replyText"
+                        t-on-keydown="onReplyKeydown"
+                        t-att-disabled="!canReply or state.sending"
+                    />
+                    <button
+                        class="btn btn-primary"
+                        t-on-click="sendReply"
+                        t-att-disabled="!canReply or state.sending or !state.replyText.trim()"
+                    >
+                        Enviar
+                    </button>
+                </div>
             </div>
-            <div t-else="">
-                <h4 t-esc="this.contactLabel(selectedConversation)" />
+            <div class="o_ais_whatsapp_info border-start p-3" style="width: 260px;">
+                <h5 t-esc="this.contactLabel(selectedConversation)" />
                 <p>Estado: <t t-esc="this.statusLabel(selectedConversation.status)" /></p>
                 <p t-if="selectedConversation.helpdesk_ticket_id">
                     Ticket: #<t t-esc="selectedConversation.helpdesk_ticket_id" />
                 </p>
-                <p class="text-muted">(el chat y las acciones se agregan en la próxima etapa)</p>
+                <p class="text-muted small">(tomar / devolver a la IA / cerrar se agregan en la próxima etapa)</p>
             </div>
-        </div>
+        </t>
     </div>
 </t>
 
