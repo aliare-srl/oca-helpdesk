@@ -34,7 +34,7 @@ class WhatsappDashboardController(http.Controller):
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/take", type="json", auth="user")
     def take(self, remote_id):
         _check_access()
-        return agent_client.take(request.env, remote_id)
+        return agent_client.take(request.env, remote_id, taken_by=request.env.user.name)
 
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/return_to_ai", type="json", auth="user")
     def return_to_ai(self, remote_id):
@@ -45,6 +45,19 @@ class WhatsappDashboardController(http.Controller):
     def close(self, remote_id):
         _check_access()
         return agent_client.close(request.env, remote_id)
+
+    @http.route("/ais_helpdesk_whatsapp/tickets/<int:ticket_id>", type="json", auth="user")
+    def ticket_info(self, ticket_id):
+        _check_access()
+        ticket = request.env["helpdesk.ticket"].browse(ticket_id)
+        if not ticket.exists():
+            return False
+        return {
+            "id": ticket.id,
+            "number": ticket.number,
+            "name": ticket.name,
+            "stage": ticket.stage_id.name,
+        }
 
     @http.route("/ais_helpdesk_whatsapp/conversations/start", type="json", auth="user")
     def start(self, phone, template_name, params=None, profile_name=None, helpdesk_partner_id=None):

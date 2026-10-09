@@ -8,27 +8,36 @@ const { useState, onWillStart, onWillUnmount } = hooks;
 
 const POLL_INTERVAL_MS = 4000;
 
-const STATUS_LABEL = {
-    ai: "Atiende la IA",
-    waiting_human: "Esperando a un humano",
-    human: "Atiende un humano",
-    closed: "Cerrada",
+const STATUS_PILL = {
+    waiting_human: { label: "Espera a una persona", bg: "#FEF0D9", color: "#8A3B0C", border: "#F2C98A" },
+    ai: { label: "Atiende la IA", bg: "#DDF1F4", color: "#0B5560", border: "#A9D8DF" },
+    human: { label: "Atiende", bg: "#E1F3E8", color: "#17603B", border: "#A9D9BC" },
+    closed: { label: "Cerrada", bg: "#ECE9EB", color: "#3F3A44", border: "#D2CCD3" },
 };
 
-const SENDER_LABEL = { customer: "Cliente", ai: "IA", human: "Persona" };
+const QUICK_REPLIES = ["Ya lo reviso", "¿Me pasás una captura?", "Quedó resuelto, gracias"];
 
-// Primero las que esperan o están con una persona, después la IA, al final las cerradas.
-const STATUS_ORDER = { waiting_human: 0, human: 1, ai: 2, closed: 3 };
+function initials(name) {
+    const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) {
+        return "?";
+    }
+    return (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
+}
 
 export class WhatsappDashboard extends Component {
     setup() {
         this.rpc = useService("rpc");
         this.action = useService("action");
+        this.userService = useService("user");
+        this.quickReplies = QUICK_REPLIES;
         this.state = useState({
             conversations: [],
             loading: true,
             error: "",
             selectedId: null,
+            searchQuery: "",
+            filterTab: "atencion",
             messages: [],
             messagesLoading: false,
             messagesError: "",
@@ -36,7 +45,17 @@ export class WhatsappDashboard extends Component {
             sending: false,
             actionError: "",
             actionPending: false,
+            ticketInfo: null,
+            now: Date.now(),
+            startOpen: false,
+            startPhone: "",
+            startName: "",
+            startTemplate: "",
+            startParams: "",
+            startError: "",
+            startSending: false,
         });
+
         onWillStart(async () => {
             await this.loadConversations();
             const params = this.props.action && this.props.action.params;
@@ -44,8 +63,15 @@ export class WhatsappDashboard extends Component {
                 this.selectConversation(params.conversation_id);
             }
         });
+
         this.pollTimer = setInterval(() => this.poll(), POLL_INTERVAL_MS);
-        onWillUnmount(() => clearInterval(this.pollTimer));
+        this.clockTimer = setInterval(() => {
+            this.state.now = Date.now();
+        }, 30000);
+        onWillUnmount(() => {
+            clearInterval(this.pollTimer);
+            clearInterval(this.clockTimer);
+        });
     }
 
     async poll() {
@@ -62,12 +88,7 @@ export class WhatsappDashboard extends Component {
         }
         try {
             const conversations = await this.rpc("/ais_helpdesk_whatsapp/conversations", {});
-            conversations.sort((a, b) => {
-                if (a.is_urgent !== b.is_urgent) return a.is_urgent ? -1 : 1;
-                const order = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-                if (order !== 0) return order;
-                return (b.last_message_at || "").localeCompare(a.last_message_at || "");
-            });
+            conversations.sort((a, b) => (b.last_message_at || "").localeCompare(a.last_message_at || ""));
             this.state.conversations = conversations;
         } catch (error) {
             if (!silent) {
@@ -78,19 +99,84 @@ export class WhatsappDashboard extends Component {
         }
     }
 
-    statusLabel(status) {
-        return STATUS_LABEL[status] || status;
+    get atencionCount() {
+        return this.state.conversations.filter((c) => c.status === "waiting_human").length;
+    }
+
+    get todasCount() {
+        return this.state.conversations.filter((c) => c.status !== "closed").length;
+    }
+
+    get cerradasCount() {
+        return this.state.conversations.filter((c) => c.status === "closed").length;
+    }
+
+    setFilterTab(tab) {
+        this.state.filterTab = tab;
+    }
+
+    get filteredConversations() {
+        const byTab = this.state.conversations.filter((c) => {
+            if (this.state.filterTab === "atencion") return c.status === "waiting_human";
+            if (this.state.filterTab === "cerradas") return c.status === "closed";
+            return c.status !== "closed";
+        });
+        const query = this.state.searchQuery.trim().toLowerCase();
+        if (!query) {
+            return byTab;
+        }
+        return byTab.filter((c) => {
+            const contact = c.contact || {};
+            const haystack = `${contact.company || ""} ${contact.profile_name || ""} ${contact.wa_id || ""}`.toLowerCase();
+            return haystack.includes(query);
+        });
+    }
+
+    statusPill(status) {
+        return STATUS_PILL[status] || STATUS_PILL.closed;
+    }
+
+    statusLabel(conversation) {
+        if (conversation.status === "human") {
+            return conversation.taken_by ? `Atiende ${conversation.taken_by}` : "Atiende una persona";
+        }
+        return this.statusPill(conversation.status).label;
     }
 
     contactLabel(conversation) {
         const contact = conversation.contact || {};
-        return contact.company || contact.profile_name || contact.wa_id;
+        return contact.profile_name || contact.wa_id;
     }
 
-    selectConversation(id) {
+    initials(conversation) {
+        const contact = conversation.contact || {};
+        return initials(contact.profile_name || contact.company);
+    }
+
+    timeLabel(iso) {
+        if (!iso) {
+            return "";
+        }
+        return new Date(iso).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    async selectConversation(id) {
         this.state.selectedId = id;
         this.state.replyText = "";
-        this.loadMessages();
+        this.state.ticketInfo = null;
+        await this.loadMessages();
+        const conversation = this.selectedConversation;
+        if (conversation && conversation.helpdesk_ticket_id) {
+            this.loadTicketInfo(conversation.helpdesk_ticket_id);
+        }
+    }
+
+    async loadTicketInfo(ticketId) {
+        try {
+            this.state.ticketInfo = await this.rpc(`/ais_helpdesk_whatsapp/tickets/${ticketId}`, {});
+        } catch (error) {
+            this.state.ticketInfo = null;
+        }
     }
 
     async loadMessages({ silent = false } = {}) {
@@ -110,16 +196,16 @@ export class WhatsappDashboard extends Component {
         }
     }
 
-    async sendReply() {
-        const text = this.state.replyText.trim();
+    async sendReply(text) {
+        const body = (text !== undefined ? text : this.state.replyText).trim();
         const id = this.state.selectedId;
-        if (!text || !id || this.state.sending) {
+        if (!body || !id || this.state.sending) {
             return;
         }
         this.state.sending = true;
         this.state.messagesError = "";
         try {
-            await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/reply`, { text });
+            await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/reply`, { text: body });
             this.state.replyText = "";
             await this.loadMessages();
         } catch (error) {
@@ -129,6 +215,10 @@ export class WhatsappDashboard extends Component {
         }
     }
 
+    sendQuickReply(text) {
+        return this.sendReply(text);
+    }
+
     onReplyKeydown(ev) {
         if (ev.key === "Enter" && !ev.shiftKey) {
             ev.preventDefault();
@@ -136,8 +226,16 @@ export class WhatsappDashboard extends Component {
         }
     }
 
-    senderLabel(sender) {
-        return SENDER_LABEL[sender] || sender;
+    senderClass(sender) {
+        if (sender === "customer") return "customer";
+        if (sender === "human") return "human";
+        return "ai";
+    }
+
+    senderLabel(sender, conversation) {
+        if (sender === "customer") return this.contactLabel(conversation);
+        if (sender === "human") return conversation.taken_by || "Persona";
+        return "IA";
     }
 
     get selectedConversation() {
@@ -145,7 +243,7 @@ export class WhatsappDashboard extends Component {
     }
 
     get canReply() {
-        return !!this.selectedConversation && this.selectedConversation.status !== "closed";
+        return !!this.selectedConversation && this.selectedConversation.status === "human";
     }
 
     get canTake() {
@@ -160,6 +258,21 @@ export class WhatsappDashboard extends Component {
     get canClose() {
         const status = this.selectedConversation && this.selectedConversation.status;
         return status && status !== "closed";
+    }
+
+    get pauseRemainingLabel() {
+        const until = this.selectedConversation && this.selectedConversation.ai_paused_until;
+        if (!until) {
+            return "";
+        }
+        const diffMs = new Date(until).getTime() - this.state.now;
+        if (diffMs <= 0) {
+            return "en cualquier momento";
+        }
+        const totalMin = Math.round(diffMs / 60000);
+        const h = Math.floor(totalMin / 60);
+        const m = totalMin % 60;
+        return h > 0 ? `${h} h ${m} min` : `${m} min`;
     }
 
     async runAction(route) {
@@ -194,6 +307,10 @@ export class WhatsappDashboard extends Component {
         return this.runAction("close");
     }
 
+    backToList() {
+        this.state.selectedId = null;
+    }
+
     openTicket() {
         const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
         if (!ticketId) {
@@ -206,6 +323,48 @@ export class WhatsappDashboard extends Component {
             views: [[false, "form"]],
             target: "current",
         });
+    }
+
+    openStartModal() {
+        this.state.startOpen = true;
+        this.state.startPhone = "";
+        this.state.startName = "";
+        this.state.startTemplate = "";
+        this.state.startParams = "";
+        this.state.startError = "";
+    }
+
+    closeStartModal() {
+        this.state.startOpen = false;
+    }
+
+    async submitStart() {
+        const phone = this.state.startPhone.trim();
+        const templateName = this.state.startTemplate.trim();
+        if (!phone || !templateName) {
+            this.state.startError = "Faltan el número y la plantilla.";
+            return;
+        }
+        this.state.startSending = true;
+        this.state.startError = "";
+        const params = this.state.startParams
+            .split(",")
+            .map((p) => p.trim())
+            .filter(Boolean);
+        try {
+            await this.rpc("/ais_helpdesk_whatsapp/conversations/start", {
+                phone,
+                template_name: templateName,
+                profile_name: this.state.startName.trim() || null,
+                params,
+            });
+            this.state.startOpen = false;
+            await this.loadConversations();
+        } catch (error) {
+            this.state.startError = error.message || "No se pudo iniciar la conversación.";
+        } finally {
+            this.state.startSending = false;
+        }
     }
 }
 

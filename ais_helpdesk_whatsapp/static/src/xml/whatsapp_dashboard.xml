@@ -2,101 +2,228 @@
 <templates xml:space="preserve">
 
 <t t-name="ais_helpdesk_whatsapp.WhatsappDashboard" owl="1">
-    <div class="o_ais_whatsapp_dashboard d-flex h-100">
-        <div class="o_ais_whatsapp_list border-end" style="overflow-y: auto;">
-            <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
-                <h5 class="m-0">Conversaciones</h5>
-                <button class="btn btn-sm btn-secondary" t-on-click="loadConversations">Actualizar</button>
+    <div t-attf-class="o_ais_whatsapp_dashboard {{ selectedConversation ? 'has-selection' : '' }}">
+
+        <div class="o_ais_whatsapp_topbar">
+            <div class="o_ais_whatsapp_topbar_title">
+                <span class="o_ais_whatsapp_title">Mesa de ayuda</span>
+                <span class="o_ais_whatsapp_subtitle">Aliare</span>
             </div>
-            <div t-if="state.loading" class="p-3 text-muted">Cargando...</div>
-            <div t-if="state.error" class="alert alert-danger m-2" t-esc="state.error" />
-            <div t-if="!state.loading and !state.error and !state.conversations.length" class="p-3 text-muted">
-                No hay conversaciones.
+            <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="openStartModal">
+                + Iniciar conversación
+            </button>
+            <div class="o_ais_whatsapp_avatar_name">
+                <div class="o_ais_whatsapp_avatar" t-esc="initials(userService.name)" />
+                <span t-esc="userService.name" />
             </div>
-            <div
-                t-foreach="state.conversations"
-                t-as="conversation"
-                t-key="conversation.id"
-                t-on-click="() => this.selectConversation(conversation.id)"
-                t-attf-class="o_ais_whatsapp_item p-2 border-bottom {{ conversation.id === state.selectedId ? 'bg-primary text-white' : '' }}"
-                style="cursor: pointer;"
-            >
-                <div class="d-flex justify-content-between">
-                    <strong t-esc="contactLabel(conversation)" />
-                    <span t-if="conversation.is_urgent" class="badge bg-danger">Urgente</span>
+        </div>
+
+        <div class="o_ais_whatsapp_body">
+
+            <div class="o_ais_whatsapp_list">
+                <div class="o_ais_whatsapp_search">
+                    <input
+                        type="text"
+                        placeholder="Buscar cliente o número"
+                        t-model="state.searchQuery"
+                    />
                 </div>
-                <div class="small" t-esc="statusLabel(conversation.status)" />
-            </div>
-        </div>
-        <div t-if="!selectedConversation" class="o_ais_whatsapp_detail flex-grow-1 p-3 text-muted">
-            Elegí una conversación de la izquierda.
-        </div>
-        <t t-else="">
-            <div class="o_ais_whatsapp_chat d-flex flex-column flex-grow-1 p-2">
-                <div class="o_ais_whatsapp_messages flex-grow-1 overflow-auto p-2">
-                    <div t-if="state.messagesLoading" class="text-muted">Cargando mensajes...</div>
+                <div class="o_ais_whatsapp_tabs">
+                    <button
+                        type="button"
+                        t-attf-class="o_ais_whatsapp_tab {{ state.filterTab === 'atencion' ? 'active' : '' }}"
+                        t-on-click="() => this.setFilterTab('atencion')"
+                    >Atención · <t t-esc="atencionCount" /></button>
+                    <button
+                        type="button"
+                        t-attf-class="o_ais_whatsapp_tab {{ state.filterTab === 'todas' ? 'active' : '' }}"
+                        t-on-click="() => this.setFilterTab('todas')"
+                    >Todas · <t t-esc="todasCount" /></button>
+                    <button
+                        type="button"
+                        t-attf-class="o_ais_whatsapp_tab {{ state.filterTab === 'cerradas' ? 'active' : '' }}"
+                        t-on-click="() => this.setFilterTab('cerradas')"
+                    >Cerradas · <t t-esc="cerradasCount" /></button>
+                </div>
+                <div t-if="state.loading" class="o_ais_whatsapp_muted p-3">Cargando...</div>
+                <div t-if="state.error" class="o_ais_whatsapp_error m-2" t-esc="state.error" />
+                <div t-if="!state.loading and !state.error and !filteredConversations.length" class="o_ais_whatsapp_muted p-3">
+                    No hay conversaciones.
+                </div>
+                <div class="o_ais_whatsapp_list_items">
                     <div
-                        t-foreach="state.messages"
-                        t-as="message"
-                        t-key="message.id"
-                        t-attf-class="o_ais_whatsapp_message mb-2 p-2 rounded {{ message.sender === 'customer' ? 'bg-light' : 'bg-primary text-white ms-auto' }}"
-                        style="max-width: 75%;"
+                        t-foreach="filteredConversations"
+                        t-as="conversation"
+                        t-key="conversation.id"
+                        t-on-click="() => this.selectConversation(conversation.id)"
+                        t-attf-class="o_ais_whatsapp_item {{ conversation.id === state.selectedId ? 'selected' : '' }}"
                     >
-                        <div class="small fw-bold" t-esc="senderLabel(message.sender)" />
-                        <div t-esc="message.body" style="white-space: pre-wrap;" />
-                        <div t-if="message.has_media" class="small text-muted">[adjunto]</div>
+                        <div class="o_ais_whatsapp_item_row">
+                            <strong t-esc="contactLabel(conversation)" />
+                            <span class="o_ais_whatsapp_time" t-esc="timeLabel(conversation.last_message_at)" />
+                        </div>
+                        <span class="o_ais_whatsapp_item_company" t-esc="(conversation.contact and conversation.contact.company) or ''" />
+                        <span class="o_ais_whatsapp_item_preview" t-esc="conversation.last_message_preview" />
+                        <span
+                            class="o_ais_whatsapp_pill"
+                            t-attf-style="background:{{statusPill(conversation.status).bg}};color:{{statusPill(conversation.status).color}};border-color:{{statusPill(conversation.status).border}};"
+                            t-esc="statusLabel(conversation)"
+                        />
                     </div>
                 </div>
-                <div t-if="state.messagesError" class="alert alert-danger m-2" t-esc="state.messagesError" />
-                <div class="o_ais_whatsapp_reply d-flex p-2 border-top">
-                    <textarea
-                        class="form-control me-2"
-                        rows="2"
-                        placeholder="Escribí una respuesta..."
-                        t-model="state.replyText"
-                        t-on-keydown="onReplyKeydown"
-                        t-att-disabled="!canReply or state.sending"
-                    />
-                    <button
-                        class="btn btn-primary"
-                        t-on-click="sendReply"
-                        t-att-disabled="!canReply or state.sending or !state.replyText.trim()"
-                    >
-                        Enviar
+            </div>
+
+            <div t-if="!selectedConversation" class="o_ais_whatsapp_placeholder">
+                Elegí una conversación de la izquierda.
+            </div>
+            <t t-else="">
+                <div class="o_ais_whatsapp_chat">
+                    <div class="o_ais_whatsapp_chat_header">
+                        <button type="button" class="o_ais_whatsapp_back" t-on-click="backToList" aria-label="Volver a la lista">←</button>
+                        <div class="o_ais_whatsapp_avatar lg" t-esc="initials(selectedConversation.contact and selectedConversation.contact.profile_name)" />
+                        <div class="o_ais_whatsapp_chat_header_info">
+                            <span class="o_ais_whatsapp_chat_name" t-esc="contactLabel(selectedConversation)" />
+                            <span class="o_ais_whatsapp_muted">
+                                <t t-esc="(selectedConversation.contact and selectedConversation.contact.company) or ''" /> · <t t-esc="(selectedConversation.contact and selectedConversation.contact.wa_id) or ''" />
+                            </span>
+                        </div>
+                        <span
+                            class="o_ais_whatsapp_pill lg"
+                            t-attf-style="background:{{statusPill(selectedConversation.status).bg}};color:{{statusPill(selectedConversation.status).color}};border-color:{{statusPill(selectedConversation.status).border}};"
+                            t-esc="statusLabel(selectedConversation)"
+                        />
+                        <button t-if="canReply" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeConversation" t-att-disabled="state.actionPending">
+                            Cerrar conversación
+                        </button>
+                    </div>
+
+                    <div t-if="selectedConversation.status === 'waiting_human'" class="o_ais_whatsapp_banner warn">
+                        <div>
+                            <strong>La IA pidió ayuda</strong>
+                            <div t-esc="'Motivo: ' + (selectedConversation.escalation_reason || 'sin especificar')" />
+                        </div>
+                    </div>
+                    <div t-if="selectedConversation.status === 'ai'" class="o_ais_whatsapp_banner info">
+                        <div><strong>La IA está respondiendo.</strong> Estás mirando en vivo.</div>
+                    </div>
+                    <div t-if="selectedConversation.status === 'human'" class="o_ais_whatsapp_banner info">
+                        <div>
+                            <strong>La IA está en pausa en esta conversación</strong>
+                            <div t-esc="'Se reanuda sola en ' + pauseRemainingLabel + ' si no respondés.'" />
+                        </div>
+                        <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="returnToAi" t-att-disabled="state.actionPending">
+                            Devolver a la IA ahora
+                        </button>
+                    </div>
+
+                    <div class="o_ais_whatsapp_messages">
+                        <div t-if="state.messagesLoading" class="o_ais_whatsapp_muted">Cargando mensajes...</div>
+                        <div
+                            t-foreach="state.messages"
+                            t-as="message"
+                            t-key="message.id"
+                            t-attf-class="o_ais_whatsapp_message_row {{ senderClass(message.sender) }}"
+                        >
+                            <span class="o_ais_whatsapp_sender_label" t-esc="senderLabel(message.sender, selectedConversation) + ' · ' + timeLabel(message.timestamp)" />
+                            <div t-if="!message.has_media" t-attf-class="o_ais_whatsapp_bubble {{ senderClass(message.sender) }}" t-esc="message.body" />
+                            <div t-else="" t-attf-class="o_ais_whatsapp_bubble {{ senderClass(message.sender) }} attachment">
+                                <div class="o_ais_whatsapp_attachment">Adjunto (<t t-esc="message.msg_type" />)</div>
+                                <span t-if="message.body" t-esc="message.body" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div t-if="state.messagesError" class="o_ais_whatsapp_error m-2" t-esc="state.messagesError" />
+                    <div t-if="state.actionError" class="o_ais_whatsapp_error m-2" t-esc="state.actionError" />
+
+                    <div t-if="canReply" class="o_ais_whatsapp_replybox">
+                        <div class="o_ais_whatsapp_quickreplies">
+                            <button
+                                t-foreach="quickReplies"
+                                t-as="qr"
+                                t-key="qr"
+                                type="button"
+                                class="o_ais_whatsapp_chip"
+                                t-on-click="() => this.sendQuickReply(qr)"
+                                t-att-disabled="state.sending"
+                            ><t t-esc="qr" /></button>
+                        </div>
+                        <div class="o_ais_whatsapp_replyrow">
+                            <textarea
+                                placeholder="Escribí tu respuesta..."
+                                t-model="state.replyText"
+                                t-on-keydown="onReplyKeydown"
+                                t-att-disabled="state.sending"
+                            />
+                            <button
+                                type="button"
+                                class="o_ais_whatsapp_btn_primary"
+                                t-on-click="() => this.sendReply()"
+                                t-att-disabled="state.sending or !state.replyText.trim()"
+                            >Enviar</button>
+                        </div>
+                    </div>
+                    <div t-elif="canTake" class="o_ais_whatsapp_takebar">
+                        <span class="o_ais_whatsapp_muted">
+                            Nadie está atendiendo esta conversación. Tomala para poder responder.
+                        </span>
+                        <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="takeConversation" t-att-disabled="state.actionPending">
+                            Tomar conversación
+                        </button>
+                    </div>
+                </div>
+
+                <div class="o_ais_whatsapp_info">
+                    <div class="o_ais_whatsapp_info_section">
+                        <span class="o_ais_whatsapp_info_label">Cliente</span>
+                        <span class="o_ais_whatsapp_info_title" t-esc="(selectedConversation.contact and selectedConversation.contact.company) or 'Sin empresa'" />
+                        <span t-esc="'Contacto: ' + contactLabel(selectedConversation)" />
+                        <span t-esc="'WhatsApp: ' + ((selectedConversation.contact and selectedConversation.contact.wa_id) or '')" />
+                    </div>
+                    <div t-if="selectedConversation.helpdesk_ticket_id" class="o_ais_whatsapp_info_section">
+                        <span class="o_ais_whatsapp_info_label">Ticket en el Helpdesk</span>
+                        <span t-if="state.ticketInfo" class="o_ais_whatsapp_info_title">
+                            #<t t-esc="state.ticketInfo.number" /> · <t t-esc="state.ticketInfo.name" />
+                        </span>
+                        <span t-if="state.ticketInfo" class="o_ais_whatsapp_pill" t-esc="state.ticketInfo.stage" />
+                        <span t-esc="selectedConversation.taken_by ? ('Asignado a ' + selectedConversation.taken_by) : 'Creado por la IA'" />
+                        <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="openTicket">
+                            Abrir en Odoo
+                        </button>
+                    </div>
+                    <div class="o_ais_whatsapp_info_section">
+                        <button t-if="canClose and !canReply" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeConversation" t-att-disabled="state.actionPending">
+                            Cerrar conversación
+                        </button>
+                    </div>
+                </div>
+            </t>
+        </div>
+
+        <div t-if="state.startOpen" class="o_ais_whatsapp_modal_backdrop" t-on-click="closeStartModal">
+            <div class="o_ais_whatsapp_modal" t-on-click.stop="">
+                <div class="o_ais_whatsapp_modal_header">
+                    <strong>Iniciar conversación</strong>
+                    <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeStartModal">×</button>
+                </div>
+                <label>Número de WhatsApp (con código de país)</label>
+                <input type="text" t-model="state.startPhone" placeholder="5493794000000" />
+                <label>Nombre (opcional)</label>
+                <input type="text" t-model="state.startName" placeholder="Nombre del contacto" />
+                <label>Plantilla aprobada por Meta</label>
+                <input type="text" t-model="state.startTemplate" placeholder="nombre_de_la_plantilla" />
+                <label>Parámetros de la plantilla (separados por coma, opcional)</label>
+                <input type="text" t-model="state.startParams" placeholder="Laura, #2417" />
+                <div t-if="state.startError" class="o_ais_whatsapp_error" t-esc="state.startError" />
+                <div class="o_ais_whatsapp_modal_actions">
+                    <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeStartModal">Cancelar</button>
+                    <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="submitStart" t-att-disabled="state.startSending">
+                        Enviar plantilla
                     </button>
                 </div>
             </div>
-            <div class="o_ais_whatsapp_info border-start p-3">
-                <h5 t-esc="contactLabel(selectedConversation)" />
-                <p>Estado: <t t-esc="statusLabel(selectedConversation.status)" /></p>
-                <p t-if="selectedConversation.helpdesk_ticket_id">
-                    <button class="btn btn-link p-0" t-on-click="openTicket">
-                        Ver ticket #<t t-esc="selectedConversation.helpdesk_ticket_id" />
-                    </button>
-                </p>
-                <div t-if="state.actionError" class="alert alert-danger p-2" t-esc="state.actionError" />
-                <div class="d-flex flex-column gap-2">
-                    <button
-                        t-if="canTake"
-                        class="btn btn-primary btn-sm"
-                        t-on-click="takeConversation"
-                        t-att-disabled="state.actionPending"
-                    >Tomar</button>
-                    <button
-                        t-if="canReturnToAi"
-                        class="btn btn-secondary btn-sm"
-                        t-on-click="returnToAi"
-                        t-att-disabled="state.actionPending"
-                    >Devolver a la IA</button>
-                    <button
-                        t-if="canClose"
-                        class="btn btn-outline-danger btn-sm"
-                        t-on-click="closeConversation"
-                        t-att-disabled="state.actionPending"
-                    >Cerrar</button>
-                </div>
-            </div>
-        </t>
+        </div>
+
     </div>
 </t>
 

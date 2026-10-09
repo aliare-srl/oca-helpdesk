@@ -120,7 +120,7 @@ class WhatsappConversation(models.Model):
 
     def action_take(self):
         self.ensure_one()
-        agent_client.take(self.env, self.remote_id)
+        agent_client.take(self.env, self.remote_id, taken_by=self.env.user.name)
         self.action_refresh()
 
     def action_return_to_ai(self):

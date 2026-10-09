@@ -66,8 +66,9 @@ def reply(env, remote_id, text):
     return _request(env, "POST", f"/api/conversations/{remote_id}/reply", json_body={"text": text})
 
 
-def take(env, remote_id):
-    return _request(env, "POST", f"/api/conversations/{remote_id}/take")
+def take(env, remote_id, taken_by=None):
+    body = {"taken_by": taken_by} if taken_by else None
+    return _request(env, "POST", f"/api/conversations/{remote_id}/take", json_body=body)
 
 
 def return_to_ai(env, remote_id):
