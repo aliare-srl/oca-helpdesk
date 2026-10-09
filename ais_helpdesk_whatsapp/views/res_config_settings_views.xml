@@ -92,6 +92,20 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label
+                                    for="ais_whatsapp_waiting_human_team_id"
+                                    string="Equipo para avisos de conversaciones esperando"
+                                />
+                                <div class="text-muted">
+                                    El aviso (mail y WhatsApp) se manda a cada miembro de este equipo, menos el usuario de la IA. El WhatsApp necesita además una plantilla aprobada por Meta.
+                                </div>
+                                <div class="content-group">
+                                    <field name="ais_whatsapp_waiting_human_team_id" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </xpath>
