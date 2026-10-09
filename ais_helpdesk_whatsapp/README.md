@@ -4,12 +4,14 @@ Agrega a la Mesa de Ayuda de Odoo la pantalla donde el equipo ve y atiende las c
 
 ## Funcionalidad
 
-- Menú **Helpdesk → Conversaciones de WhatsApp**: lista de conversaciones, con las urgentes y las que esperan a una persona resaltadas.
-- Por conversación: **Actualizar** (trae estado y mensajes nuevos), **Tomar** (pausa la IA), **Responder** (manda un mensaje real por WhatsApp), **Devolver a la IA**, **Cerrar**.
-- Los mensajes se muestran en el chatter nativo de Odoo (igual que el historial de un ticket), marcados Cliente / IA / Persona.
-- Vínculo directo al ticket del Helpdesk relacionado, cuando existe.
-- Menú **Helpdesk → Iniciar conversación**: para escribirle primero a un cliente con una plantilla aprobada por Meta.
-- Sincronización automática de la lista cada 2 minutos (no de los mensajes, para no recargar innecesariamente: esos se traen al abrir o actualizar una conversación puntual).
+- Menú **Helpdesk → Conversaciones de WhatsApp**: pantalla propia (OWL) de tres columnas — lista, chat, ficha del cliente/ticket.
+- Lista de conversaciones con búsqueda, filtro por rango de fecha (por defecto, hoy) y 5 pestañas de estado: **Esperando**, **IA**, **Persona**, **Cerradas**, **Todas**. Dentro de cada estado, ordenadas por hora de ingreso más reciente primero; al cerrarse, una conversación pasa a "Cerradas".
+- Por conversación: **Tomar** (pausa la IA y asigna el ticket a quien la toma, con historial de reasignaciones), **Responder** (solo mientras la tiene tomada una persona), **Devolver a la IA**, **Cerrar con resolución** (la resolución queda en la descripción del ticket, como base de casos resueltos).
+- Las imágenes que manda el cliente se ven directo en el chat (no solo como adjunto genérico); otros archivos quedan como link para abrir.
+- Si el cliente no vuelve a escribir dentro del tiempo configurado, la conversación se cierra sola y se avisa por WhatsApp.
+- Botón **Abrir ticket** (header del chat, visible también en celular, y en la ficha del cliente).
+- Desde la ficha de un ticket del Helpdesk: botón **Iniciar WhatsApp** si el contacto tiene celular cargado y todavía no hay conversación, con el mismo modal de "Iniciar conversación" (vincula la conversación nueva a ese ticket).
+- Menú **Helpdesk → Iniciar conversación**: para escribirle primero a cualquier cliente con una plantilla aprobada por Meta.
 
 ## Instalación
 
@@ -17,23 +19,27 @@ Depende de `helpdesk_mgmt`. Sin configuración adicional en el `__manifest__`; u
 
 ## Configuración
 
-**Ajustes → Mesa de Ayuda WhatsApp** (solo administradores de Helpdesk):
+**Ajustes → Mesa de Ayuda** (solo administradores de Helpdesk):
 
-- **URL del servicio**: la del `AgenteIA-MesadeAyuda-Odoo` desplegado (ej. `https://mesaayuda.mochipa.com.ar`), sin la barra final.
-- **Clave de la API**: la `PANEL_API_KEY` configurada en el `.env` de ese servicio.
+- **URL del servicio** y **clave de la API**: las del `AgenteIA-MesadeAyuda-Odoo` desplegado y su `PANEL_API_KEY`.
+- **Usuario de la IA**: a nombre de quién queda un ticket mientras lo atiende la IA.
+- **Minutos de inactividad del cliente para cerrar solo**: por defecto 30.
+- **Segundos entre actualizaciones de la pantalla**: por defecto 4.
 
 ## Uso
 
-1. Un cliente escribe por WhatsApp; la IA responde sola o escala.
-2. Cuando una conversación necesita a una persona, aparece en **Conversaciones de WhatsApp** marcada "Esperando a un humano" (o "Urgente").
-3. Se abre, se apreta **Tomar** y después **Responder** para escribirle al cliente. Mientras una persona la tiene tomada, la IA no contesta; si pasan 2 horas sin que nadie responda, vuelve sola a la IA (configurable en el servicio).
-4. **Devolver a la IA** o **Cerrar** cuando termina.
-5. Para escribirle primero a un cliente (sin que haya escrito antes), **Iniciar conversación** con una plantilla ya aprobada por Meta.
+1. Un cliente escribe por WhatsApp; la IA responde sola, deriva a comercial o escala a una persona.
+2. Cuando una conversación necesita a alguien, aparece en la pestaña **Esperando**.
+3. Se abre, se apreta **Tomar** y después se responde. Mientras una persona la tiene tomada, la IA no contesta; si pasa el tiempo configurado sin que nadie responda, vuelve sola a la IA.
+4. **Devolver a la IA** o **Cerrar con resolución** cuando termina (la resolución escrita ahí queda en el ticket).
+5. Para escribirle primero a un cliente, **Iniciar conversación** (desde el menú, o desde el botón del ticket si ya tiene WhatsApp cargado) con una plantilla aprobada por Meta.
 
 ## Detalle técnico
 
-- `models/whatsapp_conversation.py`: `ais.whatsapp.conversation`, hereda `mail.thread` para reusar el chatter como historial de mensajes. `ticket_id` es un `Many2one` calculado al `helpdesk.ticket` real (el id que guarda el servicio ya es el id del ticket en esta misma base, porque el agente escribe directo por XML-RPC).
+- `controllers/main.py`: rutas JSON que consume la pantalla OWL (proxy fino a `services/agent_client.py`), más una ruta HTTP (no JSON-RPC) para servir el adjunto real de un mensaje.
 - `services/agent_client.py`: único punto de acceso a la API del servicio (`requests`), con errores traducidos a `UserError`.
-- `wizards/`: ventanas para responder e iniciar conversación.
+- `static/src/js/whatsapp_dashboard.js`, `static/src/xml/whatsapp_dashboard.xml`, `static/src/scss/whatsapp_dashboard.scss`: la pantalla OWL (`ir.actions.client` con tag `ais_whatsapp_dashboard`).
+- `models/helpdesk_ticket.py`: `whatsapp_conversation_remote_id` (lo escribe el servicio al crear el ticket), botones para abrir/iniciar la conversación desde el ticket, `user_id` con tracking para ver el historial de reasignaciones.
+- `models/res_config_settings.py`: los parámetros de Ajustes, como `ir.config_parameter`.
+- `wizards/whatsapp_start_wizard.py`: ventana para iniciar una conversación nueva.
 - `data/ir_cron.xml`: sincroniza la lista cada 2 minutos; no corre si el servicio todavía no está configurado.
-- No usa JavaScript (OWL): primera versión con vistas estándar. El diseño visual (tres columnas, actualización en vivo) queda para una segunda etapa.

@@ -62,6 +62,21 @@ def get_messages(env, remote_id):
     return _request(env, "GET", f"/api/conversations/{remote_id}/messages").get("messages", [])
 
 
+def get_message_media(env, remote_id, message_id):
+    """Devuelve (content_type, contenido) del adjunto real de un mensaje. No usa _request: esa
+    función siempre espera JSON, y esto es el archivo en bruto (ej. la imagen del cliente)."""
+    base_url, api_key = _config(env)
+    url = f"{base_url}/api/conversations/{remote_id}/messages/{message_id}/media"
+    try:
+        response = requests.get(url, headers={"X-Panel-Key": api_key}, timeout=TIMEOUT)
+    except requests.RequestException as exc:
+        _logger.warning("Error llamando a %s: %s", url, exc)
+        raise UserError(_("No se pudo conectar con el servicio de WhatsApp: %s") % exc) from exc
+    if response.status_code != 200:
+        raise UserError(_("No se encontró el adjunto en el servicio."))
+    return response.headers.get("Content-Type", "application/octet-stream"), response.content
+
+
 def reply(env, remote_id, text):
     return _request(env, "POST", f"/api/conversations/{remote_id}/reply", json_body={"text": text})
 

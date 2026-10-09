@@ -308,6 +308,10 @@ export class WhatsappDashboard extends Component {
         return "IA";
     }
 
+    mediaUrl(message) {
+        return `/ais_helpdesk_whatsapp/conversations/${this.state.selectedId}/messages/${message.id}/media`;
+    }
+
     get selectedConversation() {
         return this.state.conversations.find((c) => c.id === this.state.selectedId) || null;
     }

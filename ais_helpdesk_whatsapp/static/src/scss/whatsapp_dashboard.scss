@@ -333,6 +333,13 @@ $ais-avatar-color: #5A3852;
         background: rgba(0,0,0,0.06);
         font-size: 11px;
     }
+    .o_ais_whatsapp_image {
+        max-width: 220px;
+        max-height: 220px;
+        border-radius: 7px;
+        display: block;
+        cursor: pointer;
+    }
 
     .o_ais_whatsapp_replybox {
         flex-shrink: 0;

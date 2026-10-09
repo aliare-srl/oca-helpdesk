@@ -72,6 +72,16 @@ class WhatsappDashboardController(http.Controller):
         _check_access()
         return agent_client.get_messages(request.env, remote_id)
 
+    @http.route(
+        "/ais_helpdesk_whatsapp/conversations/<int:remote_id>/messages/<int:message_id>/media",
+        type="http",
+        auth="user",
+    )
+    def message_media(self, remote_id, message_id):
+        _check_access()
+        content_type, content = agent_client.get_message_media(request.env, remote_id, message_id)
+        return request.make_response(content, headers=[("Content-Type", content_type)])
+
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/reply", type="json", auth="user")
     def reply(self, remote_id, text):
         _check_access()
