@@ -72,7 +72,27 @@
                 <p t-if="selectedConversation.helpdesk_ticket_id">
                     Ticket: #<t t-esc="selectedConversation.helpdesk_ticket_id" />
                 </p>
-                <p class="text-muted small">(tomar / devolver a la IA / cerrar se agregan en la próxima etapa)</p>
+                <div t-if="state.actionError" class="alert alert-danger p-2" t-esc="state.actionError" />
+                <div class="d-flex flex-column gap-2">
+                    <button
+                        t-if="canTake"
+                        class="btn btn-primary btn-sm"
+                        t-on-click="takeConversation"
+                        t-att-disabled="state.actionPending"
+                    >Tomar</button>
+                    <button
+                        t-if="canReturnToAi"
+                        class="btn btn-secondary btn-sm"
+                        t-on-click="returnToAi"
+                        t-att-disabled="state.actionPending"
+                    >Devolver a la IA</button>
+                    <button
+                        t-if="canClose"
+                        class="btn btn-outline-danger btn-sm"
+                        t-on-click="closeConversation"
+                        t-att-disabled="state.actionPending"
+                    >Cerrar</button>
+                </div>
             </div>
         </t>
     </div>

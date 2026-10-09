@@ -4,7 +4,9 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
 const { Component, hooks } = owl;
-const { useState, onWillStart } = hooks;
+const { useState, onWillStart, onWillUnmount } = hooks;
+
+const POLL_INTERVAL_MS = 4000;
 
 const STATUS_LABEL = {
     ai: "Atiende la IA",
@@ -31,13 +33,26 @@ export class WhatsappDashboard extends Component {
             messagesError: "",
             replyText: "",
             sending: false,
+            actionError: "",
+            actionPending: false,
         });
         onWillStart(() => this.loadConversations());
+        this.pollTimer = setInterval(() => this.poll(), POLL_INTERVAL_MS);
+        onWillUnmount(() => clearInterval(this.pollTimer));
     }
 
-    async loadConversations() {
-        this.state.loading = true;
-        this.state.error = "";
+    async poll() {
+        await this.loadConversations({ silent: true });
+        if (this.state.selectedId) {
+            await this.loadMessages({ silent: true });
+        }
+    }
+
+    async loadConversations({ silent = false } = {}) {
+        if (!silent) {
+            this.state.loading = true;
+            this.state.error = "";
+        }
         try {
             const conversations = await this.rpc("/ais_helpdesk_whatsapp/conversations", {});
             conversations.sort((a, b) => {
@@ -48,7 +63,9 @@ export class WhatsappDashboard extends Component {
             });
             this.state.conversations = conversations;
         } catch (error) {
-            this.state.error = error.message || "No se pudo conectar con el servicio.";
+            if (!silent) {
+                this.state.error = error.message || "No se pudo conectar con el servicio.";
+            }
         } finally {
             this.state.loading = false;
         }
@@ -69,14 +86,18 @@ export class WhatsappDashboard extends Component {
         this.loadMessages();
     }
 
-    async loadMessages() {
+    async loadMessages({ silent = false } = {}) {
         const id = this.state.selectedId;
-        this.state.messagesLoading = true;
-        this.state.messagesError = "";
+        if (!silent) {
+            this.state.messagesLoading = true;
+            this.state.messagesError = "";
+        }
         try {
             this.state.messages = await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/messages`, {});
         } catch (error) {
-            this.state.messagesError = error.message || "No se pudo leer la conversación.";
+            if (!silent) {
+                this.state.messagesError = error.message || "No se pudo leer la conversación.";
+            }
         } finally {
             this.state.messagesLoading = false;
         }
@@ -118,6 +139,52 @@ export class WhatsappDashboard extends Component {
 
     get canReply() {
         return !!this.selectedConversation && this.selectedConversation.status !== "closed";
+    }
+
+    get canTake() {
+        const status = this.selectedConversation && this.selectedConversation.status;
+        return status && status !== "human" && status !== "closed";
+    }
+
+    get canReturnToAi() {
+        return this.selectedConversation && this.selectedConversation.status === "human";
+    }
+
+    get canClose() {
+        const status = this.selectedConversation && this.selectedConversation.status;
+        return status && status !== "closed";
+    }
+
+    async runAction(route) {
+        const id = this.state.selectedId;
+        if (!id || this.state.actionPending) {
+            return;
+        }
+        this.state.actionPending = true;
+        this.state.actionError = "";
+        try {
+            await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/${route}`, {});
+            await this.loadConversations();
+            if (this.state.selectedId) {
+                await this.loadMessages();
+            }
+        } catch (error) {
+            this.state.actionError = error.message || "No se pudo completar la acción.";
+        } finally {
+            this.state.actionPending = false;
+        }
+    }
+
+    takeConversation() {
+        return this.runAction("take");
+    }
+
+    returnToAi() {
+        return this.runAction("return_to_ai");
+    }
+
+    closeConversation() {
+        return this.runAction("close");
     }
 }
 
