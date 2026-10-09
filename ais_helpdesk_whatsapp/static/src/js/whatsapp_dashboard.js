@@ -17,6 +17,10 @@ const STATUS_PILL = {
 
 const QUICK_REPLIES = ["Ya lo reviso", "¿Me pasás una captura?", "Quedó resuelto, gracias"];
 
+// Orden de la lista: primero por estado (esperando > IA > persona > cerrada), y dentro de cada
+// estado, de la más reciente a la más antigua.
+const STATUS_ORDER = { waiting_human: 0, ai: 1, human: 2, closed: 3 };
+
 function todayLocal() {
     const d = new Date();
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -114,7 +118,11 @@ export class WhatsappDashboard extends Component {
         }
         try {
             const conversations = await this.rpc("/ais_helpdesk_whatsapp/conversations", {});
-            conversations.sort((a, b) => (b.last_message_at || "").localeCompare(a.last_message_at || ""));
+            conversations.sort((a, b) => {
+                const order = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9);
+                if (order !== 0) return order;
+                return (b.last_message_at || "").localeCompare(a.last_message_at || "");
+            });
             this.state.conversations = conversations;
         } catch (error) {
             if (!silent) {
