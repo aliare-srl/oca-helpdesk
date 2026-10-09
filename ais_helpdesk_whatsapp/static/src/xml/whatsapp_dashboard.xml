@@ -108,7 +108,7 @@
                             t-attf-style="background:{{statusPill(selectedConversation.status).bg}};color:{{statusPill(selectedConversation.status).color}};border-color:{{statusPill(selectedConversation.status).border}};"
                             t-esc="statusLabel(selectedConversation)"
                         />
-                        <button t-if="selectedConversation.helpdesk_ticket_id" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="openTicket">
+                        <button t-if="selectedConversation.helpdesk_ticket_id" type="button" class="o_ais_whatsapp_btn_outline o_ais_whatsapp_header_ticket_btn" t-on-click="openTicket">
                             Abrir ticket
                         </button>
                         <button t-if="canReply" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="openCloseModal" t-att-disabled="state.actionPending">
