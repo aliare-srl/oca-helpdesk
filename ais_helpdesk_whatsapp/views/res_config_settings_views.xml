@@ -39,6 +39,46 @@
                             </div>
                         </div>
                     </div>
+                    <h2>Mesa de ayuda</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_ai_user_id" string="Usuario de la IA" />
+                                <div class="text-muted">
+                                    A nombre de quién queda un ticket mientras lo atiende la IA.
+                                </div>
+                                <div class="content-group">
+                                    <field name="ais_whatsapp_ai_user_id" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label
+                                    for="ais_whatsapp_inactivity_close_minutes"
+                                    string="Minutos de inactividad para cerrar solo"
+                                />
+                                <div class="text-muted">
+                                    Si el cliente no responde en este tiempo, se cierra solo y se le avisa. 0 lo desactiva.
+                                </div>
+                                <div class="content-group">
+                                    <field name="ais_whatsapp_inactivity_close_minutes" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label
+                                    for="ais_whatsapp_refresh_seconds"
+                                    string="Segundos entre actualizaciones"
+                                />
+                                <div class="text-muted">Cada cuánto se refresca sola la pantalla de conversaciones.</div>
+                                <div class="content-group">
+                                    <field name="ais_whatsapp_refresh_seconds" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </xpath>
         </field>

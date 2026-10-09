@@ -447,15 +447,18 @@ $ais-avatar-color: #5A3852;
         font-size: 13px;
 
         label { font-size: 12px; font-weight: 600; color: $ais-muted; margin-top: 4px; }
-        input {
-            height: 36px;
+        input, textarea {
             box-sizing: border-box;
             border: 1.5px solid $ais-border-strong;
             border-radius: 8px;
             padding: 0 10px;
             font-size: 13px;
             outline: 0;
+            font-family: inherit;
+            width: 100%;
         }
+        input { height: 36px; }
+        textarea { padding: 8px 10px; resize: vertical; }
     }
     .o_ais_whatsapp_modal_header {
         display: flex;

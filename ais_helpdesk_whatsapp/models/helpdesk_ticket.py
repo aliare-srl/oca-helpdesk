@@ -4,6 +4,11 @@ from odoo import fields, models
 class HelpdeskTicket(models.Model):
     _inherit = "helpdesk.ticket"
 
+    # En helpdesk_mgmt este campo no tiene seguimiento (tracking=False); acá se prende, acotado a
+    # este módulo, para que quede solo en el chatter el historial de quién fue atendiendo el ticket
+    # (la IA, tal persona, la IA de nuevo, otra persona...).
+    user_id = fields.Many2one(tracking=True)
+
     whatsapp_conversation_remote_id = fields.Integer(
         string="Id de la conversación de WhatsApp",
         help="Lo escribe el servicio al crear el ticket, para no depender del sync cada 2 minutos.",

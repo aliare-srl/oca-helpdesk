@@ -4,6 +4,7 @@ y la autenticación contra el servicio viven ahí, esto solo expone esas funcion
 from odoo import http
 from odoo.exceptions import AccessError
 from odoo.http import request
+from odoo.tools import html_escape
 
 from odoo.addons.ais_helpdesk_whatsapp.services import agent_client
 
@@ -15,7 +16,38 @@ def _check_access():
         raise AccessError("No tenés acceso a la mesa de ayuda.")
 
 
+def _config_param(key, default=""):
+    return request.env["ir.config_parameter"].sudo().get_param(key) or default
+
+
+def _reassign_ticket(ticket_id, user_id):
+    if not ticket_id or not user_id:
+        return
+    request.env["helpdesk.ticket"].browse(int(ticket_id)).user_id = int(user_id)
+
+
+def _close_ticket_with_resolution(ticket_id, resolution):
+    if not ticket_id:
+        return
+    ticket = request.env["helpdesk.ticket"].browse(int(ticket_id))
+    if not ticket.exists():
+        return
+    stage = request.env["helpdesk.ticket.stage"].search([("name", "=", "Hecho")], limit=1)
+    vals = {"stage_id": stage.id} if stage else {}
+    if resolution:
+        safe = html_escape(resolution).replace("\n", "<br/>")
+        vals["description"] = f"{ticket.description or ''}<p><b>Resolución:</b> {safe}</p>"
+    if vals:
+        ticket.write(vals)
+
+
 class WhatsappDashboardController(http.Controller):
+    @http.route("/ais_helpdesk_whatsapp/config", type="json", auth="user")
+    def config(self):
+        _check_access()
+        refresh_seconds = _config_param("ais_helpdesk_whatsapp.refresh_seconds", "4")
+        return {"refresh_seconds": int(refresh_seconds) if refresh_seconds.isdigit() else 4}
+
     @http.route("/ais_helpdesk_whatsapp/conversations", type="json", auth="user")
     def conversations(self, status=None, limit=200):
         _check_access()
@@ -32,19 +64,25 @@ class WhatsappDashboardController(http.Controller):
         return agent_client.reply(request.env, remote_id, text)
 
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/take", type="json", auth="user")
-    def take(self, remote_id):
+    def take(self, remote_id, ticket_id=None):
         _check_access()
-        return agent_client.take(request.env, remote_id, taken_by=request.env.user.name)
+        result = agent_client.take(request.env, remote_id, taken_by=request.env.user.name)
+        _reassign_ticket(ticket_id, request.env.user.id)
+        return result
 
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/return_to_ai", type="json", auth="user")
-    def return_to_ai(self, remote_id):
+    def return_to_ai(self, remote_id, ticket_id=None):
         _check_access()
-        return agent_client.return_to_ai(request.env, remote_id)
+        result = agent_client.return_to_ai(request.env, remote_id)
+        _reassign_ticket(ticket_id, _config_param("ais_helpdesk_whatsapp.ai_user_id"))
+        return result
 
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/close", type="json", auth="user")
-    def close(self, remote_id):
+    def close(self, remote_id, resolution=None, ticket_id=None):
         _check_access()
-        return agent_client.close(request.env, remote_id)
+        result = agent_client.close(request.env, remote_id)
+        _close_ticket_with_resolution(ticket_id, resolution)
+        return result
 
     @http.route("/ais_helpdesk_whatsapp/tickets/<int:ticket_id>", type="json", auth="user")
     def ticket_info(self, ticket_id):

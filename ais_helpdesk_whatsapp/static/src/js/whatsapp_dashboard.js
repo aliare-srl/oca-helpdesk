@@ -6,7 +6,7 @@ import { useService } from "@web/core/utils/hooks";
 const { Component, hooks } = owl;
 const { useState, onWillStart, onWillUnmount } = hooks;
 
-const POLL_INTERVAL_MS = 4000;
+const DEFAULT_POLL_INTERVAL_MS = 4000;
 
 const STATUS_PILL = {
     waiting_human: { label: "Espera a una persona", bg: "#FEF0D9", color: "#8A3B0C", border: "#F2C98A" },
@@ -63,17 +63,23 @@ export class WhatsappDashboard extends Component {
             startParams: "",
             startError: "",
             startSending: false,
+            closeOpen: false,
+            closeResolution: "",
+            closeError: "",
         });
 
+        this.pollIntervalMs = DEFAULT_POLL_INTERVAL_MS;
+
         onWillStart(async () => {
+            await this.loadConfig();
             await this.loadConversations();
             const params = this.props.action && this.props.action.params;
             if (params && params.conversation_id) {
                 this.selectConversation(params.conversation_id);
             }
+            this.pollTimer = setInterval(() => this.poll(), this.pollIntervalMs);
         });
 
-        this.pollTimer = setInterval(() => this.poll(), POLL_INTERVAL_MS);
         this.clockTimer = setInterval(() => {
             this.state.now = Date.now();
         }, 30000);
@@ -81,6 +87,17 @@ export class WhatsappDashboard extends Component {
             clearInterval(this.pollTimer);
             clearInterval(this.clockTimer);
         });
+    }
+
+    async loadConfig() {
+        try {
+            const config = await this.rpc("/ais_helpdesk_whatsapp/config", {});
+            if (config.refresh_seconds > 0) {
+                this.pollIntervalMs = config.refresh_seconds * 1000;
+            }
+        } catch (error) {
+            // Se sigue con los valores por defecto si no se pudo leer la configuración.
+        }
     }
 
     async poll() {
@@ -317,7 +334,7 @@ export class WhatsappDashboard extends Component {
         return h > 0 ? `${h} h ${m} min` : `${m} min`;
     }
 
-    async runAction(route) {
+    async runAction(route, extraParams = {}) {
         const id = this.state.selectedId;
         if (!id || this.state.actionPending) {
             return;
@@ -325,7 +342,7 @@ export class WhatsappDashboard extends Component {
         this.state.actionPending = true;
         this.state.actionError = "";
         try {
-            await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/${route}`, {});
+            await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/${route}`, extraParams);
             await this.loadConversations();
             if (this.state.selectedId) {
                 await this.loadMessages();
@@ -338,15 +355,44 @@ export class WhatsappDashboard extends Component {
     }
 
     takeConversation() {
-        return this.runAction("take");
+        const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
+        return this.runAction("take", { ticket_id: ticketId });
     }
 
     returnToAi() {
-        return this.runAction("return_to_ai");
+        const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
+        return this.runAction("return_to_ai", { ticket_id: ticketId });
     }
 
-    closeConversation() {
-        return this.runAction("close");
+    openCloseModal() {
+        this.state.closeOpen = true;
+        this.state.closeResolution = "";
+        this.state.closeError = "";
+    }
+
+    closeCloseModal() {
+        this.state.closeOpen = false;
+    }
+
+    async submitClose() {
+        const resolution = this.state.closeResolution.trim();
+        if (!resolution) {
+            this.state.closeError = "Contá en pocas palabras cómo se resolvió, antes de cerrar.";
+            return;
+        }
+        const id = this.state.selectedId;
+        const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
+        this.state.actionPending = true;
+        this.state.closeError = "";
+        try {
+            await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/close`, { resolution, ticket_id: ticketId });
+            this.state.closeOpen = false;
+            await this.loadConversations();
+        } catch (error) {
+            this.state.closeError = error.message || "No se pudo cerrar la conversación.";
+        } finally {
+            this.state.actionPending = false;
+        }
     }
 
     backToList() {

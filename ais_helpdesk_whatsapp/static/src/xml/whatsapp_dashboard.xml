@@ -108,7 +108,7 @@
                             t-attf-style="background:{{statusPill(selectedConversation.status).bg}};color:{{statusPill(selectedConversation.status).color}};border-color:{{statusPill(selectedConversation.status).border}};"
                             t-esc="statusLabel(selectedConversation)"
                         />
-                        <button t-if="canReply" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeConversation" t-att-disabled="state.actionPending">
+                        <button t-if="canReply" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="openCloseModal" t-att-disabled="state.actionPending">
                             Cerrar conversación
                         </button>
                     </div>
@@ -208,7 +208,7 @@
                         </button>
                     </div>
                     <div class="o_ais_whatsapp_info_section">
-                        <button t-if="canClose and !canReply" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeConversation" t-att-disabled="state.actionPending">
+                        <button t-if="canClose and !canReply" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="openCloseModal" t-att-disabled="state.actionPending">
                             Cerrar conversación
                         </button>
                     </div>
@@ -235,6 +235,28 @@
                     <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeStartModal">Cancelar</button>
                     <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="submitStart" t-att-disabled="state.startSending">
                         Enviar plantilla
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div t-if="state.closeOpen" class="o_ais_whatsapp_modal_backdrop" t-on-click="closeCloseModal">
+            <div class="o_ais_whatsapp_modal" t-on-click.stop="">
+                <div class="o_ais_whatsapp_modal_header">
+                    <strong>Cerrar conversación</strong>
+                    <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeCloseModal">×</button>
+                </div>
+                <label>¿Cómo se resolvió? (queda en el ticket, como guía para casos parecidos)</label>
+                <textarea
+                    rows="3"
+                    t-model="state.closeResolution"
+                    placeholder="Ej: no podía facturar porque el diario de ventas estaba bloqueado; se le indicó desbloquearlo y confirmó que funcionó."
+                />
+                <div t-if="state.closeError" class="o_ais_whatsapp_error" t-esc="state.closeError" />
+                <div class="o_ais_whatsapp_modal_actions">
+                    <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeCloseModal">Cancelar</button>
+                    <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="submitClose" t-att-disabled="state.actionPending">
+                        Cerrar conversación
                     </button>
                 </div>
             </div>
