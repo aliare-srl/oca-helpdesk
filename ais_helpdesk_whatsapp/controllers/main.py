@@ -36,7 +36,9 @@ def _close_ticket_with_resolution(ticket_id, resolution):
     vals = {"stage_id": stage.id} if stage else {}
     if resolution:
         safe = html_escape(resolution).replace("\n", "<br/>")
-        vals["description"] = f"{ticket.description or ''}<p><b>Resolución:</b> {safe}</p>"
+        # ticket.description es un Markup: sumarle un string plano lo escapa (markupsafe lo trata
+        # como texto no confiable). Se pasa a str primero para armar HTML real, no texto escapado.
+        vals["description"] = f"{str(ticket.description or '')}<p><b>Resolución:</b> {safe}</p>"
     if vals:
         ticket.write(vals)
 
