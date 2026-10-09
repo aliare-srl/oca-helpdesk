@@ -39,17 +39,17 @@ class HelpdeskTicket(models.Model):
             "params": {"conversation_id": conversation_id},
         }
 
-    def action_open_whatsapp_start_wizard(self):
+    def action_start_whatsapp_conversation(self):
         self.ensure_one()
         return {
-            "type": "ir.actions.act_window",
-            "res_model": "ais.whatsapp.start.wizard",
-            "view_mode": "form",
-            "target": "new",
-            "context": {
-                "default_ticket_id": self.id,
-                "default_partner_id": self.partner_id.id,
-                "default_phone": self.partner_id.mobile,
-                "default_profile_name": self.partner_id.name,
+            "type": "ir.actions.client",
+            "tag": "ais_whatsapp_dashboard",
+            "name": "Conversaciones de WhatsApp",
+            "params": {
+                "start_from_ticket": {
+                    "ticket_id": self.id,
+                    "phone": self.partner_id.mobile,
+                    "profile_name": self.partner_id.name,
+                }
             },
         }

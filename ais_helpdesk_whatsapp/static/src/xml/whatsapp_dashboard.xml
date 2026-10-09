@@ -222,6 +222,9 @@
                     <strong>Iniciar conversación</strong>
                     <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeStartModal">×</button>
                 </div>
+                <div t-if="state.startTicketId" class="o_ais_whatsapp_muted">
+                    Vinculada al ticket #<t t-esc="state.startTicketId" />
+                </div>
                 <label>Número de WhatsApp (con código de país)</label>
                 <input type="text" t-model="state.startPhone" placeholder="5493794000000" />
                 <label>Nombre (opcional)</label>

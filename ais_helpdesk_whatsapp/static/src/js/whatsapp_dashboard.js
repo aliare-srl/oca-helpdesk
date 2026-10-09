@@ -67,6 +67,7 @@ export class WhatsappDashboard extends Component {
             startParams: "",
             startError: "",
             startSending: false,
+            startTicketId: null,
             closeOpen: false,
             closeResolution: "",
             closeError: "",
@@ -80,6 +81,8 @@ export class WhatsappDashboard extends Component {
             const params = this.props.action && this.props.action.params;
             if (params && params.conversation_id) {
                 this.selectConversation(params.conversation_id);
+            } else if (params && params.start_from_ticket) {
+                this.openStartModal(params.start_from_ticket);
             }
             this.pollTimer = setInterval(() => this.poll(), this.pollIntervalMs);
         });
@@ -421,13 +424,14 @@ export class WhatsappDashboard extends Component {
         });
     }
 
-    openStartModal() {
+    openStartModal(prefill) {
         this.state.startOpen = true;
-        this.state.startPhone = "";
-        this.state.startName = "";
+        this.state.startPhone = (prefill && prefill.phone) || "";
+        this.state.startName = (prefill && prefill.profile_name) || "";
         this.state.startTemplate = "";
         this.state.startParams = "";
         this.state.startError = "";
+        this.state.startTicketId = (prefill && prefill.ticket_id) || null;
     }
 
     closeStartModal() {
@@ -453,6 +457,7 @@ export class WhatsappDashboard extends Component {
                 template_name: templateName,
                 profile_name: this.state.startName.trim() || null,
                 params,
+                ticket_id: this.state.startTicketId,
             });
             this.state.startOpen = false;
             await this.loadConversations();

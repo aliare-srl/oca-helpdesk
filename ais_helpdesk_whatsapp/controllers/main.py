@@ -112,13 +112,23 @@ class WhatsappDashboardController(http.Controller):
         }
 
     @http.route("/ais_helpdesk_whatsapp/conversations/start", type="json", auth="user")
-    def start(self, phone, template_name, params=None, profile_name=None, helpdesk_partner_id=None):
+    def start(self, phone, template_name, params=None, profile_name=None, helpdesk_partner_id=None, ticket_id=None):
         _check_access()
-        return agent_client.start_conversation(
+        result = agent_client.start_conversation(
             request.env,
             phone=phone,
             template_name=template_name,
             params=params,
             profile_name=profile_name,
             helpdesk_partner_id=helpdesk_partner_id,
+            helpdesk_ticket_id=ticket_id,
         )
+        if ticket_id:
+            try:
+                ticket = request.env["helpdesk.ticket"].browse(int(ticket_id))
+                conversation = (result or {}).get("conversation") or {}
+                if ticket.exists() and not ticket.whatsapp_conversation_remote_id and conversation.get("id"):
+                    ticket.whatsapp_conversation_remote_id = conversation["id"]
+            except Exception:  # noqa: BLE001
+                _logger.exception("No se pudo vincular el ticket %s a la conversación nueva", ticket_id)
+        return result
