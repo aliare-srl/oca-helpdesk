@@ -79,10 +79,14 @@ def close(env, remote_id):
     return _request(env, "POST", f"/api/conversations/{remote_id}/close")
 
 
-def start_conversation(env, phone, template_name, params=None, profile_name=None, helpdesk_partner_id=None):
+def start_conversation(
+    env, phone, template_name, params=None, profile_name=None, helpdesk_partner_id=None, helpdesk_ticket_id=None
+):
     body = {"phone": phone, "template_name": template_name, "params": params or []}
     if profile_name:
         body["profile_name"] = profile_name
     if helpdesk_partner_id:
         body["helpdesk_partner_id"] = helpdesk_partner_id
+    if helpdesk_ticket_id:
+        body["helpdesk_ticket_id"] = helpdesk_ticket_id
     return _request(env, "POST", "/api/conversations/start", json_body=body)

@@ -7,6 +7,7 @@
         <field name="inherit_id" ref="helpdesk_mgmt.ticket_view_form" />
         <field name="arch" type="xml">
             <div name="button_box" position="inside">
+                <field name="whatsapp_partner_mobile" invisible="1" />
                 <button
                     name="action_open_whatsapp_conversation"
                     type="object"
@@ -15,6 +16,17 @@
                     attrs="{'invisible': [('whatsapp_conversation_count', '=', 0)]}"
                 >
                     <field name="whatsapp_conversation_count" widget="statinfo" string="WhatsApp" />
+                </button>
+                <button
+                    name="action_open_whatsapp_start_wizard"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-whatsapp"
+                    attrs="{'invisible': ['|', ('whatsapp_conversation_count', '!=', 0), ('whatsapp_partner_mobile', '=', False)]}"
+                >
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Iniciar WhatsApp</span>
+                    </div>
                 </button>
             </div>
         </field>

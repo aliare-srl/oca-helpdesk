@@ -14,6 +14,7 @@ class HelpdeskTicket(models.Model):
         help="Lo escribe el servicio al crear el ticket, para no depender del sync cada 2 minutos.",
     )
     whatsapp_conversation_count = fields.Integer(compute="_compute_whatsapp_conversation_count")
+    whatsapp_partner_mobile = fields.Char(related="partner_id.mobile", string="Móvil del contacto")
 
     def _fallback_conversation_remote_id(self):
         """Tickets creados antes de que existiera whatsapp_conversation_remote_id: buscar en la copia local."""
@@ -36,4 +37,19 @@ class HelpdeskTicket(models.Model):
             "tag": "ais_whatsapp_dashboard",
             "name": "Conversaciones de WhatsApp",
             "params": {"conversation_id": conversation_id},
+        }
+
+    def action_open_whatsapp_start_wizard(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window",
+            "res_model": "ais.whatsapp.start.wizard",
+            "view_mode": "form",
+            "target": "new",
+            "context": {
+                "default_ticket_id": self.id,
+                "default_partner_id": self.partner_id.id,
+                "default_phone": self.partner_id.mobile,
+                "default_profile_name": self.partner_id.name,
+            },
         }

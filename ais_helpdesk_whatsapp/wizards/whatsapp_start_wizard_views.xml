@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <form string="Iniciar conversación de WhatsApp">
                 <group>
+                    <field name="ticket_id" readonly="1" attrs="{'invisible': [('ticket_id', '=', False)]}" />
                     <field name="partner_id" />
                     <field name="phone" />
                     <field name="profile_name" />
