@@ -25,6 +25,7 @@ Depende de `helpdesk_mgmt`. Sin configuración adicional en el `__manifest__`; u
 - **Usuario de la IA**: a nombre de quién queda un ticket mientras lo atiende la IA.
 - **Minutos de inactividad del cliente para cerrar solo**: por defecto 30.
 - **Segundos entre actualizaciones de la pantalla**: por defecto 4.
+- **Minutos entre avisos de conversaciones esperando**: por defecto 15. Mientras haya conversaciones "Esperando a un humano", se avisa por mail al equipo cada este tiempo; se repite solo mientras la cola no se vacíe. 0 lo desactiva.
 
 ## Uso
 

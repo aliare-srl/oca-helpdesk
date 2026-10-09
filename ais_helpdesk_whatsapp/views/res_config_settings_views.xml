@@ -78,6 +78,20 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label
+                                    for="ais_whatsapp_waiting_human_alert_minutes"
+                                    string="Minutos entre avisos de conversaciones esperando"
+                                />
+                                <div class="text-muted">
+                                    Mientras haya conversaciones esperando a una persona, se avisa al equipo cada este tiempo. 0 lo desactiva.
+                                </div>
+                                <div class="content-group">
+                                    <field name="ais_whatsapp_waiting_human_alert_minutes" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </xpath>

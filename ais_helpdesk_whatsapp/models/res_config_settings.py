@@ -34,3 +34,10 @@ class ResConfigSettings(models.TransientModel):
         default=4,
         help="Cada cuánto se refresca sola la lista de conversaciones y el chat abierto.",
     )
+    ais_whatsapp_waiting_human_alert_minutes = fields.Integer(
+        string="Minutos entre avisos de conversaciones esperando",
+        config_parameter="ais_helpdesk_whatsapp.waiting_human_alert_minutes",
+        default=15,
+        help="Mientras haya conversaciones esperando a una persona, se avisa por mail al equipo "
+        "cada este tiempo (se repite solo si la cola no se vació). 0 desactiva el aviso.",
+    )
