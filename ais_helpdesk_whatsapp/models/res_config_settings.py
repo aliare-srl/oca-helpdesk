@@ -42,7 +42,7 @@ class ResConfigSettings(models.TransientModel):
         "cada este tiempo (se repite solo si la cola no se vació). 0 desactiva el aviso.",
     )
     ais_whatsapp_waiting_human_team_id = fields.Many2one(
-        "helpdesk.team",
+        "helpdesk.ticket.team",
         string="Equipo para avisos de conversaciones esperando",
         config_parameter="ais_helpdesk_whatsapp.waiting_human_team_id",
         help="El aviso se manda por mail y WhatsApp a cada miembro de este equipo (con el mail o "
