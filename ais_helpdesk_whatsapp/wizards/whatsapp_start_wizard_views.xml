@@ -26,13 +26,4 @@
         <field name="view_mode">form</field>
         <field name="target">new</field>
     </record>
-
-    <menuitem
-        id="whatsapp_start_wizard_menu"
-        name="Iniciar conversación"
-        parent="helpdesk_mgmt.helpdesk_ticket_main_menu"
-        action="whatsapp_start_wizard_action"
-        sequence="6"
-        groups="helpdesk_mgmt.group_helpdesk_user_own"
-    />
 </odoo>

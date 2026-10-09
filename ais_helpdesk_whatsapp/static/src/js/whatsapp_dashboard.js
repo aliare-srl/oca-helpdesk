@@ -17,6 +17,13 @@ const STATUS_PILL = {
 
 const QUICK_REPLIES = ["Ya lo reviso", "¿Me pasás una captura?", "Quedó resuelto, gracias"];
 
+function todayLocal() {
+    const d = new Date();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${month}-${day}`;
+}
+
 function initials(name) {
     const parts = (name || "").trim().split(/\s+/).filter(Boolean);
     if (!parts.length) {
@@ -37,7 +44,9 @@ export class WhatsappDashboard extends Component {
             error: "",
             selectedId: null,
             searchQuery: "",
-            filterTab: "atencion",
+            filterTab: "esperando",
+            dateFrom: todayLocal(),
+            dateTo: todayLocal(),
             messages: [],
             messagesLoading: false,
             messagesError: "",
@@ -99,27 +108,60 @@ export class WhatsappDashboard extends Component {
         }
     }
 
-    get atencionCount() {
-        return this.state.conversations.filter((c) => c.status === "waiting_human").length;
+    get byDateConversations() {
+        const from = this.state.dateFrom;
+        const to = this.state.dateTo;
+        if (!from && !to) {
+            return this.state.conversations;
+        }
+        return this.state.conversations.filter((c) => {
+            if (!c.last_message_at) return false;
+            // last_message_at viene en UTC; se compara por fecha calendario tal cual, sin pasar a
+            // hora local. Cerca de la medianoche puede quedar un mensaje en el día de al lado.
+            const day = c.last_message_at.slice(0, 10);
+            if (from && day < from) return false;
+            if (to && day > to) return false;
+            return true;
+        });
     }
 
-    get todasCount() {
-        return this.state.conversations.filter((c) => c.status !== "closed").length;
+    get esperandoCount() {
+        return this.byDateConversations.filter((c) => c.status === "waiting_human").length;
+    }
+
+    get iaCount() {
+        return this.byDateConversations.filter((c) => c.status === "ai").length;
+    }
+
+    get personaCount() {
+        return this.byDateConversations.filter((c) => c.status === "human").length;
     }
 
     get cerradasCount() {
-        return this.state.conversations.filter((c) => c.status === "closed").length;
+        return this.byDateConversations.filter((c) => c.status === "closed").length;
+    }
+
+    get todasCount() {
+        return this.byDateConversations.length;
     }
 
     setFilterTab(tab) {
         this.state.filterTab = tab;
     }
 
+    resetDateToday() {
+        const today = todayLocal();
+        this.state.dateFrom = today;
+        this.state.dateTo = today;
+    }
+
     get filteredConversations() {
-        const byTab = this.state.conversations.filter((c) => {
-            if (this.state.filterTab === "atencion") return c.status === "waiting_human";
+        const byTab = this.byDateConversations.filter((c) => {
+            if (this.state.filterTab === "esperando") return c.status === "waiting_human";
+            if (this.state.filterTab === "ia") return c.status === "ai";
+            if (this.state.filterTab === "persona") return c.status === "human";
             if (this.state.filterTab === "cerradas") return c.status === "closed";
-            return c.status !== "closed";
+            return true;
         });
         const query = this.state.searchQuery.trim().toLowerCase();
         if (!query) {

@@ -15,7 +15,7 @@ $ais-avatar-color: #5A3852;
     flex-direction: column;
     background: $ais-bg;
     color: $ais-text;
-    font-size: 15px;
+    font-size: 13px;
 
     button {
         cursor: pointer;
@@ -26,29 +26,29 @@ $ais-avatar-color: #5A3852;
     }
 
     .o_ais_whatsapp_topbar {
-        height: 64px;
+        height: 52px;
         flex-shrink: 0;
         box-sizing: border-box;
-        padding: 0 24px;
+        padding: 0 16px;
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
         background: #fff;
         border-bottom: 1px solid $ais-border;
 
         .o_ais_whatsapp_topbar_title {
             display: flex;
             align-items: baseline;
-            gap: 10px;
+            gap: 8px;
             flex-grow: 1;
         }
         .o_ais_whatsapp_title {
-            font-size: 19px;
+            font-size: 16px;
             font-weight: 700;
             color: $ais-accent-dark;
         }
         .o_ais_whatsapp_subtitle {
-            font-size: 14px;
+            font-size: 12px;
             color: $ais-muted;
         }
     }
@@ -56,50 +56,53 @@ $ais-avatar-color: #5A3852;
     .o_ais_whatsapp_avatar_name {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         font-weight: 600;
+        font-size: 13px;
     }
 
     .o_ais_whatsapp_avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 20px;
+        width: 30px;
+        height: 30px;
+        border-radius: 15px;
         background: $ais-avatar-bg;
         color: $ais-avatar-color;
         font-weight: 700;
-        font-size: 14px;
+        font-size: 12px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
 
         &.lg {
-            width: 44px;
-            height: 44px;
-            border-radius: 22px;
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
         }
     }
 
     .o_ais_whatsapp_btn_outline {
-        height: 44px;
-        padding: 0 18px;
-        border-radius: 10px;
+        height: 34px;
+        padding: 0 12px;
+        border-radius: 8px;
         background: #fff;
         color: $ais-accent-dark;
         border: 1.5px solid $ais-border-strong;
-        font-size: 15px;
+        font-size: 13px;
         font-weight: 600;
+        white-space: nowrap;
     }
 
     .o_ais_whatsapp_btn_primary {
-        height: 48px;
-        padding: 0 24px;
-        border-radius: 10px;
+        height: 38px;
+        padding: 0 16px;
+        border-radius: 8px;
         border: 0;
         background: $ais-accent;
         color: #fff;
-        font-size: 16px;
+        font-size: 13px;
         font-weight: 700;
+        white-space: nowrap;
 
         &:disabled { opacity: 0.6; }
     }
@@ -110,11 +113,11 @@ $ais-avatar-color: #5A3852;
         min-height: 0;
     }
 
-    .o_ais_whatsapp_back { display: none; background: none; border: 0; font-size: 20px; }
+    .o_ais_whatsapp_back { display: none; background: none; border: 0; font-size: 18px; }
 
     // ---- lista ----
     .o_ais_whatsapp_list {
-        width: 360px;
+        width: 300px;
         flex-shrink: 0;
         box-sizing: border-box;
         background: #fff;
@@ -124,32 +127,53 @@ $ais-avatar-color: #5A3852;
         min-height: 0;
     }
     .o_ais_whatsapp_search {
-        padding: 16px 16px 12px 16px;
+        padding: 10px 10px 6px 10px;
         input {
             width: 100%;
             box-sizing: border-box;
-            height: 44px;
+            height: 36px;
             border: 1.5px solid $ais-border-strong;
-            border-radius: 10px;
-            padding: 0 12px;
-            font-size: 15px;
+            border-radius: 8px;
+            padding: 0 10px;
+            font-size: 13px;
             outline: 0;
         }
     }
+    .o_ais_whatsapp_daterange {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 10px 8px 10px;
+        font-size: 12px;
+        color: $ais-muted;
+
+        input[type="date"] {
+            height: 30px;
+            border: 1.5px solid $ais-border-strong;
+            border-radius: 7px;
+            padding: 0 6px;
+            font-size: 12px;
+            color: $ais-text;
+            outline: 0;
+            min-width: 0;
+            flex: 1 1 0;
+        }
+    }
+
     .o_ais_whatsapp_tabs {
         display: flex;
-        gap: 8px;
-        padding: 0 16px 12px 16px;
+        gap: 6px;
+        padding: 0 10px 8px 10px;
         flex-wrap: wrap;
     }
     .o_ais_whatsapp_tab {
-        height: 40px;
-        padding: 0 14px;
-        border-radius: 20px;
+        height: 30px;
+        padding: 0 10px;
+        border-radius: 16px;
         border: 1.5px solid $ais-border-strong;
         background: #fff;
         color: $ais-accent-dark;
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 600;
 
         &.active {
@@ -167,8 +191,8 @@ $ais-avatar-color: #5A3852;
     .o_ais_whatsapp_item {
         display: flex;
         flex-direction: column;
-        gap: 5px;
-        padding: 14px 16px;
+        gap: 3px;
+        padding: 9px 12px;
         background: #fff;
         border-bottom: 1px solid $ais-border;
         cursor: pointer;
@@ -182,10 +206,10 @@ $ais-avatar-color: #5A3852;
         justify-content: space-between;
         gap: 8px;
     }
-    .o_ais_whatsapp_time { font-size: 13px; color: $ais-muted; flex-shrink: 0; }
-    .o_ais_whatsapp_item_company { font-size: 13px; color: $ais-muted; }
+    .o_ais_whatsapp_time { font-size: 11px; color: $ais-muted; flex-shrink: 0; }
+    .o_ais_whatsapp_item_company { font-size: 11px; color: $ais-muted; }
     .o_ais_whatsapp_item_preview {
-        font-size: 14px;
+        font-size: 12px;
         color: #3B3540;
         white-space: nowrap;
         overflow: hidden;
@@ -196,14 +220,14 @@ $ais-avatar-color: #5A3852;
         align-self: flex-start;
         display: inline-flex;
         align-items: center;
-        height: 24px;
-        padding: 0 10px;
-        border-radius: 12px;
-        font-size: 12px;
+        height: 19px;
+        padding: 0 8px;
+        border-radius: 10px;
+        font-size: 11px;
         font-weight: 600;
         border: 1px solid transparent;
 
-        &.lg { height: 28px; padding: 0 12px; font-size: 13px; }
+        &.lg { height: 22px; padding: 0 10px; font-size: 11px; }
     }
 
     // ---- centro (placeholder / chat) ----
@@ -213,6 +237,7 @@ $ais-avatar-color: #5A3852;
         align-items: center;
         justify-content: center;
         color: $ais-muted;
+        font-size: 13px;
     }
 
     .o_ais_whatsapp_chat {
@@ -223,35 +248,35 @@ $ais-avatar-color: #5A3852;
         min-height: 0;
     }
     .o_ais_whatsapp_chat_header {
-        height: 76px;
+        height: 60px;
         flex-shrink: 0;
         box-sizing: border-box;
-        padding: 0 24px;
+        padding: 0 16px;
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 10px;
         background: #fff;
         border-bottom: 1px solid $ais-border;
     }
     .o_ais_whatsapp_chat_header_info {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 1px;
         flex-grow: 1;
         min-width: 0;
     }
-    .o_ais_whatsapp_chat_name { font-size: 18px; font-weight: 700; }
+    .o_ais_whatsapp_chat_name { font-size: 15px; font-weight: 700; }
 
     .o_ais_whatsapp_banner {
         flex-shrink: 0;
         box-sizing: border-box;
-        padding: 14px 24px;
+        padding: 9px 16px;
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
         border-bottom: 1px solid;
 
-        > div:first-child { flex-grow: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+        > div:first-child { flex-grow: 1; display: flex; flex-direction: column; gap: 1px; font-size: 12px; }
 
         &.warn { background: #FEF0D9; border-color: #F2C98A; color: #6B2D08; }
         &.info { background: #DDF1F4; border-color: #B7DDE3; color: #0B4650; }
@@ -262,87 +287,88 @@ $ais-avatar-color: #5A3852;
         min-height: 0;
         overflow-y: auto;
         box-sizing: border-box;
-        padding: 24px;
+        padding: 16px;
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: 10px;
     }
     .o_ais_whatsapp_message_row {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 3px;
         align-items: flex-start;
 
         &.ai, &.human { align-items: flex-end; }
     }
-    .o_ais_whatsapp_sender_label { font-size: 12px; font-weight: 600; color: $ais-muted; }
+    .o_ais_whatsapp_sender_label { font-size: 11px; font-weight: 600; color: $ais-muted; }
     .o_ais_whatsapp_bubble {
-        max-width: 520px;
-        padding: 10px 14px;
-        line-height: 1.45;
+        max-width: 460px;
+        padding: 7px 11px;
+        line-height: 1.4;
         white-space: pre-wrap;
+        font-size: 13px;
 
         &.customer {
             background: #fff;
             border: 1px solid $ais-border;
-            border-radius: 14px 14px 14px 4px;
+            border-radius: 12px 12px 12px 3px;
         }
         &.ai {
             background: #DDF1F4;
             border: 1px solid #B7DDE3;
             color: #0F2E33;
-            border-radius: 14px 14px 4px 14px;
+            border-radius: 12px 12px 3px 12px;
         }
         &.human {
             background: $ais-accent;
             color: #fff;
-            border-radius: 14px 14px 4px 14px;
+            border-radius: 12px 12px 3px 12px;
         }
-        &.attachment { display: flex; flex-direction: column; gap: 6px; }
+        &.attachment { display: flex; flex-direction: column; gap: 5px; }
     }
     .o_ais_whatsapp_attachment {
-        width: 200px;
-        padding: 10px;
-        border-radius: 8px;
+        width: 170px;
+        padding: 8px;
+        border-radius: 7px;
         background: rgba(0,0,0,0.06);
-        font-size: 13px;
+        font-size: 11px;
     }
 
     .o_ais_whatsapp_replybox {
         flex-shrink: 0;
         box-sizing: border-box;
-        padding: 12px 24px 14px 24px;
+        padding: 8px 16px 10px 16px;
         background: #fff;
         border-top: 1px solid $ais-border;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
     }
-    .o_ais_whatsapp_quickreplies { display: flex; gap: 8px; flex-wrap: wrap; }
+    .o_ais_whatsapp_quickreplies { display: flex; gap: 6px; flex-wrap: wrap; }
     .o_ais_whatsapp_chip {
-        height: 36px;
-        padding: 0 14px;
-        border-radius: 18px;
+        height: 28px;
+        padding: 0 10px;
+        border-radius: 14px;
         border: 1.5px solid $ais-border-strong;
         background: #fff;
         color: $ais-accent-dark;
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 600;
     }
     .o_ais_whatsapp_replyrow {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         align-items: stretch;
 
         textarea {
             flex-grow: 1;
-            height: 64px;
+            height: 50px;
             box-sizing: border-box;
             resize: none;
             border: 1.5px solid $ais-border-strong;
-            border-radius: 10px;
-            padding: 12px 14px;
-            font-size: 15px;
+            border-radius: 8px;
+            padding: 9px 11px;
+            font-size: 13px;
             line-height: 1.4;
             outline: 0;
         }
@@ -351,50 +377,52 @@ $ais-avatar-color: #5A3852;
     .o_ais_whatsapp_takebar {
         flex-shrink: 0;
         box-sizing: border-box;
-        padding: 16px 24px;
+        padding: 10px 16px;
         background: #fff;
         border-top: 1px solid $ais-border;
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
 
-        > span { flex-grow: 1; }
+        > span { flex-grow: 1; font-size: 13px; }
     }
 
     // ---- panel derecho ----
     .o_ais_whatsapp_info {
-        width: 320px;
+        width: 260px;
         flex-shrink: 0;
         box-sizing: border-box;
         background: #fff;
         border-left: 1px solid $ais-border;
-        padding: 20px;
+        padding: 14px;
         display: flex;
         flex-direction: column;
-        gap: 22px;
+        gap: 16px;
         overflow-y: auto;
     }
     .o_ais_whatsapp_info_section {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
+        font-size: 13px;
     }
     .o_ais_whatsapp_info_label {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
         color: $ais-muted;
     }
-    .o_ais_whatsapp_info_title { font-size: 16px; font-weight: 700; }
+    .o_ais_whatsapp_info_title { font-size: 14px; font-weight: 700; }
 
     .o_ais_whatsapp_muted { color: $ais-muted; }
     .o_ais_whatsapp_error {
         background: #FBEAEA;
         color: #8A1F1F;
         border: 1px solid #EFC2C2;
-        border-radius: 8px;
-        padding: 10px 14px;
+        border-radius: 7px;
+        padding: 8px 11px;
+        font-size: 12px;
     }
 
     // ---- modal iniciar conversación ----
@@ -409,22 +437,23 @@ $ais-avatar-color: #5A3852;
     }
     .o_ais_whatsapp_modal {
         background: #fff;
-        border-radius: 12px;
-        padding: 24px;
-        width: 420px;
+        border-radius: 10px;
+        padding: 18px;
+        width: 380px;
         max-width: calc(100vw - 32px);
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
+        font-size: 13px;
 
-        label { font-size: 13px; font-weight: 600; color: $ais-muted; margin-top: 6px; }
+        label { font-size: 12px; font-weight: 600; color: $ais-muted; margin-top: 4px; }
         input {
-            height: 44px;
+            height: 36px;
             box-sizing: border-box;
             border: 1.5px solid $ais-border-strong;
-            border-radius: 10px;
-            padding: 0 12px;
-            font-size: 15px;
+            border-radius: 8px;
+            padding: 0 10px;
+            font-size: 13px;
             outline: 0;
         }
     }
@@ -432,15 +461,15 @@ $ais-avatar-color: #5A3852;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 18px;
+        font-size: 15px;
 
-        button { height: 32px; width: 32px; padding: 0; border-radius: 8px; }
+        button { height: 28px; width: 28px; padding: 0; border-radius: 7px; }
     }
     .o_ais_whatsapp_modal_actions {
         display: flex;
         justify-content: flex-end;
-        gap: 10px;
-        margin-top: 8px;
+        gap: 8px;
+        margin-top: 6px;
     }
 }
 

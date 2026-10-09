@@ -28,22 +28,38 @@
                         t-model="state.searchQuery"
                     />
                 </div>
+                <div class="o_ais_whatsapp_daterange">
+                    <input type="date" t-model="state.dateFrom" aria-label="Desde" />
+                    <span>a</span>
+                    <input type="date" t-model="state.dateTo" aria-label="Hasta" />
+                    <button type="button" class="o_ais_whatsapp_tab" t-on-click="resetDateToday">Hoy</button>
+                </div>
                 <div class="o_ais_whatsapp_tabs">
                     <button
                         type="button"
-                        t-attf-class="o_ais_whatsapp_tab {{ state.filterTab === 'atencion' ? 'active' : '' }}"
-                        t-on-click="() => this.setFilterTab('atencion')"
-                    >Atención · <t t-esc="atencionCount" /></button>
+                        t-attf-class="o_ais_whatsapp_tab {{ state.filterTab === 'esperando' ? 'active' : '' }}"
+                        t-on-click="() => this.setFilterTab('esperando')"
+                    >Esperando · <t t-esc="esperandoCount" /></button>
                     <button
                         type="button"
-                        t-attf-class="o_ais_whatsapp_tab {{ state.filterTab === 'todas' ? 'active' : '' }}"
-                        t-on-click="() => this.setFilterTab('todas')"
-                    >Todas · <t t-esc="todasCount" /></button>
+                        t-attf-class="o_ais_whatsapp_tab {{ state.filterTab === 'ia' ? 'active' : '' }}"
+                        t-on-click="() => this.setFilterTab('ia')"
+                    >IA · <t t-esc="iaCount" /></button>
+                    <button
+                        type="button"
+                        t-attf-class="o_ais_whatsapp_tab {{ state.filterTab === 'persona' ? 'active' : '' }}"
+                        t-on-click="() => this.setFilterTab('persona')"
+                    >Persona · <t t-esc="personaCount" /></button>
                     <button
                         type="button"
                         t-attf-class="o_ais_whatsapp_tab {{ state.filterTab === 'cerradas' ? 'active' : '' }}"
                         t-on-click="() => this.setFilterTab('cerradas')"
                     >Cerradas · <t t-esc="cerradasCount" /></button>
+                    <button
+                        type="button"
+                        t-attf-class="o_ais_whatsapp_tab {{ state.filterTab === 'todas' ? 'active' : '' }}"
+                        t-on-click="() => this.setFilterTab('todas')"
+                    >Todas · <t t-esc="todasCount" /></button>
                 </div>
                 <div t-if="state.loading" class="o_ais_whatsapp_muted p-3">Cargando...</div>
                 <div t-if="state.error" class="o_ais_whatsapp_error m-2" t-esc="state.error" />
@@ -188,7 +204,7 @@
                         <span t-if="state.ticketInfo" class="o_ais_whatsapp_pill" t-esc="state.ticketInfo.stage" />
                         <span t-esc="selectedConversation.taken_by ? ('Asignado a ' + selectedConversation.taken_by) : 'Creado por la IA'" />
                         <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="openTicket">
-                            Abrir en Odoo
+                            Abrir ticket
                         </button>
                     </div>
                     <div class="o_ais_whatsapp_info_section">
