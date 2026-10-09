@@ -22,10 +22,10 @@
                 style="cursor: pointer;"
             >
                 <div class="d-flex justify-content-between">
-                    <strong t-esc="this.contactLabel(conversation)" />
+                    <strong t-esc="contactLabel(conversation)" />
                     <span t-if="conversation.is_urgent" class="badge bg-danger">Urgente</span>
                 </div>
-                <div class="small" t-esc="this.statusLabel(conversation.status)" />
+                <div class="small" t-esc="statusLabel(conversation.status)" />
             </div>
         </div>
         <div t-if="!selectedConversation" class="o_ais_whatsapp_detail flex-grow-1 p-3 text-muted">
@@ -42,7 +42,7 @@
                         t-attf-class="o_ais_whatsapp_message mb-2 p-2 rounded {{ message.sender === 'customer' ? 'bg-light' : 'bg-primary text-white ms-auto' }}"
                         style="max-width: 75%;"
                     >
-                        <div class="small fw-bold" t-esc="this.senderLabel(message.sender)" />
+                        <div class="small fw-bold" t-esc="senderLabel(message.sender)" />
                         <div t-esc="message.body" style="white-space: pre-wrap;" />
                         <div t-if="message.has_media" class="small text-muted">[adjunto]</div>
                     </div>
@@ -67,8 +67,8 @@
                 </div>
             </div>
             <div class="o_ais_whatsapp_info border-start p-3" style="width: 260px;">
-                <h5 t-esc="this.contactLabel(selectedConversation)" />
-                <p>Estado: <t t-esc="this.statusLabel(selectedConversation.status)" /></p>
+                <h5 t-esc="contactLabel(selectedConversation)" />
+                <p>Estado: <t t-esc="statusLabel(selectedConversation.status)" /></p>
                 <p t-if="selectedConversation.helpdesk_ticket_id">
                     Ticket: #<t t-esc="selectedConversation.helpdesk_ticket_id" />
                 </p>
