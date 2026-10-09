@@ -125,7 +125,13 @@
                     <div t-if="selectedConversation.status === 'ai'" class="o_ais_whatsapp_banner info">
                         <div><strong>La IA está respondiendo.</strong> Estás mirando en vivo.</div>
                     </div>
-                    <div t-if="selectedConversation.status === 'human'" class="o_ais_whatsapp_banner info">
+                    <div t-if="selectedConversation.status === 'human' and state.agentDisabled" class="o_ais_whatsapp_banner info">
+                        <div>
+                            <strong>El agente de IA está desactivado</strong>
+                            <div>Si no respondés a tiempo, la conversación queda esperando a una persona.</div>
+                        </div>
+                    </div>
+                    <div t-if="selectedConversation.status === 'human' and !state.agentDisabled" class="o_ais_whatsapp_banner info">
                         <div>
                             <strong>La IA está en pausa en esta conversación</strong>
                             <div t-esc="'Se reanuda sola en ' + pauseRemainingLabel + ' si no respondés.'" />

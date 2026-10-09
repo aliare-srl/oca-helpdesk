@@ -44,6 +44,7 @@ export class WhatsappDashboard extends Component {
         this.quickReplies = QUICK_REPLIES;
         this.state = useState({
             conversations: [],
+            agentDisabled: false,
             loading: true,
             error: "",
             selectedId: null,
@@ -102,6 +103,7 @@ export class WhatsappDashboard extends Component {
             if (config.refresh_seconds > 0) {
                 this.pollIntervalMs = config.refresh_seconds * 1000;
             }
+            this.state.agentDisabled = Boolean(config.agent_disabled);
         } catch (error) {
             // Se sigue con los valores por defecto si no se pudo leer la configuración.
         }

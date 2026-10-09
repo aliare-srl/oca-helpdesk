@@ -23,6 +23,7 @@ class WhatsappConversation(models.Model):
     _inherit = ["mail.thread"]
     _order = "is_urgent desc, last_message_at desc"
 
+    agent_disabled = fields.Boolean(compute="_compute_agent_disabled")
     remote_id = fields.Integer(string="Id en el servicio", required=True, index=True)
     status = fields.Selection(STATUS_SELECTION, required=True, default="ai", tracking=True)
     is_urgent = fields.Boolean(string="Urgente")
@@ -117,6 +118,11 @@ class WhatsappConversation(models.Model):
             new_last = max(new_last, message["id"])
         if new_last != self.last_synced_message_id:
             self.last_synced_message_id = new_last
+
+    def _compute_agent_disabled(self):
+        disabled = self.env["ir.config_parameter"].sudo().get_param("ais_helpdesk_whatsapp.agent_disabled") == "True"
+        for record in self:
+            record.agent_disabled = disabled
 
     def action_take(self):
         self.ensure_one()

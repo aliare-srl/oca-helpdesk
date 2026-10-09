@@ -60,7 +60,10 @@ class WhatsappDashboardController(http.Controller):
     def config(self):
         _check_access()
         refresh_seconds = _config_param("ais_helpdesk_whatsapp.refresh_seconds", "4")
-        return {"refresh_seconds": int(refresh_seconds) if refresh_seconds.isdigit() else 4}
+        return {
+            "refresh_seconds": int(refresh_seconds) if refresh_seconds.isdigit() else 4,
+            "agent_disabled": _config_param("ais_helpdesk_whatsapp.agent_disabled") == "True",
+        }
 
     @http.route("/ais_helpdesk_whatsapp/conversations", type="json", auth="user")
     def conversations(self, status=None, limit=200):

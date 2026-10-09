@@ -21,7 +21,7 @@ Depende de `helpdesk_mgmt`. Sin configuración adicional en el `__manifest__`; u
 
 **Ajustes → Mesa de Ayuda** (solo administradores de Helpdesk):
 
-- **Desactivar el agente de IA**: si se marca, ninguna conversación nueva la contesta la IA, pasan directo a esperar a una persona (avisándole al cliente). No afecta a las que ya está atendiendo alguien.
+- **Desactivar el agente de IA**: si se marca, ninguna conversación nueva la contesta la IA, pasan directo a esperar a una persona (avisándole al cliente). No afecta a las que ya está atendiendo alguien. Con el agente desactivado se oculta "Devolver a la IA" (formulario y tablero), y si vence el plazo de una conversación tomada, pasa a "Esperando a un humano" en vez de volver a la IA. El tablero lee el valor al abrirse (hay que recargar la página para ver un cambio).
 - **URL del servicio** y **clave de la API**: las del `AgenteIA-MesadeAyuda-Odoo` desplegado y su `PANEL_API_KEY`.
 - **Usuario de la IA**: a nombre de quién queda un ticket mientras lo atiende la IA.
 - **Minutos de inactividad del cliente para cerrar solo**: por defecto 30.

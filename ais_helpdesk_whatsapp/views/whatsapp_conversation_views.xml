@@ -46,8 +46,9 @@
                         name="action_return_to_ai"
                         type="object"
                         string="Devolver a la IA"
-                        attrs="{'invisible': [('status', '!=', 'human')]}"
+                        attrs="{'invisible': ['|', ('status', '!=', 'human'), ('agent_disabled', '=', True)]}"
                     />
+                    <field name="agent_disabled" invisible="1" />
                     <button
                         name="action_close"
                         type="object"
