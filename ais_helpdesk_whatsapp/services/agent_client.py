@@ -58,6 +58,11 @@ def list_conversations(env, status=None, limit=200):
     return _request(env, "GET", "/api/conversations", params=params).get("conversations", [])
 
 
+def search_messages(env, query):
+    """Conversaciones (de cualquier estado) con mensajes que contienen el texto."""
+    return _request(env, "GET", "/api/messages/search", params={"q": query}).get("results", [])
+
+
 def get_messages(env, remote_id):
     return _request(env, "GET", f"/api/conversations/{remote_id}/messages").get("messages", [])
 

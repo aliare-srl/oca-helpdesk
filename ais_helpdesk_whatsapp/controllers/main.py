@@ -70,6 +70,11 @@ class WhatsappDashboardController(http.Controller):
         _check_access()
         return agent_client.list_conversations(request.env, status=status, limit=limit)
 
+    @http.route("/ais_helpdesk_whatsapp/messages/search", type="json", auth="user")
+    def search_messages(self, q):
+        _check_access()
+        return agent_client.search_messages(request.env, q)
+
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/messages", type="json", auth="user")
     def messages(self, remote_id):
         _check_access()

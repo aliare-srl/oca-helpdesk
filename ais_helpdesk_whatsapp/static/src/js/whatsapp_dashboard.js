@@ -28,6 +28,45 @@ function todayLocal() {
     return `${d.getFullYear()}-${month}-${day}`;
 }
 
+function escapeHtml(text) {
+    return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// Minúsculas y sin tildes, guardando a qué posición del texto original corresponde cada letra.
+function fold(text) {
+    let folded = "";
+    const map = [];
+    for (let i = 0; i < text.length; i++) {
+        const piece = text[i].normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        for (let j = 0; j < piece.length; j++) {
+            map.push(i);
+        }
+        folded += piece;
+    }
+    return { folded, map };
+}
+
+// Posiciones [desde, hasta) de cada coincidencia de la búsqueda dentro del texto.
+function findRanges(text, query) {
+    const needle = fold(query).folded;
+    if (!needle || !text) {
+        return [];
+    }
+    const { folded, map } = fold(text);
+    const ranges = [];
+    let from = 0;
+    let at = folded.indexOf(needle, from);
+    while (at !== -1) {
+        ranges.push([map[at], map[at + needle.length - 1] + 1]);
+        from = at + needle.length;
+        at = folded.indexOf(needle, from);
+    }
+    return ranges;
+}
+
+const GLOBAL_SEARCH_MIN_CHARS = 2;
+const GLOBAL_SEARCH_DELAY_MS = 350;
+
 function initials(name) {
     const parts = (name || "").trim().split(/\s+/).filter(Boolean);
     if (!parts.length) {
@@ -49,6 +88,9 @@ export class WhatsappDashboard extends Component {
             error: "",
             selectedId: null,
             searchQuery: "",
+            globalMatches: {},
+            panelQuery: "",
+            panelIndex: 0,
             filterTab: "esperando",
             dateFrom: todayLocal(),
             dateTo: todayLocal(),
@@ -80,6 +122,9 @@ export class WhatsappDashboard extends Component {
         this.messagesRef = useRef("messages");
         this.stickToBottom = true;
         this.lastScrolledId = null;
+        this.pendingMatchScroll = false;
+        this.globalSearchTimer = null;
+        this.matchCache = { key: null, data: null };
         onWillPatch(() => {
             const el = this.messagesRef.el;
             if (el) {
@@ -92,7 +137,16 @@ export class WhatsappDashboard extends Component {
                 this.lastScrolledId = null;
                 return;
             }
-            if (this.stickToBottom || this.lastScrolledId !== this.state.selectedId) {
+            if (this.state.panelQuery.trim()) {
+                // Con una búsqueda en curso no se baja solo: se queda en la coincidencia elegida.
+                if (this.pendingMatchScroll) {
+                    this.pendingMatchScroll = false;
+                    const mark = el.querySelector("mark.o_ais_whatsapp_match_current");
+                    if (mark) {
+                        mark.scrollIntoView({ block: "center" });
+                    }
+                }
+            } else if (this.stickToBottom || this.lastScrolledId !== this.state.selectedId) {
                 el.scrollTop = el.scrollHeight;
             }
             this.lastScrolledId = this.state.selectedId;
@@ -116,6 +170,7 @@ export class WhatsappDashboard extends Component {
         onWillUnmount(() => {
             clearInterval(this.pollTimer);
             clearInterval(this.clockTimer);
+            clearTimeout(this.globalSearchTimer);
         });
     }
 
@@ -208,21 +263,22 @@ export class WhatsappDashboard extends Component {
     }
 
     get filteredConversations() {
-        const byTab = this.byDateConversations.filter((c) => {
+        const inTab = (c) => {
             if (this.state.filterTab === "esperando") return c.status === "waiting_human";
             if (this.state.filterTab === "ia") return c.status === "ai";
             if (this.state.filterTab === "persona") return c.status === "human";
             if (this.state.filterTab === "cerradas") return c.status === "closed";
             return true;
-        });
+        };
         const query = this.state.searchQuery.trim().toLowerCase();
         if (!query) {
-            return byTab;
+            return this.byDateConversations.filter(inTab);
         }
-        return byTab.filter((c) => {
+        // Una conversación con el texto en sus mensajes aparece sin importar la pestaña (sí respeta las fechas).
+        return this.byDateConversations.filter((c) => {
             const contact = c.contact || {};
             const haystack = `${contact.company || ""} ${contact.profile_name || ""} ${contact.wa_id || ""}`.toLowerCase();
-            return haystack.includes(query);
+            return (inTab(c) && haystack.includes(query)) || this.state.globalMatches[c.id];
         });
     }
 
@@ -258,11 +314,132 @@ export class WhatsappDashboard extends Component {
         this.state.selectedId = id;
         this.state.replyText = "";
         this.state.ticketInfo = null;
+        this.state.panelQuery = "";
         await this.loadMessages();
+        const globalQuery = this.state.searchQuery.trim();
+        if (this.state.globalMatches[id] && globalQuery.length >= GLOBAL_SEARCH_MIN_CHARS) {
+            // Viene de la búsqueda general: se abre con el mismo texto buscado y en la última coincidencia.
+            this.state.panelQuery = globalQuery;
+            this.state.panelIndex = Math.max(this.panelMatchData.total - 1, 0);
+            this.pendingMatchScroll = true;
+        }
         const conversation = this.selectedConversation;
         if (conversation && conversation.helpdesk_ticket_id) {
             this.loadTicketInfo(conversation.helpdesk_ticket_id);
         }
+    }
+
+    onSearchInput(ev) {
+        // La lista se filtra al instante por cliente o número; en los mensajes se busca al dejar de escribir.
+        const query = ev.target.value.trim();
+        clearTimeout(this.globalSearchTimer);
+        if (query.length < GLOBAL_SEARCH_MIN_CHARS) {
+            this.state.globalMatches = {};
+            return;
+        }
+        this.globalSearchTimer = setTimeout(() => this.runGlobalSearch(query), GLOBAL_SEARCH_DELAY_MS);
+    }
+
+    async runGlobalSearch(query) {
+        try {
+            const results = await this.rpc("/ais_helpdesk_whatsapp/messages/search", { q: query });
+            if (this.state.searchQuery.trim() !== query) {
+                return; // el texto cambió mientras tanto
+            }
+            const matches = {};
+            for (const result of results) {
+                matches[result.conversation_id] = result;
+            }
+            this.state.globalMatches = matches;
+        } catch (error) {
+            this.state.globalMatches = {};
+        }
+    }
+
+    matchLabel(conversation) {
+        const match = this.state.globalMatches[conversation.id];
+        if (!match) {
+            return "";
+        }
+        return `${match.matches} ${match.matches === 1 ? "coincidencia" : "coincidencias"}: ${match.snippet}`;
+    }
+
+    // Coincidencias de la búsqueda interna, por mensaje y en total (con caché: se pide varias veces por dibujado).
+    get panelMatchData() {
+        const query = this.state.panelQuery.trim();
+        const messages = this.state.messages;
+        const last = messages.length ? messages[messages.length - 1].id : 0;
+        const key = `${query}|${messages.length}|${last}`;
+        if (this.matchCache.key === key) {
+            return this.matchCache.data;
+        }
+        const byMessage = {};
+        let total = 0;
+        if (query) {
+            for (const message of messages) {
+                const ranges = findRanges(message.body, query);
+                if (ranges.length) {
+                    byMessage[message.id] = { ranges, first: total };
+                    total += ranges.length;
+                }
+            }
+        }
+        this.matchCache = { key, data: { byMessage, total } };
+        return this.matchCache.data;
+    }
+
+    get panelCounter() {
+        const total = this.panelMatchData.total;
+        return total ? `${Math.min(this.state.panelIndex, total - 1) + 1} de ${total}` : "Sin resultados";
+    }
+
+    // Texto del mensaje ya escapado, con las coincidencias marcadas (la actual, más fuerte).
+    bodyHtml(message) {
+        const body = message.body || "";
+        const info = this.panelMatchData.byMessage[message.id];
+        if (!info) {
+            return escapeHtml(body);
+        }
+        const current = Math.min(this.state.panelIndex, this.panelMatchData.total - 1);
+        let html = "";
+        let at = 0;
+        info.ranges.forEach(([from, to], i) => {
+            const cls = info.first + i === current ? "o_ais_whatsapp_match_current" : "o_ais_whatsapp_match";
+            html += escapeHtml(body.slice(at, from)) + `<mark class="${cls}">${escapeHtml(body.slice(from, to))}</mark>`;
+            at = to;
+        });
+        return html + escapeHtml(body.slice(at));
+    }
+
+    onPanelQueryInput(ev) {
+        this.state.panelQuery = ev.target.value;
+        // Se arranca por la coincidencia más reciente, como en WhatsApp.
+        this.state.panelIndex = Math.max(this.panelMatchData.total - 1, 0);
+        this.pendingMatchScroll = true;
+    }
+
+    onPanelQueryKeydown(ev) {
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            this.goToMatch(ev.shiftKey ? 1 : -1);
+        } else if (ev.key === "Escape") {
+            this.clearPanelSearch();
+        }
+    }
+
+    goToMatch(delta) {
+        const total = this.panelMatchData.total;
+        if (!total) {
+            return;
+        }
+        this.state.panelIndex = (Math.min(this.state.panelIndex, total - 1) + delta + total) % total;
+        this.pendingMatchScroll = true;
+        this.render();
+    }
+
+    clearPanelSearch() {
+        this.state.panelQuery = "";
+        this.state.panelIndex = 0;
     }
 
     async loadTicketInfo(ticketId) {

@@ -24,8 +24,9 @@
                 <div class="o_ais_whatsapp_search">
                     <input
                         type="text"
-                        placeholder="Buscar cliente o número"
+                        placeholder="Buscar cliente, número o texto de los mensajes"
                         t-model="state.searchQuery"
+                        t-on-input="onSearchInput"
                     />
                 </div>
                 <div class="o_ais_whatsapp_daterange">
@@ -80,6 +81,7 @@
                         </div>
                         <span class="o_ais_whatsapp_item_company" t-esc="(conversation.contact and conversation.contact.company) or ''" />
                         <span class="o_ais_whatsapp_item_preview" t-esc="conversation.last_message_preview" />
+                        <span t-if="state.globalMatches[conversation.id]" class="o_ais_whatsapp_item_match" t-esc="matchLabel(conversation)" />
                         <span
                             class="o_ais_whatsapp_pill"
                             t-attf-style="background:{{statusPill(conversation.status).bg}};color:{{statusPill(conversation.status).color}};border-color:{{statusPill(conversation.status).border}};"
@@ -141,6 +143,22 @@
                         </button>
                     </div>
 
+                    <div class="o_ais_whatsapp_panelsearch">
+                        <input
+                            type="text"
+                            placeholder="Buscar en la conversación"
+                            t-att-value="state.panelQuery"
+                            t-on-input="onPanelQueryInput"
+                            t-on-keydown="onPanelQueryKeydown"
+                        />
+                        <t t-if="state.panelQuery.trim()">
+                            <span class="o_ais_whatsapp_muted" t-esc="panelCounter" />
+                            <button type="button" class="o_ais_whatsapp_btn_outline" title="Anterior (más antigua)" t-on-click="() => this.goToMatch(-1)" t-att-disabled="!panelMatchData.total">↑</button>
+                            <button type="button" class="o_ais_whatsapp_btn_outline" title="Siguiente (más reciente)" t-on-click="() => this.goToMatch(1)" t-att-disabled="!panelMatchData.total">↓</button>
+                            <button type="button" class="o_ais_whatsapp_btn_outline" title="Cerrar búsqueda" t-on-click="clearPanelSearch">✕</button>
+                        </t>
+                    </div>
+
                     <div class="o_ais_whatsapp_messages" t-ref="messages">
                         <div t-if="state.messagesLoading" class="o_ais_whatsapp_muted">Cargando mensajes...</div>
                         <div
@@ -150,13 +168,13 @@
                             t-attf-class="o_ais_whatsapp_message_row {{ senderClass(message.sender) }}"
                         >
                             <span class="o_ais_whatsapp_sender_label" t-esc="senderLabel(message.sender, selectedConversation) + ' · ' + timeLabel(message.timestamp)" />
-                            <div t-if="!message.has_media" t-attf-class="o_ais_whatsapp_bubble {{ senderClass(message.sender) }}" t-esc="message.body" />
+                            <div t-if="!message.has_media" t-attf-class="o_ais_whatsapp_bubble {{ senderClass(message.sender) }}" t-raw="bodyHtml(message)" />
                             <div t-else="" t-attf-class="o_ais_whatsapp_bubble {{ senderClass(message.sender) }} attachment">
                                 <img t-if="message.msg_type === 'image'" class="o_ais_whatsapp_image" t-att-src="mediaUrl(message)" />
                                 <a t-else="" class="o_ais_whatsapp_attachment" t-att-href="mediaUrl(message)" target="_blank" rel="noopener">
                                     Ver adjunto (<t t-esc="message.msg_type" />)
                                 </a>
-                                <span t-if="message.body" t-esc="message.body" />
+                                <span t-if="message.body" t-raw="bodyHtml(message)" />
                             </div>
                         </div>
                     </div>
