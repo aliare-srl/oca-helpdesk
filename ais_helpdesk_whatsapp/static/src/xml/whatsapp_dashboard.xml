@@ -70,7 +70,9 @@
                 <h5 t-esc="contactLabel(selectedConversation)" />
                 <p>Estado: <t t-esc="statusLabel(selectedConversation.status)" /></p>
                 <p t-if="selectedConversation.helpdesk_ticket_id">
-                    Ticket: #<t t-esc="selectedConversation.helpdesk_ticket_id" />
+                    <button class="btn btn-link p-0" t-on-click="openTicket">
+                        Ver ticket #<t t-esc="selectedConversation.helpdesk_ticket_id" />
+                    </button>
                 </p>
                 <div t-if="state.actionError" class="alert alert-danger p-2" t-esc="state.actionError" />
                 <div class="d-flex flex-column gap-2">

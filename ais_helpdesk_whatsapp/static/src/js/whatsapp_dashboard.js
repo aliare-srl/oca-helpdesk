@@ -23,6 +23,7 @@ const STATUS_ORDER = { waiting_human: 0, human: 1, ai: 2, closed: 3 };
 export class WhatsappDashboard extends Component {
     setup() {
         this.rpc = useService("rpc");
+        this.action = useService("action");
         this.state = useState({
             conversations: [],
             loading: true,
@@ -36,7 +37,13 @@ export class WhatsappDashboard extends Component {
             actionError: "",
             actionPending: false,
         });
-        onWillStart(() => this.loadConversations());
+        onWillStart(async () => {
+            await this.loadConversations();
+            const params = this.props.action && this.props.action.params;
+            if (params && params.conversation_id) {
+                this.selectConversation(params.conversation_id);
+            }
+        });
         this.pollTimer = setInterval(() => this.poll(), POLL_INTERVAL_MS);
         onWillUnmount(() => clearInterval(this.pollTimer));
     }
@@ -185,6 +192,20 @@ export class WhatsappDashboard extends Component {
 
     closeConversation() {
         return this.runAction("close");
+    }
+
+    openTicket() {
+        const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
+        if (!ticketId) {
+            return;
+        }
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "helpdesk.ticket",
+            res_id: ticketId,
+            views: [[false, "form"]],
+            target: "current",
+        });
     }
 }
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="helpdesk_ticket_view_form_whatsapp" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.view.form.whatsapp</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk_mgmt.ticket_view_form" />
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button
+                    name="action_open_whatsapp_conversation"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-whatsapp"
+                    attrs="{'invisible': [('whatsapp_conversation_count', '=', 0)]}"
+                >
+                    <field name="whatsapp_conversation_count" widget="statinfo" string="WhatsApp" />
+                </button>
+            </div>
+        </field>
+    </record>
+
+</odoo>
