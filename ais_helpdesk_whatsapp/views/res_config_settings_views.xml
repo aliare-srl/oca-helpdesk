@@ -17,12 +17,12 @@
                     <div class="row mt16 o_settings_container">
                         <div class="col-12 col-lg-8 o_setting_box">
                             <div class="o_setting_left_pane">
-                                <field name="ais_whatsapp_agent_enabled" />
+                                <field name="ais_whatsapp_agent_disabled" />
                             </div>
                             <div class="o_setting_right_pane">
-                                <label for="ais_whatsapp_agent_enabled" string="Agente de IA activo" />
+                                <label for="ais_whatsapp_agent_disabled" string="Desactivar el agente de IA" />
                                 <div class="text-muted">
-                                    Si se apaga, ninguna conversación nueva la contesta la IA: pasan directo a esperar a una persona.
+                                    Si se marca, ninguna conversación nueva la contesta la IA: pasan directo a esperar a una persona.
                                 </div>
                             </div>
                         </div>

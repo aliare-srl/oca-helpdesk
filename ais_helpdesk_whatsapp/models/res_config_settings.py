@@ -4,11 +4,10 @@ from odoo import fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = "res.config.settings"
 
-    ais_whatsapp_agent_enabled = fields.Boolean(
-        string="Agente de IA activo",
-        config_parameter="ais_helpdesk_whatsapp.agent_enabled",
-        default=True,
-        help="Si se apaga, ninguna conversación nueva la contesta la IA: pasan directo a esperar "
+    ais_whatsapp_agent_disabled = fields.Boolean(
+        string="Desactivar el agente de IA",
+        config_parameter="ais_helpdesk_whatsapp.agent_disabled",
+        help="Si se marca, ninguna conversación nueva la contesta la IA: pasan directo a esperar "
         "a una persona, avisándole al cliente. No afecta a las conversaciones que ya está "
         "atendiendo una persona.",
     )
