@@ -69,6 +69,28 @@
                         </div>
                         <div class="col-12 col-lg-8 o_setting_box">
                             <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_quota_category_id" string="Categoría de las consultas" />
+                                <div class="text-muted">
+                                    Los tickets de consulta de la IA van con esta categoría, y solo estos cuentan para el tope de tickets por mes.
+                                </div>
+                                <div class="content-group">
+                                    <field name="ais_whatsapp_quota_category_id" options="{'no_create': True}" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_urgent_category_id" string="Categoría de las urgencias" />
+                                <div class="text-muted">
+                                    Los tickets de urgencia de la IA van con esta categoría y no cuentan para el tope.
+                                </div>
+                                <div class="content-group">
+                                    <field name="ais_whatsapp_urgent_category_id" options="{'no_create': True}" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
                                 <label
                                     for="ais_whatsapp_inactivity_close_minutes"
                                     string="Minutos de inactividad para cerrar solo"

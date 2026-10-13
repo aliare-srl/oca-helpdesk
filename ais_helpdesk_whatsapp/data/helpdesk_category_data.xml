@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo noupdate="1">
+    <record id="helpdesk_category_urgent" model="helpdesk.ticket.category">
+        <field name="name">Urgente</field>
+    </record>
+
+    <record id="config_urgent_category" model="ir.config_parameter">
+        <field name="key">ais_helpdesk_whatsapp.urgent_category_id</field>
+        <field name="value" eval="str(ref('ais_helpdesk_whatsapp.helpdesk_category_urgent'))" />
+    </record>
+</odoo>

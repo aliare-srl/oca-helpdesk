@@ -11,6 +11,20 @@ class ResConfigSettings(models.TransientModel):
         "a una persona, avisándole al cliente. No afecta a las conversaciones que ya está "
         "atendiendo una persona.",
     )
+    ais_whatsapp_quota_category_id = fields.Many2one(
+        "helpdesk.ticket.category",
+        string="Categoría de las consultas (cuenta para el tope)",
+        config_parameter="ais_helpdesk_whatsapp.quota_category_id",
+        help="Los tickets de consulta que crea la IA van con esta categoría, y solo los de esta categoría "
+        "cuentan para el tope de tickets por mes de cada empresa. Si queda vacía, no se asigna categoría y "
+        "cuentan todos los tickets.",
+    )
+    ais_whatsapp_urgent_category_id = fields.Many2one(
+        "helpdesk.ticket.category",
+        string="Categoría de las urgencias",
+        config_parameter="ais_helpdesk_whatsapp.urgent_category_id",
+        help="Los tickets de urgencia que crea la IA van con esta categoría y no cuentan para el tope.",
+    )
     ais_whatsapp_service_url = fields.Char(
         string="URL del servicio de WhatsApp",
         config_parameter="ais_helpdesk_whatsapp.service_url",

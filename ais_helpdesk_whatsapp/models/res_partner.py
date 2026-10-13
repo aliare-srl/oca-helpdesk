@@ -27,7 +27,7 @@ class ResPartner(models.Model):
     @api.depends("ais_tickets_per_month")
     def _compute_ais_tickets_used_month(self):
         """Tickets de la empresa y de todos sus contactos, creados en el mes y ya resueltos (los
-        cancelados o rechazados no cuentan)."""
+        cancelados o rechazados no cuentan), de la categoría de consultas si está configurada."""
         local_now = datetime.now(pytz.timezone(TZ_NAME))
         month_start = local_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         month_start = month_start.astimezone(pytz.utc).replace(tzinfo=None)
@@ -38,6 +38,9 @@ class ResPartner(models.Model):
             if stage
         ]
         Ticket = self.env["helpdesk.ticket"].sudo()
+        # Si hay una categoría de consultas configurada (Ajustes de Mesa de Ayuda), solo cuentan esos tickets.
+        category = self.env["ir.config_parameter"].sudo().get_param("ais_helpdesk_whatsapp.quota_category_id")
+        category_domain = [("category_id", "=", int(category))] if category and category.isdigit() else []
         for partner in self:
             used = 0
             if partner.is_company and partner.id:
@@ -48,6 +51,7 @@ class ResPartner(models.Model):
                         ("stage_id.closed", "=", True),
                         ("stage_id", "not in", not_counted),
                     ]
+                    + category_domain
                 )
             partner.ais_tickets_used_month = used
             limit = partner.ais_tickets_per_month
