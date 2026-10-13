@@ -41,7 +41,11 @@ class ResPartner(models.Model):
         # Si hay una categoría de consultas configurada (Ajustes de Mesa de Ayuda), solo cuentan esos tickets.
         raw = self.env["ir.config_parameter"].sudo().get_param("ais_helpdesk_whatsapp.quota_category_ids") or ""
         category_ids = [int(i) for i in raw.split(",") if i.strip().isdigit()]
+        raw_urgent = self.env["ir.config_parameter"].sudo().get_param("ais_helpdesk_whatsapp.urgent_category_ids") or ""
+        urgent_ids = [int(i) for i in raw_urgent.split(",") if i.strip().isdigit()]
         category_domain = [("category_id", "in", category_ids)] if category_ids else []
+        if urgent_ids:
+            category_domain.append(("category_id", "not in", urgent_ids))  # las urgencias nunca cuentan
         for partner in self:
             used = 0
             if partner.is_company and partner.id:
