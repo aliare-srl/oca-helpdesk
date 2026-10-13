@@ -55,6 +55,41 @@ def _close_ticket_with_resolution(ticket_id, resolution):
         _logger.exception("No se pudo cerrar el ticket %s con la resolución", ticket_id)
 
 
+def _create_closed_ticket(remote_id, resolution):
+    """Cierre con resolución de una conversación que no tiene ticket (el ticket ya no se crea al empezar
+    el chat): se crea directamente en 'Hecho' para no perder el caso ni la resolución."""
+    try:
+        env = request.env
+        conversation = env["ais.whatsapp.conversation"].search([("remote_id", "=", remote_id)], limit=1)
+        messages = agent_client.get_messages(env, remote_id)
+        customer_texts = [
+            m["body"].strip() for m in messages if m.get("sender") == "customer" and (m.get("body") or "").strip()
+        ]
+        vals = {
+            "name": (customer_texts[0] if customer_texts else "Consulta por WhatsApp")[:150],
+            "description": "".join(
+                [f"<p>{html_escape(text)}</p>" for text in customer_texts[:10]]
+                + [f"<p><b>Resolución:</b> {html_escape(resolution)}</p>".replace("\n", "<br/>")]
+            ),
+            "whatsapp_conversation_remote_id": remote_id,
+        }
+        if conversation.company_name:
+            partner = env["res.partner"].search(
+                [("is_company", "=", True), ("name", "=", conversation.company_name)], limit=1
+            )
+            if partner:
+                vals["partner_id"] = partner.id
+        channel = env["helpdesk.ticket.channel"].search([("name", "=ilike", "Whatsapp")], limit=1)
+        if channel:
+            vals["channel_id"] = channel.id
+        stage = env["helpdesk.ticket.stage"].search([("name", "=", "Hecho")], limit=1)
+        if stage:
+            vals["stage_id"] = stage.id
+        env["helpdesk.ticket"].create(vals)
+    except Exception:  # noqa: BLE001
+        _logger.exception("No se pudo crear el ticket al cerrar la conversación %s", remote_id)
+
+
 class WhatsappDashboardController(http.Controller):
     @http.route("/ais_helpdesk_whatsapp/config", type="json", auth="user")
     def config(self):
@@ -113,7 +148,10 @@ class WhatsappDashboardController(http.Controller):
     def close(self, remote_id, resolution=None, ticket_id=None):
         _check_access()
         result = agent_client.close(request.env, remote_id)
-        _close_ticket_with_resolution(ticket_id, resolution)
+        if ticket_id:
+            _close_ticket_with_resolution(ticket_id, resolution)
+        elif resolution:
+            _create_closed_ticket(remote_id, resolution)
         return result
 
     @http.route("/ais_helpdesk_whatsapp/tickets/<int:ticket_id>", type="json", auth="user")
