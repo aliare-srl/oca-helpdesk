@@ -20,8 +20,8 @@
                     </group>
                     <div class="text-muted">
                         La URL de su Odoo es el campo "Sitio web" del contacto. Los tickets cuentan solo los ya
-                        resueltos, creados este mes por la empresa y por todos sus contactos, y de la categoría de consultas
-                        elegida en Ajustes de Mesa de Ayuda.
+                        resueltos, creados este mes por la empresa y por todos sus contactos, y de las categorías de consultas
+                        elegidas en Ajustes de Mesa de Ayuda.
                     </div>
                 </page>
             </xpath>

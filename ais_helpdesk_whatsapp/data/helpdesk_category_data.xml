@@ -5,7 +5,7 @@
     </record>
 
     <record id="config_urgent_category" model="ir.config_parameter">
-        <field name="key">ais_helpdesk_whatsapp.urgent_category_id</field>
+        <field name="key">ais_helpdesk_whatsapp.urgent_category_ids</field>
         <field name="value" eval="str(ref('ais_helpdesk_whatsapp.helpdesk_category_urgent'))" />
     </record>
 </odoo>

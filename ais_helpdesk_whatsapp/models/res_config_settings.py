@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class ResConfigSettings(models.TransientModel):
@@ -11,19 +11,24 @@ class ResConfigSettings(models.TransientModel):
         "a una persona, avisándole al cliente. No afecta a las conversaciones que ya está "
         "atendiendo una persona.",
     )
-    ais_whatsapp_quota_category_id = fields.Many2one(
+    ais_whatsapp_quota_category_ids = fields.Many2many(
         "helpdesk.ticket.category",
-        string="Categoría de las consultas (cuenta para el tope)",
-        config_parameter="ais_helpdesk_whatsapp.quota_category_id",
-        help="Los tickets de consulta que crea la IA van con esta categoría, y solo los de esta categoría "
-        "cuentan para el tope de tickets por mes de cada empresa. Si queda vacía, no se asigna categoría y "
-        "cuentan todos los tickets.",
+        "ais_whatsapp_settings_quota_category_rel",
+        "settings_id",
+        "category_id",
+        string="Categorías de consultas (cuentan para el tope)",
+        help="Solo los tickets de estas categorías (por ejemplo consultas, reclamos y errores de Odoo) cuentan "
+        "para el tope de tickets por mes de cada empresa. Los tickets de consulta que crea la IA van con la "
+        "primera de la lista (la de menor id). Si queda vacía, no se asigna categoría y cuentan todos.",
     )
-    ais_whatsapp_urgent_category_id = fields.Many2one(
+    ais_whatsapp_urgent_category_ids = fields.Many2many(
         "helpdesk.ticket.category",
-        string="Categoría de las urgencias",
-        config_parameter="ais_helpdesk_whatsapp.urgent_category_id",
-        help="Los tickets de urgencia que crea la IA van con esta categoría y no cuentan para el tope.",
+        "ais_whatsapp_settings_urgent_category_rel",
+        "settings_id",
+        "category_id",
+        string="Categorías de urgencias",
+        help="Categorías con las que se clasifican las urgencias. No cuentan para el tope. Los tickets de "
+        "urgencia que crea la IA van con la primera de la lista (la de menor id).",
     )
     ais_whatsapp_service_url = fields.Char(
         string="URL del servicio de WhatsApp",
@@ -70,3 +75,25 @@ class ResConfigSettings(models.TransientModel):
         "el móvil cargado en su contacto), menos el usuario de la IA. El WhatsApp necesita además "
         "una plantilla aprobada por Meta configurada en el servicio.",
     )
+
+    # Many2many no se guarda solo en un parámetro del sistema: se guardan los ids separados por coma.
+    _CATEGORY_PARAMS = {
+        "ais_whatsapp_quota_category_ids": "ais_helpdesk_whatsapp.quota_category_ids",
+        "ais_whatsapp_urgent_category_ids": "ais_helpdesk_whatsapp.urgent_category_ids",
+    }
+
+    @api.model
+    def get_values(self):
+        res = super().get_values()
+        params = self.env["ir.config_parameter"].sudo()
+        for field, key in self._CATEGORY_PARAMS.items():
+            ids = [int(i) for i in (params.get_param(key) or "").split(",") if i.strip().isdigit()]
+            res[field] = [(6, 0, ids)]
+        return res
+
+    def set_values(self):
+        super().set_values()
+        params = self.env["ir.config_parameter"].sudo()
+        for field, key in self._CATEGORY_PARAMS.items():
+            params.set_param(key, ",".join(str(i) for i in sorted(self[field].ids)) or False)
+
