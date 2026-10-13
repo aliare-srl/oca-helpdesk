@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="res_partner_view_form_ais_helpdesk" model="ir.ui.view">
+        <field name="name">res.partner.form.ais.helpdesk</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Mesa de ayuda" name="ais_helpdesk" attrs="{'invisible': [('is_company', '=', False)]}">
+                    <group>
+                        <group>
+                            <field name="ais_odoo_version" />
+                            <field name="ais_support_plan_id" options="{'no_create_edit': True}" />
+                            <field name="ais_plan_observations" />
+                        </group>
+                        <group>
+                            <field name="ais_tickets_per_month" />
+                            <field name="ais_tickets_summary" />
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        La URL de su Odoo es el campo "Sitio web" del contacto. Los tickets cuentan solo los ya
+                        resueltos, creados este mes por la empresa y por todos sus contactos.
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

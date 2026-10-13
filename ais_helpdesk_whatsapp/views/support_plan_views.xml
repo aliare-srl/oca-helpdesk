@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <record id="ais_support_plan_view_tree" model="ir.ui.view">
+        <field name="name">ais.support.plan.tree</field>
+        <field name="model">ais.support.plan</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name" />
+                <field name="observations" />
+            </tree>
+        </field>
+    </record>
+
+    <record id="ais_support_plan_view_form" model="ir.ui.view">
+        <field name="name">ais.support.plan.form</field>
+        <field name="model">ais.support.plan</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name" />
+                        <field name="observations" placeholder="Qué incluye el plan..." />
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="ais_support_plan_action" model="ir.actions.act_window">
+        <field name="name">Planes de soporte</field>
+        <field name="res_model">ais.support.plan</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem
+        id="ais_support_plan_menu"
+        name="Planes de soporte"
+        parent="helpdesk_mgmt.helpdesk_ticket_config_main_menu"
+        action="ais_support_plan_action"
+        sequence="60"
+    />
+</odoo>
