@@ -687,7 +687,8 @@ export class WhatsappDashboard extends Component {
         }
         this.state.actionError = "";
         try {
-            const messaging = await this.env.services.messaging.get();
+            // El servicio de mensajería es del entorno global de Odoo 15, no del de este componente.
+            const messaging = await Component.env.services.messaging.get();
             await messaging.openChat({ partnerId: user.partner_id });
         } catch (error) {
             this.state.actionError = `No se pudo abrir el chat de Odoo con ese usuario (${(error && error.message) || error}).`;
