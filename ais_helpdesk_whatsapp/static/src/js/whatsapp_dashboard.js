@@ -114,6 +114,11 @@ export class WhatsappDashboard extends Component {
             closeOpen: false,
             closeResolution: "",
             closeError: "",
+            myUserId: this.userService.userId,
+            isAdmin: false,
+            team: [],
+            delegateOpen: false,
+            delegateTo: "",
         });
 
         this.pollIntervalMs = DEFAULT_POLL_INTERVAL_MS;
@@ -181,6 +186,8 @@ export class WhatsappDashboard extends Component {
                 this.pollIntervalMs = config.refresh_seconds * 1000;
             }
             this.state.agentDisabled = Boolean(config.agent_disabled);
+            this.state.myUserId = config.user_id || this.state.myUserId;
+            this.state.isAdmin = Boolean(config.is_admin);
         } catch (error) {
             // Se sigue con los valores por defecto si no se pudo leer la configuración.
         }
@@ -288,6 +295,9 @@ export class WhatsappDashboard extends Component {
 
     statusLabel(conversation) {
         if (conversation.status === "human") {
+            if (conversation.delegated_to_user_id && conversation.delegated_to_user_id === this.state.myUserId) {
+                return `Te delegaron: ${conversation.delegated_by || "un compañero"}`;
+            }
             return conversation.taken_by ? `Atiende ${conversation.taken_by}` : "Atiende una persona";
         }
         return this.statusPill(conversation.status).label;
@@ -322,6 +332,7 @@ export class WhatsappDashboard extends Component {
 
     async selectConversation(id) {
         this.state.selectedId = id;
+        this.state.delegateOpen = false;
         this.state.replyText = "";
         this.state.ticketInfo = null;
         this.state.panelQuery = "";
@@ -528,22 +539,49 @@ export class WhatsappDashboard extends Component {
         return this.state.conversations.find((c) => c.id === this.state.selectedId) || null;
     }
 
+    // La conversación tomada es solo de quien la tomó, hasta que la devuelva o la delegue.
+    get ownedByOther() {
+        const c = this.selectedConversation;
+        return !!c && c.status === "human" && !!c.taken_by_user_id && c.taken_by_user_id !== this.state.myUserId;
+    }
+
+    get isMine() {
+        const c = this.selectedConversation;
+        return !!c && c.status === "human" && !this.ownedByOther;
+    }
+
     get canReply() {
-        return !!this.selectedConversation && this.selectedConversation.status === "human";
+        return this.isMine;
     }
 
     get canTake() {
         const status = this.selectedConversation && this.selectedConversation.status;
-        return status && status !== "human" && status !== "closed";
+        return status === "ai" || status === "waiting_human";
     }
 
     get canReturnToAi() {
-        return this.selectedConversation && this.selectedConversation.status === "human";
+        return this.isMine;
     }
 
     get canClose() {
-        const status = this.selectedConversation && this.selectedConversation.status;
-        return status && status !== "closed";
+        const c = this.selectedConversation;
+        return !!c && c.status !== "closed" && !this.ownedByOther;
+    }
+
+    get incomingDelegation() {
+        const c = this.selectedConversation;
+        return !!c && !!c.delegated_to_user_id && c.delegated_to_user_id === this.state.myUserId;
+    }
+
+    get outgoingDelegation() {
+        const c = this.selectedConversation;
+        return this.isMine && !!c.delegated_to_user_id;
+    }
+
+    get myDelegations() {
+        return this.state.conversations.filter(
+            (c) => c.status === "human" && c.delegated_to_user_id && c.delegated_to_user_id === this.state.myUserId
+        );
     }
 
     get pauseRemainingLabel() {
@@ -589,6 +627,80 @@ export class WhatsappDashboard extends Component {
     returnToAi() {
         const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
         return this.runAction("return_to_ai", { ticket_id: ticketId });
+    }
+
+    returnToWaiting() {
+        const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
+        return this.runAction("return_to_waiting", { ticket_id: ticketId });
+    }
+
+    async openDelegate() {
+        this.state.delegateOpen = true;
+        this.state.delegateTo = "";
+        this.state.actionError = "";
+        try {
+            this.state.team = await this.rpc("/ais_helpdesk_whatsapp/team", {});
+        } catch (error) {
+            this.state.actionError = error.message || "No se pudo leer el equipo.";
+        }
+    }
+
+    closeDelegate() {
+        this.state.delegateOpen = false;
+    }
+
+    async submitDelegate() {
+        if (!this.state.delegateTo) {
+            return;
+        }
+        await this.runAction("delegate", { to_user_id: Number(this.state.delegateTo) });
+        if (!this.state.actionError) {
+            this.state.delegateOpen = false;
+        }
+    }
+
+    cancelDelegation() {
+        return this.runAction("cancel_delegation");
+    }
+
+    acceptDelegation() {
+        const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
+        return this.runAction("accept_delegation", { ticket_id: ticketId });
+    }
+
+    rejectDelegation() {
+        return this.runAction("reject_delegation");
+    }
+
+    // Abre el chat de Odoo (Discuss) con el usuario, sin salir de esta pantalla.
+    async openChatWith(userId) {
+        const user = this.state.team.find((u) => u.id === Number(userId));
+        if (!user) {
+            return;
+        }
+        this.state.actionError = "";
+        try {
+            const messaging = this.env.services.messaging.modelManager.getMessaging();
+            await messaging.openChat({ partnerId: user.partner_id });
+        } catch (error) {
+            this.state.actionError = "No se pudo abrir el chat de Odoo con ese usuario.";
+        }
+    }
+
+    async openChatWithDelegate() {
+        const c = this.selectedConversation;
+        if (!c || !c.delegated_to_user_id) {
+            return;
+        }
+        if (!this.state.team.length) {
+            try {
+                this.state.team = await this.rpc("/ais_helpdesk_whatsapp/team", {});
+            } catch (error) {
+                this.state.actionError = error.message || "No se pudo leer el equipo.";
+                return;
+            }
+        }
+        return this.openChatWith(c.delegated_to_user_id);
     }
 
     openCloseModal() {

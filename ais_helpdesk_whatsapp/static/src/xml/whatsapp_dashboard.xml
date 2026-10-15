@@ -18,6 +18,11 @@
             </div>
         </div>
 
+        <div t-if="myDelegations.length" class="o_ais_whatsapp_banner info">
+            <div><strong t-esc="'Tenés ' + myDelegations.length + (myDelegations.length === 1 ? ' conversación delegada' : ' conversaciones delegadas') + ' para aceptar'" /></div>
+            <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="() => this.selectConversation(myDelegations[0].id)">Ver</button>
+        </div>
+
         <div class="o_ais_whatsapp_body">
 
             <div class="o_ais_whatsapp_list">
@@ -138,9 +143,52 @@
                             <strong>La IA está en pausa en esta conversación</strong>
                             <div t-esc="'Se reanuda sola en ' + pauseRemainingLabel + ' si no respondés.'" />
                         </div>
-                        <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="returnToAi" t-att-disabled="state.actionPending">
+                        <button t-if="canReturnToAi" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="returnToAi" t-att-disabled="state.actionPending">
                             Devolver a la IA ahora
                         </button>
+                    </div>
+
+                    <div t-if="ownedByOther" class="o_ais_whatsapp_banner warn">
+                        <div>
+                            <strong t-esc="'La atiende ' + (selectedConversation.taken_by or 'otra persona')" />
+                            <div>Nadie más puede responderla ni tomarla hasta que la devuelva o la delegue.</div>
+                        </div>
+                        <button t-if="state.isAdmin" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="returnToWaiting" t-att-disabled="state.actionPending">
+                            Soltar (administrador)
+                        </button>
+                    </div>
+                    <div t-if="incomingDelegation" class="o_ais_whatsapp_banner info">
+                        <div>
+                            <strong t-esc="(selectedConversation.delegated_by or 'Un compañero') + ' te delegó esta conversación'" />
+                            <div>Hasta que la aceptes, sigue siendo de quien la tiene.</div>
+                        </div>
+                        <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="acceptDelegation" t-att-disabled="state.actionPending">Aceptar</button>
+                        <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="rejectDelegation" t-att-disabled="state.actionPending">Rechazar</button>
+                    </div>
+                    <div t-if="outgoingDelegation" class="o_ais_whatsapp_banner info">
+                        <div>
+                            <strong t-esc="'Delegada a ' + selectedConversation.delegated_to_name" />
+                            <div>Esperando que la acepte. Mientras tanto sigue siendo tuya.</div>
+                        </div>
+                        <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="openChatWithDelegate">Chat de Odoo</button>
+                        <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="cancelDelegation" t-att-disabled="state.actionPending">Cancelar delegación</button>
+                    </div>
+                    <div t-if="isMine and !outgoingDelegation" class="o_ais_whatsapp_ownerbar">
+                        <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="returnToWaiting" t-att-disabled="state.actionPending">
+                            Devolver a esperando persona
+                        </button>
+                        <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="openDelegate" t-att-disabled="state.actionPending">
+                            Delegar
+                        </button>
+                        <t t-if="state.delegateOpen">
+                            <select t-model="state.delegateTo">
+                                <option value="">Elegí a quién delegar</option>
+                                <option t-foreach="state.team" t-as="user" t-key="user.id" t-att-value="user.id" t-esc="user.name" />
+                            </select>
+                            <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="submitDelegate" t-att-disabled="!state.delegateTo or state.actionPending">Delegar</button>
+                            <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="() => this.openChatWith(state.delegateTo)" t-att-disabled="!state.delegateTo">Chat de Odoo</button>
+                            <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeDelegate">Cancelar</button>
+                        </t>
                     </div>
 
                     <div class="o_ais_whatsapp_panelsearch">
@@ -216,6 +264,9 @@
                         <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="takeConversation" t-att-disabled="state.actionPending">
                             Tomar conversación
                         </button>
+                    </div>
+                    <div t-elif="ownedByOther" class="o_ais_whatsapp_takebar">
+                        <span class="o_ais_whatsapp_muted" t-esc="'La está atendiendo ' + (selectedConversation.taken_by or 'otra persona') + '. No podés responder ni tomarla.'" />
                     </div>
                 </div>
 

@@ -413,6 +413,19 @@ $ais-avatar-color: #5A3852;
         }
     }
 
+    .o_ais_whatsapp_ownerbar {
+        flex-shrink: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: #fff;
+        border-bottom: 1px solid $ais-border;
+
+        select { min-width: 200px; padding: 6px 8px; }
+    }
+
     .o_ais_whatsapp_takebar {
         flex-shrink: 0;
         box-sizing: border-box;

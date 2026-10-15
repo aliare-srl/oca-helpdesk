@@ -35,6 +35,20 @@ def _reassign_ticket(ticket_id, user_id):
         _logger.exception("No se pudo reasignar el ticket %s al usuario %s", ticket_id, user_id)
 
 
+def _unassign_ticket(ticket_id):
+    if not ticket_id:
+        return
+    try:
+        request.env["helpdesk.ticket"].browse(int(ticket_id)).user_id = False
+    except Exception:  # noqa: BLE001
+        _logger.exception("No se pudo dejar sin responsable el ticket %s", ticket_id)
+
+
+def _is_admin():
+    user = request.env.user
+    return user.has_group("base.group_system") or user.has_group("helpdesk_mgmt.group_helpdesk_manager")
+
+
 def _close_ticket_with_resolution(ticket_id, resolution):
     if not ticket_id:
         return
@@ -98,6 +112,8 @@ class WhatsappDashboardController(http.Controller):
         return {
             "refresh_seconds": int(refresh_seconds) if refresh_seconds.isdigit() else 4,
             "agent_disabled": _config_param("ais_helpdesk_whatsapp.agent_disabled") == "True",
+            "user_id": request.env.user.id,
+            "is_admin": _is_admin(),
         }
 
     @http.route("/ais_helpdesk_whatsapp/conversations", type="json", auth="user")
@@ -143,6 +159,63 @@ class WhatsappDashboardController(http.Controller):
         result = agent_client.return_to_ai(request.env, remote_id)
         _reassign_ticket(ticket_id, _config_param("ais_helpdesk_whatsapp.ai_user_id"))
         return result
+
+    @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/return_to_waiting", type="json", auth="user")
+    def return_to_waiting(self, remote_id, ticket_id=None):
+        _check_access()
+        result = agent_client.return_to_waiting(request.env, remote_id)
+        _unassign_ticket(ticket_id)
+        return result
+
+    @http.route("/ais_helpdesk_whatsapp/team", type="json", auth="user")
+    def team(self):
+        """Usuarios a los que se les puede delegar una conversación (los que tienen acceso a la mesa de ayuda)."""
+        _check_access()
+        group = request.env.ref(_GROUP)
+        users = request.env["res.users"].search(
+            [("groups_id", "in", group.id), ("id", "!=", request.env.user.id), ("share", "=", False)], order="name"
+        )
+        return [{"id": u.id, "name": u.name, "partner_id": u.partner_id.id} for u in users]
+
+    @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/delegate", type="json", auth="user")
+    def delegate(self, remote_id, to_user_id):
+        _check_access()
+        target = request.env["res.users"].browse(int(to_user_id)).exists()
+        if not target or not target.has_group(_GROUP):
+            raise AccessError("Ese usuario no tiene acceso a la mesa de ayuda.")
+        result = agent_client.delegate(request.env, remote_id, target.id, target.name)
+        contact = (result.get("conversation") or {}).get("contact") or {}
+        try:
+            target.partner_id.sudo().message_notify(
+                partner_ids=[target.partner_id.id],
+                subject="Te delegaron una conversación de WhatsApp",
+                body=html_escape(
+                    f"{request.env.user.name} te delegó la conversación con "
+                    f"{contact.get('profile_name') or contact.get('wa_id') or 'un cliente'}. "
+                    "Entrá a Mesa de Ayuda WhatsApp para aceptarla."
+                ),
+                author_id=request.env.user.partner_id.id,
+            )
+        except Exception:  # noqa: BLE001
+            _logger.exception("No se pudo avisar al usuario %s de la delegación", target.id)
+        return result
+
+    @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/cancel_delegation", type="json", auth="user")
+    def cancel_delegation(self, remote_id):
+        _check_access()
+        return agent_client.cancel_delegation(request.env, remote_id)
+
+    @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/accept_delegation", type="json", auth="user")
+    def accept_delegation(self, remote_id, ticket_id=None):
+        _check_access()
+        result = agent_client.accept_delegation(request.env, remote_id)
+        _reassign_ticket(ticket_id, request.env.user.id)
+        return result
+
+    @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/reject_delegation", type="json", auth="user")
+    def reject_delegation(self, remote_id):
+        _check_access()
+        return agent_client.reject_delegation(request.env, remote_id)
 
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/close", type="json", auth="user")
     def close(self, remote_id, resolution=None, ticket_id=None):

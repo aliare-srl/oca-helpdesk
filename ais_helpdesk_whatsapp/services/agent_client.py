@@ -43,6 +43,12 @@ def _request(env, method, path, json_body=None, params=None):
         raise UserError(_("La clave de la API configurada es inválida."))
     if response.status_code == 404:
         raise UserError(_("No se encontró la conversación en el servicio."))
+    if response.status_code == 403:
+        try:
+            detail = response.json().get("error")
+        except ValueError:
+            detail = None
+        raise UserError(detail or _("No tenés permiso para hacer esto con la conversación."))
     if response.status_code >= 400:
         raise UserError(
             _("El servicio de WhatsApp devolvió un error (%(code)s): %(detail)s")
@@ -82,21 +88,55 @@ def get_message_media(env, remote_id, message_id):
     return response.headers.get("Content-Type", "application/octet-stream"), response.content
 
 
+def _actor(env):
+    """Quién hace la acción: el servicio solo deja actuar sobre una conversación tomada a quien la tomó
+    (un administrador puede soltarla)."""
+    user = env.user
+    return {
+        "user_id": user.id,
+        "user_name": user.name,
+        "is_admin": user.has_group("base.group_system") or user.has_group("helpdesk_mgmt.group_helpdesk_manager"),
+    }
+
+
+def _action(env, remote_id, name, **extra):
+    return _request(env, "POST", f"/api/conversations/{remote_id}/{name}", json_body={**_actor(env), **extra})
+
+
 def reply(env, remote_id, text):
-    return _request(env, "POST", f"/api/conversations/{remote_id}/reply", json_body={"text": text})
+    return _action(env, remote_id, "reply", text=text)
 
 
 def take(env, remote_id, taken_by=None):
-    body = {"taken_by": taken_by} if taken_by else None
-    return _request(env, "POST", f"/api/conversations/{remote_id}/take", json_body=body)
+    return _action(env, remote_id, "take", taken_by=taken_by)
 
 
 def return_to_ai(env, remote_id):
-    return _request(env, "POST", f"/api/conversations/{remote_id}/return_to_ai")
+    return _action(env, remote_id, "return_to_ai")
+
+
+def return_to_waiting(env, remote_id):
+    return _action(env, remote_id, "return_to_waiting")
+
+
+def delegate(env, remote_id, to_user_id, to_user_name):
+    return _action(env, remote_id, "delegate", to_user_id=to_user_id, to_user_name=to_user_name)
+
+
+def cancel_delegation(env, remote_id):
+    return _action(env, remote_id, "cancel_delegation")
+
+
+def accept_delegation(env, remote_id):
+    return _action(env, remote_id, "accept_delegation")
+
+
+def reject_delegation(env, remote_id):
+    return _action(env, remote_id, "reject_delegation")
 
 
 def close(env, remote_id):
-    return _request(env, "POST", f"/api/conversations/{remote_id}/close")
+    return _action(env, remote_id, "close")
 
 
 def start_conversation(
