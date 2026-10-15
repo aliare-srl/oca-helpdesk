@@ -94,7 +94,7 @@ class ResConfigSettings(models.TransientModel):
         config_parameter="ais_helpdesk_whatsapp.wait_notice_1_enabled",
         help="Se manda a los clientes que esperan a una persona. No se manda si el aviso 2 está activo.",
     )
-    ais_whatsapp_wait_notice_1_text = fields.Text(
+    ais_whatsapp_wait_notice_1_text = fields.Char(
         string="Texto del aviso 1",
         config_parameter="ais_helpdesk_whatsapp.wait_notice_1_text",
         default="Estimado cliente, en este momento todos nuestros operadores se encuentran ocupados. "
@@ -112,7 +112,7 @@ class ResConfigSettings(models.TransientModel):
         config_parameter="ais_helpdesk_whatsapp.wait_notice_2_enabled",
         help="Se manda a los clientes que esperan a una persona. Si está activo, tiene prioridad y el aviso 1 no se manda.",
     )
-    ais_whatsapp_wait_notice_2_text = fields.Text(
+    ais_whatsapp_wait_notice_2_text = fields.Char(
         string="Texto del aviso 2",
         config_parameter="ais_helpdesk_whatsapp.wait_notice_2_text",
         default="Estimado cliente, debido a la alta demanda de consultas, actualmente tenemos una demora "

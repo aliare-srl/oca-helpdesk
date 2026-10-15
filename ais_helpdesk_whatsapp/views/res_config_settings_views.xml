@@ -177,7 +177,7 @@
                                         <field name="ais_whatsapp_wait_notice_1_minutes" class="oe_inline" />
                                     </div>
                                     <div class="mt8">
-                                        <field name="ais_whatsapp_wait_notice_1_text" nolabel="1" />
+                                        <field name="ais_whatsapp_wait_notice_1_text" nolabel="1" widget="text" />
                                     </div>
                                 </div>
                             </div>
@@ -198,7 +198,7 @@
                                         <field name="ais_whatsapp_wait_notice_2_minutes" class="oe_inline" />
                                     </div>
                                     <div class="mt8">
-                                        <field name="ais_whatsapp_wait_notice_2_text" nolabel="1" />
+                                        <field name="ais_whatsapp_wait_notice_2_text" nolabel="1" widget="text" />
                                     </div>
                                 </div>
                             </div>
