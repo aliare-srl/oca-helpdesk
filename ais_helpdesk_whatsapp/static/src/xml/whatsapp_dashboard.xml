@@ -18,6 +18,14 @@
             </div>
         </div>
 
+        <div t-if="urgentWaiting.length" class="o_ais_whatsapp_banner urgent">
+            <div>
+                <strong t-esc="'🚨 URGENCIA esperando: ' + urgentWaiting.length"/>
+                <span t-esc="contactLabel(urgentWaiting[0]) + ' · desde ' + dateTimeLabel(urgentWaiting[0].last_message_at)" />
+            </div>
+            <button type="button" class="o_ais_whatsapp_btn_urgent" t-on-click="() => this.selectConversation(urgentWaiting[0].id)">Ver</button>
+        </div>
+
         <div t-if="myDelegations.length" class="o_ais_whatsapp_banner info">
             <div><strong t-esc="'Tenés ' + myDelegations.length + (myDelegations.length === 1 ? ' conversación delegada' : ' conversaciones delegadas') + ' para aceptar'" /></div>
             <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="() => this.selectConversation(myDelegations[0].id)">Ver</button>
@@ -78,7 +86,7 @@
                         t-as="conversation"
                         t-key="conversation.id"
                         t-on-click="() => this.selectConversation(conversation.id)"
-                        t-attf-class="o_ais_whatsapp_item {{ conversation.id === state.selectedId ? 'selected' : '' }}"
+                        t-attf-class="o_ais_whatsapp_item {{ conversation.id === state.selectedId ? 'selected' : '' }} {{ conversation.is_urgent and conversation.status === 'waiting_human' ? 'urgent' : '' }}"
                     >
                         <div class="o_ais_whatsapp_item_row">
                             <strong t-esc="contactLabel(conversation)" />

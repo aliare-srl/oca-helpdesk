@@ -585,6 +585,12 @@ export class WhatsappDashboard extends Component {
         return this.isMine && !!c.delegated_to_user_id;
     }
 
+    get urgentWaiting() {
+        return this.state.conversations
+            .filter((c) => c.status === "waiting_human" && c.is_urgent)
+            .sort((a, b) => String(a.last_message_at || "").localeCompare(String(b.last_message_at || "")));
+    }
+
     get myDelegations() {
         return this.state.conversations.filter(
             (c) => c.status === "human" && c.delegated_to_user_id && c.delegated_to_user_id === this.state.myUserId

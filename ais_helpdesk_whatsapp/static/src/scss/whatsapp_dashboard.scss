@@ -284,6 +284,36 @@ $ais-avatar-color: #5A3852;
 
         &.warn { background: #FEF0D9; border-color: #F2C98A; color: #6B2D08; }
         &.info { background: #DDF1F4; border-color: #B7DDE3; color: #0B4650; }
+        &.urgent {
+            background: #C62828;
+            border-color: #8E0000;
+            color: #fff;
+            font-size: 14px;
+            animation: o_ais_whatsapp_urgent_pulse 2.4s ease-in-out infinite;
+
+            > div:first-child { font-size: 14px; }
+        }
+    }
+
+    .o_ais_whatsapp_btn_urgent {
+        background: #fff;
+        color: #C62828;
+        border: 0;
+        border-radius: 6px;
+        padding: 6px 16px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .o_ais_whatsapp_item.urgent { border-left: 4px solid #C62828; background: #FDECEA; }
+
+    @keyframes o_ais_whatsapp_urgent_pulse {
+        0%, 100% { background: #C62828; }
+        50% { background: #E57373; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .o_ais_whatsapp_banner.urgent { animation: none; }
     }
 
     .o_ais_whatsapp_item_match {
