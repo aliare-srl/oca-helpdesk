@@ -47,6 +47,19 @@ class ResConfigSettings(models.TransientModel):
         help="A nombre de quién queda asignado un ticket mientras lo atiende la IA (al tomar una "
         "conversación pasa al usuario que la tomó; al devolverla, vuelve a este).",
     )
+    ais_whatsapp_requirement_category_id = fields.Many2one(
+        "helpdesk.ticket.category",
+        string="Categoría de nuevos requerimientos",
+        config_parameter="ais_helpdesk_whatsapp.requirement_category_id",
+        help="Categoría con la que la IA registra lo que el cliente pide y Odoo no hace (nuevos "
+        "requerimientos). No cuenta para el tope mensual y el ticket queda abierto para su evaluación.",
+    )
+    ais_whatsapp_requirement_user_id = fields.Many2one(
+        "res.users",
+        string="Responsable de nuevos requerimientos",
+        config_parameter="ais_helpdesk_whatsapp.requirement_user_id",
+        help="Usuario de desarrollo al que se asignan los tickets de nuevos requerimientos que registra la IA.",
+    )
     ais_whatsapp_inactivity_close_minutes = fields.Integer(
         string="Minutos de inactividad del cliente para cerrar solo",
         config_parameter="ais_helpdesk_whatsapp.inactivity_close_minutes",

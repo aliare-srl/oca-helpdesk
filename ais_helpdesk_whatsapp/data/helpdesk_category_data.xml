@@ -8,4 +8,13 @@
         <field name="key">ais_helpdesk_whatsapp.urgent_category_ids</field>
         <field name="value" eval="str(ref('ais_helpdesk_whatsapp.helpdesk_category_urgent'))" />
     </record>
+
+    <record id="helpdesk_category_requirement" model="helpdesk.ticket.category">
+        <field name="name">Nuevo requerimiento</field>
+    </record>
+
+    <record id="config_requirement_category" model="ir.config_parameter">
+        <field name="key">ais_helpdesk_whatsapp.requirement_category_id</field>
+        <field name="value" eval="str(ref('ais_helpdesk_whatsapp.helpdesk_category_requirement'))" />
+    </record>
 </odoo>
