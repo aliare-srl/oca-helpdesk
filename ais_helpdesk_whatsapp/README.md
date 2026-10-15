@@ -55,3 +55,4 @@ Depende de `helpdesk_mgmt`. Sin configuración adicional en el `__manifest__`; u
 - `models/res_config_settings.py`: los parámetros de Ajustes, como `ir.config_parameter`.
 - `wizards/whatsapp_start_wizard.py`: ventana para iniciar una conversación nueva.
 - `data/ir_cron.xml`: sincroniza la lista cada 2 minutos; no corre si el servicio todavía no está configurado.
+- **Filtro por fechas del tablero**: compara con la fecha **local** del último mensaje (la misma que muestra la lista), no con la fecha UTC; antes una conversación de la noche aparecía en el día siguiente.

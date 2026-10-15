@@ -28,6 +28,14 @@ function todayLocal() {
     return `${d.getFullYear()}-${month}-${day}`;
 }
 
+// Fecha calendario local (AAAA-MM-DD) de un instante ISO: es la misma que se muestra en la lista.
+function localDay(iso) {
+    const d = new Date(iso);
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${month}-${day}`;
+}
+
 function escapeHtml(text) {
     return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -230,9 +238,8 @@ export class WhatsappDashboard extends Component {
         }
         return this.state.conversations.filter((c) => {
             if (!c.last_message_at) return false;
-            // last_message_at viene en UTC; se compara por fecha calendario tal cual, sin pasar a
-            // hora local. Cerca de la medianoche puede quedar un mensaje en el día de al lado.
-            const day = c.last_message_at.slice(0, 10);
+            // last_message_at viene en UTC: se pasa a la fecha local para que coincida con la que muestra la lista.
+            const day = localDay(c.last_message_at);
             if (from && day < from) return false;
             if (to && day > to) return false;
             return true;
