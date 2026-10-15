@@ -687,10 +687,10 @@ export class WhatsappDashboard extends Component {
         }
         this.state.actionError = "";
         try {
-            const messaging = this.env.services.messaging.modelManager.getMessaging();
+            const messaging = await this.env.services.messaging.get();
             await messaging.openChat({ partnerId: user.partner_id });
         } catch (error) {
-            this.state.actionError = "No se pudo abrir el chat de Odoo con ese usuario.";
+            this.state.actionError = `No se pudo abrir el chat de Odoo con ese usuario (${(error && error.message) || error}).`;
         }
     }
 
