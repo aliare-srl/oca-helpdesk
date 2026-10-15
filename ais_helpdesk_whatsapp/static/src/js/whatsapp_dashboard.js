@@ -333,6 +333,10 @@ export class WhatsappDashboard extends Component {
         return company ? `${name} - ${company}` : name;
     }
 
+    nameInitials(name) {
+        return initials(name);
+    }
+
     initials(conversation) {
         const contact = conversation.contact || {};
         return initials(contact.profile_name || contact.company);

@@ -13,7 +13,7 @@
                 + Iniciar conversación
             </button>
             <div class="o_ais_whatsapp_avatar_name">
-                <div class="o_ais_whatsapp_avatar" t-esc="initials(userService.name)" />
+                <div class="o_ais_whatsapp_avatar" t-esc="nameInitials(userService.name)" />
                 <span t-esc="userService.name" />
             </div>
         </div>
@@ -110,7 +110,7 @@
                 <div class="o_ais_whatsapp_chat">
                     <div class="o_ais_whatsapp_chat_header">
                         <button type="button" class="o_ais_whatsapp_back" t-on-click="backToList" aria-label="Volver a la lista">←</button>
-                        <div class="o_ais_whatsapp_avatar lg" t-esc="initials(selectedConversation.contact and selectedConversation.contact.profile_name)" />
+                        <div class="o_ais_whatsapp_avatar lg" t-esc="initials(selectedConversation)" />
                         <div class="o_ais_whatsapp_chat_header_info">
                             <span class="o_ais_whatsapp_chat_name"><span class="o_ais_whatsapp_item_number" t-esc="'#' + selectedConversation.id" /> <t t-esc="contactLabel(selectedConversation)" /></span>
                             <span class="o_ais_whatsapp_muted" t-esc="(selectedConversation.contact and selectedConversation.contact.wa_id) or ''" />
