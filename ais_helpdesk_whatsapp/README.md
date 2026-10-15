@@ -33,7 +33,7 @@ Depende de `helpdesk_mgmt`. Sin configuración adicional en el `__manifest__`; u
 - **Desactivar el agente de IA**: si se marca, ninguna conversación nueva la contesta la IA, pasan directo a esperar a una persona (avisándole al cliente). No afecta a las que ya está atendiendo alguien. Con el agente desactivado se oculta "Devolver a la IA" (formulario y tablero), y si vence el plazo de una conversación tomada, pasa a "Esperando a un humano" en vez de volver a la IA. El tablero lee el valor al abrirse (hay que recargar la página para ver un cambio).
 - **URL del servicio** y **clave de la API**: las del `AgenteIA-MesadeAyuda-Odoo` desplegado y su `PANEL_API_KEY`.
 - **Usuario de la IA**: a nombre de quién queda un ticket mientras lo atiende la IA.
-- **Minutos de inactividad del cliente para cerrar solo**: por defecto 30.
+- **Minutos de inactividad del cliente para cerrar solo**: por defecto 30. Cuenta desde el último mensaje del cliente y aplica a toda conversación abierta (también las que esperan a una persona). Al cerrar se le avisa: "…al no haber recibido respuesta durante los últimos N minutos, damos por finalizada esta atención…".
 - **Segundos entre actualizaciones de la pantalla**: por defecto 4.
 - **Minutos entre avisos de conversaciones esperando**: por defecto 15. Mientras haya conversaciones "Esperando a un humano", se avisa cada este tiempo; se repite solo mientras la cola no se vacíe. 0 lo desactiva.
 - **Equipo para avisos de conversaciones esperando**: a qué equipo de Helpdesk avisar. El aviso va por mail y WhatsApp a cada miembro del equipo (según el mail/móvil que tengan cargado en su contacto), menos el usuario de la IA. El WhatsApp necesita además una plantilla aprobada por Meta configurada en el servicio.
