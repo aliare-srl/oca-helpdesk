@@ -162,6 +162,48 @@
                             </div>
                         </div>
                     </div>
+                    <h2>Aviso al cliente en espera: operadores ocupados</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="ais_whatsapp_wait_notice_1_enabled" />
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_wait_notice_1_enabled" />
+                                <div class="text-muted">Mensaje para los clientes que esperan a una persona. Se repite mientras sigan esperando.</div>
+                                <div class="content-group">
+                                    <div class="mt8">
+                                        <label for="ais_whatsapp_wait_notice_1_minutes" class="o_light_label" />
+                                        <field name="ais_whatsapp_wait_notice_1_minutes" class="oe_inline" />
+                                    </div>
+                                    <div class="mt8">
+                                        <field name="ais_whatsapp_wait_notice_1_text" nolabel="1" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h2>Aviso al cliente en espera: demora</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_left_pane">
+                                <field name="ais_whatsapp_wait_notice_2_enabled" />
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_wait_notice_2_enabled" />
+                                <div class="text-muted">Mismo destino que el aviso 1, pero con prioridad: si está activo, el aviso 1 no se manda.</div>
+                                <div class="content-group">
+                                    <div class="mt8">
+                                        <label for="ais_whatsapp_wait_notice_2_minutes" class="o_light_label" />
+                                        <field name="ais_whatsapp_wait_notice_2_minutes" class="oe_inline" />
+                                    </div>
+                                    <div class="mt8">
+                                        <field name="ais_whatsapp_wait_notice_2_text" nolabel="1" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </xpath>
         </field>

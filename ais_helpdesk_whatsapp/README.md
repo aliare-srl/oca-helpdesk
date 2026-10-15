@@ -37,6 +37,7 @@ Depende de `helpdesk_mgmt`. Sin configuración adicional en el `__manifest__`; u
 - **Segundos entre actualizaciones de la pantalla**: por defecto 4.
 - **Minutos entre avisos de conversaciones esperando**: por defecto 15. Mientras haya conversaciones "Esperando a un humano", se avisa cada este tiempo; se repite solo mientras la cola no se vacíe. 0 lo desactiva.
 - **Equipo para avisos de conversaciones esperando**: a qué equipo de Helpdesk avisar. El aviso va por mail y WhatsApp a cada miembro del equipo (según el mail/móvil que tengan cargado en su contacto), menos el usuario de la IA. El WhatsApp necesita además una plantilla aprobada por Meta configurada en el servicio.
+- **Avisos al cliente en espera** (dos, ambos con activar, texto y minutos): se mandan por WhatsApp a las conversaciones en "Esperando a un humano" y quedan en el historial. El primero sale al cumplirse los minutos desde que la conversación empezó a esperar y luego se repite cada ese tiempo; al ser tomada, devuelta a la IA o cerrada, deja de recibirlos. **Aviso 1** (operadores ocupados, 5 min por defecto) y **Aviso 2** (demora, 10 min por defecto). Si el 2 está activo tiene prioridad y el 1 no se manda. Ambos vienen desactivados. Son texto libre: solo llegan si el cliente escribió en las últimas 24 h (si no, se saltea y se reintenta en el próximo plazo).
 
 ## Uso
 

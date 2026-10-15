@@ -89,6 +89,43 @@ class ResConfigSettings(models.TransientModel):
         "una plantilla aprobada por Meta configurada en el servicio.",
     )
 
+    ais_whatsapp_wait_notice_1_enabled = fields.Boolean(
+        string="Aviso 1: operadores ocupados",
+        config_parameter="ais_helpdesk_whatsapp.wait_notice_1_enabled",
+        help="Se manda a los clientes que esperan a una persona. No se manda si el aviso 2 está activo.",
+    )
+    ais_whatsapp_wait_notice_1_text = fields.Text(
+        string="Texto del aviso 1",
+        config_parameter="ais_helpdesk_whatsapp.wait_notice_1_text",
+        default="Estimado cliente, en este momento todos nuestros operadores se encuentran ocupados. "
+        "En cuanto uno de ellos esté disponible, te atenderemos a la brevedad. "
+        "Muchas gracias por tu paciencia.",
+    )
+    ais_whatsapp_wait_notice_1_minutes = fields.Integer(
+        string="Minutos entre avisos 1",
+        config_parameter="ais_helpdesk_whatsapp.wait_notice_1_minutes",
+        default=5,
+        help="El primero sale al cumplirse este tiempo de espera; luego se repite cada este tiempo.",
+    )
+    ais_whatsapp_wait_notice_2_enabled = fields.Boolean(
+        string="Aviso 2: demora",
+        config_parameter="ais_helpdesk_whatsapp.wait_notice_2_enabled",
+        help="Se manda a los clientes que esperan a una persona. Si está activo, tiene prioridad y el aviso 1 no se manda.",
+    )
+    ais_whatsapp_wait_notice_2_text = fields.Text(
+        string="Texto del aviso 2",
+        config_parameter="ais_helpdesk_whatsapp.wait_notice_2_text",
+        default="Estimado cliente, debido a la alta demanda de consultas, actualmente tenemos una demora "
+        "aproximada de 30 minutos en la atención.\n\nEn cuanto un operador esté disponible, atenderemos "
+        "tu consulta a la brevedad.\n\nAgradecemos tu paciencia y comprensión.",
+    )
+    ais_whatsapp_wait_notice_2_minutes = fields.Integer(
+        string="Minutos entre avisos 2",
+        config_parameter="ais_helpdesk_whatsapp.wait_notice_2_minutes",
+        default=10,
+        help="El primero sale al cumplirse este tiempo de espera; luego se repite cada este tiempo.",
+    )
+
     # Many2many no se guarda solo en un parámetro del sistema: se guardan los ids separados por coma.
     _CATEGORY_PARAMS = {
         "ais_whatsapp_quota_category_ids": "ais_helpdesk_whatsapp.quota_category_ids",
