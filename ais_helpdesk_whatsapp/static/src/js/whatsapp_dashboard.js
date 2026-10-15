@@ -288,11 +288,22 @@ export class WhatsappDashboard extends Component {
         if (!query) {
             return this.byDateConversations.filter(inTab);
         }
+        // "#83": solo la conversación con ese número, en cualquier pestaña (respeta las fechas).
+        if (query.startsWith("#")) {
+            const number = query.slice(1).trim();
+            return this.byDateConversations.filter((c) => String(c.id) === number);
+        }
+        // Un número corto (hasta 6 dígitos) también encuentra la conversación con ese número.
+        const byNumber = /^\d{1,6}$/.test(query);
         // Una conversación con el texto en sus mensajes aparece sin importar la pestaña (sí respeta las fechas).
         return this.byDateConversations.filter((c) => {
             const contact = c.contact || {};
             const haystack = `${contact.company || ""} ${contact.profile_name || ""} ${contact.wa_id || ""}`.toLowerCase();
-            return (inTab(c) && haystack.includes(query)) || this.state.globalMatches[c.id];
+            return (
+                (inTab(c) && haystack.includes(query)) ||
+                this.state.globalMatches[c.id] ||
+                (byNumber && String(c.id) === query)
+            );
         });
     }
 
@@ -310,9 +321,16 @@ export class WhatsappDashboard extends Component {
         return this.statusPill(conversation.status).label;
     }
 
-    contactLabel(conversation) {
+    contactName(conversation) {
         const contact = conversation.contact || {};
         return contact.profile_name || contact.wa_id;
+    }
+
+    // "Nombre - Empresa" (solo el nombre si todavía no hay empresa identificada).
+    contactLabel(conversation) {
+        const company = (conversation.contact && conversation.contact.company) || "";
+        const name = this.contactName(conversation);
+        return company ? `${name} - ${company}` : name;
     }
 
     initials(conversation) {
@@ -362,7 +380,7 @@ export class WhatsappDashboard extends Component {
         this.state.searchQuery = ev.target.value;
         const query = this.state.searchQuery.trim();
         clearTimeout(this.globalSearchTimer);
-        if (query.length < GLOBAL_SEARCH_MIN_CHARS) {
+        if (query.length < GLOBAL_SEARCH_MIN_CHARS || query.startsWith("#")) {
             this.state.globalMatches = {};
             return;
         }

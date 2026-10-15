@@ -37,7 +37,7 @@
                 <div class="o_ais_whatsapp_search">
                     <input
                         type="text"
-                        placeholder="Buscar cliente, número o texto de los mensajes"
+                        placeholder="Buscar cliente, número, #conversación o texto de los mensajes"
                         t-att-value="state.searchQuery"
                         t-on-input="onSearchInput"
                     />
@@ -89,10 +89,9 @@
                         t-attf-class="o_ais_whatsapp_item {{ conversation.id === state.selectedId ? 'selected' : '' }} {{ conversation.is_urgent and conversation.status === 'waiting_human' ? 'urgent' : '' }}"
                     >
                         <div class="o_ais_whatsapp_item_row">
-                            <strong t-esc="contactLabel(conversation)" />
+                            <strong><span class="o_ais_whatsapp_item_number" t-esc="'#' + conversation.id" /> <t t-esc="contactLabel(conversation)" /></strong>
                             <span class="o_ais_whatsapp_time" t-esc="dateTimeLabel(conversation.last_message_at)" />
                         </div>
-                        <span class="o_ais_whatsapp_item_company" t-esc="(conversation.contact and conversation.contact.company) or ''" />
                         <span class="o_ais_whatsapp_item_preview" t-esc="conversation.last_message_preview" />
                         <span t-if="state.globalMatches[conversation.id]" class="o_ais_whatsapp_item_match" t-esc="matchLabel(conversation)" />
                         <span
@@ -282,7 +281,7 @@
                     <div class="o_ais_whatsapp_info_section">
                         <span class="o_ais_whatsapp_info_label">Cliente</span>
                         <span class="o_ais_whatsapp_info_title" t-esc="(selectedConversation.contact and selectedConversation.contact.company) or 'Sin empresa'" />
-                        <span t-esc="'Contacto: ' + contactLabel(selectedConversation)" />
+                        <span t-esc="'Contacto: ' + contactName(selectedConversation)" />
                         <span t-esc="'WhatsApp: ' + ((selectedConversation.contact and selectedConversation.contact.wa_id) or '')" />
                     </div>
                     <div t-if="selectedConversation.helpdesk_ticket_id" class="o_ais_whatsapp_info_section">

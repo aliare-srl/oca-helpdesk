@@ -305,6 +305,8 @@ $ais-avatar-color: #5A3852;
         cursor: pointer;
     }
 
+    .o_ais_whatsapp_item_number { color: $ais-muted; font-weight: 600; }
+
     .o_ais_whatsapp_item.urgent { border-left: 4px solid #C62828; background: #FDECEA; }
 
     @keyframes o_ais_whatsapp_urgent_pulse {
