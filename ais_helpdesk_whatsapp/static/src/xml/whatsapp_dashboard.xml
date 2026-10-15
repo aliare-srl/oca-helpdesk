@@ -112,10 +112,8 @@
                         <button type="button" class="o_ais_whatsapp_back" t-on-click="backToList" aria-label="Volver a la lista">←</button>
                         <div class="o_ais_whatsapp_avatar lg" t-esc="initials(selectedConversation.contact and selectedConversation.contact.profile_name)" />
                         <div class="o_ais_whatsapp_chat_header_info">
-                            <span class="o_ais_whatsapp_chat_name" t-esc="contactLabel(selectedConversation)" />
-                            <span class="o_ais_whatsapp_muted">
-                                <t t-esc="(selectedConversation.contact and selectedConversation.contact.company) or ''" /> · <t t-esc="(selectedConversation.contact and selectedConversation.contact.wa_id) or ''" />
-                            </span>
+                            <span class="o_ais_whatsapp_chat_name"><span class="o_ais_whatsapp_item_number" t-esc="'#' + selectedConversation.id" /> <t t-esc="contactLabel(selectedConversation)" /></span>
+                            <span class="o_ais_whatsapp_muted" t-esc="(selectedConversation.contact and selectedConversation.contact.wa_id) or ''" />
                         </div>
                         <span
                             class="o_ais_whatsapp_pill lg"
