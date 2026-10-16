@@ -21,7 +21,7 @@
         <div t-if="urgentWaiting.length" class="o_ais_whatsapp_banner urgent">
             <div>
                 <strong t-esc="'🚨 URGENCIA esperando: ' + urgentWaiting.length"/>
-                <span t-esc="contactLabel(urgentWaiting[0]) + ' · desde ' + dateTimeLabel(urgentWaiting[0].last_message_at)" />
+                <span t-esc="'#' + urgentWaiting[0].id + ' ' + contactLabel(urgentWaiting[0]) + ' · desde ' + dateTimeLabel(urgentWaiting[0].last_message_at)" />
             </div>
             <button type="button" class="o_ais_whatsapp_btn_urgent" t-on-click="() => this.selectConversation(urgentWaiting[0].id)">Ver</button>
         </div>
