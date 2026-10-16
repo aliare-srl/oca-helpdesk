@@ -308,6 +308,8 @@ $ais-avatar-color: #5A3852;
     .o_ais_whatsapp_item_number { color: $ais-muted; font-weight: 600; }
 
     .o_ais_whatsapp_item.urgent { border-left: 4px solid #C62828; background: #FDECEA; }
+    .o_ais_whatsapp_item_pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .o_ais_whatsapp_pill_urgent { background: #C62828; color: #fff; border-color: #C62828; }
 
     @keyframes o_ais_whatsapp_urgent_pulse {
         0%, 100% { background: #C62828; }

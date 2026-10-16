@@ -94,11 +94,14 @@
                         </div>
                         <span class="o_ais_whatsapp_item_preview" t-esc="conversation.last_message_preview" />
                         <span t-if="state.globalMatches[conversation.id]" class="o_ais_whatsapp_item_match" t-esc="matchLabel(conversation)" />
-                        <span
-                            class="o_ais_whatsapp_pill"
-                            t-attf-style="background:{{statusPill(conversation.status).bg}};color:{{statusPill(conversation.status).color}};border-color:{{statusPill(conversation.status).border}};"
-                            t-esc="statusLabel(conversation)"
-                        />
+                        <div class="o_ais_whatsapp_item_pills">
+                            <span
+                                class="o_ais_whatsapp_pill"
+                                t-attf-style="background:{{statusPill(conversation.status).bg}};color:{{statusPill(conversation.status).color}};border-color:{{statusPill(conversation.status).border}};"
+                                t-esc="statusLabel(conversation)"
+                            />
+                            <span t-if="conversation.is_urgent and conversation.status === 'waiting_human'" class="o_ais_whatsapp_pill o_ais_whatsapp_pill_urgent">🚨 URGENTE</span>
+                        </div>
                     </div>
                 </div>
             </div>
