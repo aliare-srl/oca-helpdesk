@@ -22,7 +22,7 @@ class ResConfigSettings(models.TransientModel):
     )
     ais_whatsapp_month_usage = fields.Char(
         string="Gasto de IA del mes",
-        compute="_compute_month_usage",
+        readonly=True,
         help="Costo estimado (según los precios cargados en el servicio), no la factura del proveedor.",
     )
     ais_whatsapp_quota_category_ids = fields.Many2many(
@@ -146,15 +146,12 @@ class ResConfigSettings(models.TransientModel):
         "ais_whatsapp_urgent_category_ids": "ais_helpdesk_whatsapp.urgent_category_ids",
     }
 
-    def _compute_month_usage(self):
-        usage = agent_client.get_usage(self.env)
-        text = _("No disponible") if usage is None else "USD %.2f" % usage["spent"]
-        for record in self:
-            record.ais_whatsapp_month_usage = text
-
     @api.model
     def get_values(self):
         res = super().get_values()
+        # Un campo calculado no llega al abrir Ajustes (Odoo no lo manda en el onchange inicial): se carga acá.
+        usage = agent_client.get_usage(self.env)
+        res["ais_whatsapp_month_usage"] = _("No disponible") if usage is None else "USD %.2f" % usage["spent"]
         params = self.env["ir.config_parameter"].sudo()
         for field, key in self._CATEGORY_PARAMS.items():
             ids = [int(i) for i in (params.get_param(key) or "").split(",") if i.strip().isdigit()]
