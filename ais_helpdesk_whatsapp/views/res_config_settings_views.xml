@@ -143,6 +143,17 @@
                         </div>
                         <div class="col-12 col-lg-8 o_setting_box">
                             <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_inactivity_unattended_text" string="Mensaje al cerrar por falta de atención" />
+                                <div class="text-muted">
+                                    Se manda al cerrar solas las conversaciones a las que nadie le respondió. Si una persona o la IA ya le respondió, se usa el aviso de "no recibimos respuesta". Las urgencias nunca se cierran solas.
+                                </div>
+                                <div class="content-group">
+                                    <field name="ais_whatsapp_inactivity_unattended_text" nolabel="1" widget="text" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
                                 <label
                                     for="ais_whatsapp_refresh_seconds"
                                     string="Segundos entre actualizaciones"
@@ -220,6 +231,20 @@
                                     <div class="mt8">
                                         <field name="ais_whatsapp_wait_notice_2_text" nolabel="1" widget="text" />
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <h2>Avisos al cliente en espera: máximo</h2>
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_wait_notice_max" string="Máximo de avisos por conversación" />
+                                <div class="text-muted">
+                                    Cuántos avisos de espera recibe como máximo cada cliente (vale para los dos avisos). 0 = sin límite.
+                                </div>
+                                <div class="content-group">
+                                    <field name="ais_whatsapp_wait_notice_max" />
                                 </div>
                             </div>
                         </div>

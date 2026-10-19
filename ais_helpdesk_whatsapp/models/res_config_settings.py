@@ -81,6 +81,13 @@ class ResConfigSettings(models.TransientModel):
         help="Si el cliente no vuelve a escribir en este tiempo, se cierra la conversación y el "
         "ticket solos, avisándole. 0 desactiva el cierre automático.",
     )
+    ais_whatsapp_inactivity_unattended_text = fields.Text(
+        string="Mensaje al cerrar por falta de atención",
+        config_parameter="ais_helpdesk_whatsapp.inactivity_unattended_text",
+        default="Le pedimos disculpas, en este momento no podemos atenderlo. Por favor, intente más tarde.",
+        help="Se manda al cerrar solas las conversaciones a las que nadie le respondió (no las atiende la IA y "
+        "ninguna persona le escribió después de su último mensaje). Las urgencias nunca se cierran solas.",
+    )
     ais_whatsapp_refresh_seconds = fields.Integer(
         string="Segundos entre actualizaciones de la pantalla",
         config_parameter="ais_helpdesk_whatsapp.refresh_seconds",
@@ -138,6 +145,13 @@ class ResConfigSettings(models.TransientModel):
         config_parameter="ais_helpdesk_whatsapp.wait_notice_2_minutes",
         default=10,
         help="El primero sale al cumplirse este tiempo de espera; luego se repite cada este tiempo.",
+    )
+    ais_whatsapp_wait_notice_max = fields.Integer(
+        string="Máximo de avisos por conversación",
+        config_parameter="ais_helpdesk_whatsapp.wait_notice_max",
+        default=3,
+        help="Cuántos avisos de espera recibe como máximo el cliente en cada espera (vale para los dos avisos). "
+        "0 = sin límite. Vuelve a contar si la conversación deja de esperar y vuelve a esperar.",
     )
 
     # Many2many no se guarda solo en un parámetro del sistema: se guardan los ids separados por coma.
