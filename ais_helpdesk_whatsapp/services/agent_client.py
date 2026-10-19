@@ -28,12 +28,12 @@ def _config(env):
     return base_url, api_key
 
 
-def _request(env, method, path, json_body=None, params=None):
+def _request(env, method, path, json_body=None, params=None, timeout=TIMEOUT):
     base_url, api_key = _config(env)
     url = f"{base_url}{path}"
     try:
         response = requests.request(
-            method, url, json=json_body, params=params, headers={"X-Panel-Key": api_key}, timeout=TIMEOUT
+            method, url, json=json_body, params=params, headers={"X-Panel-Key": api_key}, timeout=timeout
         )
     except requests.RequestException as exc:
         _logger.warning("Error llamando a %s: %s", url, exc)
@@ -62,6 +62,15 @@ def list_conversations(env, status=None, limit=200):
     if status:
         params["status"] = status
     return _request(env, "GET", "/api/conversations", params=params).get("conversations", [])
+
+
+def get_usage(env):
+    """{limit, spent, exceeded} del gasto de IA del mes (USD), o None si el servicio no responde: el
+    tope es solo informativo acá, no debe romper Ajustes ni el tablero."""
+    try:
+        return _request(env, "GET", "/api/usage", timeout=3)
+    except UserError:
+        return None
 
 
 def search_messages(env, query):

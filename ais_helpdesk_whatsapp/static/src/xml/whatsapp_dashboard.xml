@@ -18,6 +18,13 @@
             </div>
         </div>
 
+        <div t-if="state.budget.exceeded" class="o_ais_whatsapp_banner budget">
+            <div>
+                <strong t-esc="'El agente de IA está desactivado: se alcanzó el tope de gasto mensual (USD ' + state.budget.spent.toFixed(2) + ' de USD ' + state.budget.limit.toFixed(2) + ')'" />
+                <span>Las conversaciones nuevas esperan a una persona. Se reactiva el día 1 del mes o al subir el tope en Ajustes.</span>
+            </div>
+        </div>
+
         <div t-if="urgentWaiting.length" class="o_ais_whatsapp_banner urgent">
             <div>
                 <strong t-esc="'🚨 URGENCIA esperando: ' + urgentWaiting.length"/>

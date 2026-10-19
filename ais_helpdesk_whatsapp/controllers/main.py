@@ -109,9 +109,13 @@ class WhatsappDashboardController(http.Controller):
     def config(self):
         _check_access()
         refresh_seconds = _config_param("ais_helpdesk_whatsapp.refresh_seconds", "4")
+        usage = agent_client.get_usage(request.env) or {}
         return {
             "refresh_seconds": int(refresh_seconds) if refresh_seconds.isdigit() else 4,
             "agent_disabled": _config_param("ais_helpdesk_whatsapp.agent_disabled") == "True",
+            "budget_exceeded": bool(usage.get("exceeded")),
+            "budget_limit": usage.get("limit", 0),
+            "budget_spent": usage.get("spent", 0),
             "user_id": request.env.user.id,
             "is_admin": _is_admin(),
         }

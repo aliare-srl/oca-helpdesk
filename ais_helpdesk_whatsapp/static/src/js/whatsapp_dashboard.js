@@ -92,6 +92,7 @@ export class WhatsappDashboard extends Component {
         this.state = useState({
             conversations: [],
             agentDisabled: false,
+            budget: { exceeded: false, limit: 0, spent: 0 },
             loading: true,
             error: "",
             selectedId: null,
@@ -194,6 +195,11 @@ export class WhatsappDashboard extends Component {
                 this.pollIntervalMs = config.refresh_seconds * 1000;
             }
             this.state.agentDisabled = Boolean(config.agent_disabled);
+            this.state.budget = {
+                exceeded: Boolean(config.budget_exceeded),
+                limit: config.budget_limit || 0,
+                spent: config.budget_spent || 0,
+            };
             this.state.myUserId = config.user_id || this.state.myUserId;
             this.state.isAdmin = Boolean(config.is_admin);
         } catch (error) {

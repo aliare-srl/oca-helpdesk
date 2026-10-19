@@ -28,6 +28,26 @@
                         </div>
                     </div>
 
+                    <div class="row mt16 o_settings_container">
+                        <div class="col-12 col-lg-8 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="ais_whatsapp_budget_usd" string="Tope de gasto mensual de IA (USD)" />
+                                <div class="text-muted">
+                                    Al llegar a este monto el agente se desactiva solo: las conversaciones nuevas esperan a una persona. Se reactiva el día 1 o al subir el monto. 0 = sin tope.
+                                </div>
+                                <div class="content-group">
+                                    <div class="mt16">
+                                        <field name="ais_whatsapp_budget_usd" />
+                                    </div>
+                                    <div class="mt8">
+                                        <label for="ais_whatsapp_month_usage" string="Gasto del mes (estimado):" class="o_light_label" />
+                                        <field name="ais_whatsapp_month_usage" readonly="1" class="oe_inline" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <h2>Conexión con el servicio</h2>
                     <div class="row mt16 o_settings_container">
                         <div class="col-12 col-lg-8 o_setting_box">

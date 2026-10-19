@@ -1,4 +1,6 @@
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+
+from ..services import agent_client
 
 
 class ResConfigSettings(models.TransientModel):
@@ -10,6 +12,18 @@ class ResConfigSettings(models.TransientModel):
         help="Si se marca, ninguna conversación nueva la contesta la IA: pasan directo a esperar "
         "a una persona, avisándole al cliente. No afecta a las conversaciones que ya está "
         "atendiendo una persona.",
+    )
+    ais_whatsapp_budget_usd = fields.Float(
+        string="Tope de gasto mensual de IA (USD)",
+        config_parameter="ais_helpdesk_whatsapp.budget_usd",
+        help="Si el gasto estimado de IA del mes llega a este monto, el agente se desactiva solo: las "
+        "conversaciones nuevas esperan a una persona. Se reactiva el día 1 o al subir el monto. "
+        "0 = sin tope.",
+    )
+    ais_whatsapp_month_usage = fields.Char(
+        string="Gasto de IA del mes",
+        compute="_compute_month_usage",
+        help="Costo estimado (según los precios cargados en el servicio), no la factura del proveedor.",
     )
     ais_whatsapp_quota_category_ids = fields.Many2many(
         "helpdesk.ticket.category",
@@ -131,6 +145,12 @@ class ResConfigSettings(models.TransientModel):
         "ais_whatsapp_quota_category_ids": "ais_helpdesk_whatsapp.quota_category_ids",
         "ais_whatsapp_urgent_category_ids": "ais_helpdesk_whatsapp.urgent_category_ids",
     }
+
+    def _compute_month_usage(self):
+        usage = agent_client.get_usage(self.env)
+        text = _("No disponible") if usage is None else "USD %.2f" % usage["spent"]
+        for record in self:
+            record.ais_whatsapp_month_usage = text
 
     @api.model
     def get_values(self):
