@@ -81,7 +81,7 @@ class ResConfigSettings(models.TransientModel):
         help="Si el cliente no vuelve a escribir en este tiempo, se cierra la conversación y el "
         "ticket solos, avisándole. 0 desactiva el cierre automático.",
     )
-    ais_whatsapp_inactivity_unattended_text = fields.Text(
+    ais_whatsapp_inactivity_unattended_text = fields.Char(
         string="Mensaje al cerrar por falta de atención",
         config_parameter="ais_helpdesk_whatsapp.inactivity_unattended_text",
         default="Le pedimos disculpas, en este momento no podemos atenderlo. Por favor, intente más tarde.",
