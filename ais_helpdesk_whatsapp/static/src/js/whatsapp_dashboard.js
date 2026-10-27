@@ -117,6 +117,11 @@ export class WhatsappDashboard extends Component {
             startName: "",
             startTemplate: "",
             startParams: "",
+            startTemplates: [],
+            startTemplatesLoading: false,
+            startTemplatesError: "",
+            startTemplateName: "",
+            startValues: [],
             startError: "",
             startSending: false,
             startTicketId: null,
@@ -800,8 +805,63 @@ export class WhatsappDashboard extends Component {
         this.state.startName = (prefill && prefill.profile_name) || "";
         this.state.startTemplate = "";
         this.state.startParams = "";
+        this.state.startTemplateName = "";
+        this.state.startValues = [];
         this.state.startError = "";
         this.state.startTicketId = (prefill && prefill.ticket_id) || null;
+        this.loadStartTemplates();
+    }
+
+    async loadStartTemplates() {
+        this.state.startTemplatesLoading = true;
+        this.state.startTemplatesError = "";
+        try {
+            const result = await this.rpc("/ais_helpdesk_whatsapp/templates", {});
+            this.state.startTemplates = result.templates || [];
+            this.state.startTemplatesError = result.error || "";
+        } catch (error) {
+            this.state.startTemplates = [];
+            this.state.startTemplatesError = error.message || "No se pudieron leer las plantillas.";
+        } finally {
+            this.state.startTemplatesLoading = false;
+        }
+    }
+
+    // Sin lista de plantillas (Meta o el servicio no respondieron) se deja escribir el nombre a mano.
+    get startManual() {
+        return !this.state.startTemplatesLoading && !this.state.startTemplates.length;
+    }
+
+    get startTemplateSelected() {
+        return this.state.startTemplates.find((t) => t.name === this.state.startTemplateName) || null;
+    }
+
+    get startPreview() {
+        const template = this.startTemplateSelected;
+        if (!template) {
+            return "";
+        }
+        return template.body.replace(/\{\{(\d+)\}\}/g, (match, n) => {
+            const value = (this.state.startValues[Number(n) - 1] || "").trim();
+            return value || match;
+        });
+    }
+
+    onStartTemplateChange(ev) {
+        this.state.startTemplateName = ev.target.value;
+        const template = this.startTemplateSelected;
+        const values = new Array(template ? template.variables : 0).fill("");
+        // La primera variable suele ser el nombre de quien recibe el mensaje.
+        if (values.length && this.state.startName.trim()) {
+            values[0] = this.state.startName.trim();
+        }
+        this.state.startValues = values;
+    }
+
+    setStartValue(index, value) {
+        const values = [...this.state.startValues];
+        values[index] = value;
+        this.state.startValues = values;
     }
 
     closeStartModal() {
@@ -810,17 +870,27 @@ export class WhatsappDashboard extends Component {
 
     async submitStart() {
         const phone = this.state.startPhone.trim();
-        const templateName = this.state.startTemplate.trim();
+        const manual = this.startManual;
+        const templateName = (manual ? this.state.startTemplate : this.state.startTemplateName).trim();
         if (!phone || !templateName) {
-            this.state.startError = "Faltan el número y la plantilla.";
+            this.state.startError = manual ? "Faltan el número y la plantilla." : "Faltan el número y elegir la plantilla.";
             return;
+        }
+        let params;
+        if (manual) {
+            params = this.state.startParams
+                .split(",")
+                .map((p) => p.trim())
+                .filter(Boolean);
+        } else {
+            params = this.state.startValues.map((v) => v.trim());
+            if (params.some((v) => !v)) {
+                this.state.startError = "Completá todas las variables de la plantilla.";
+                return;
+            }
         }
         this.state.startSending = true;
         this.state.startError = "";
-        const params = this.state.startParams
-            .split(",")
-            .map((p) => p.trim())
-            .filter(Boolean);
         try {
             await this.rpc("/ais_helpdesk_whatsapp/conversations/start", {
                 phone,

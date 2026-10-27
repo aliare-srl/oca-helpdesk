@@ -73,6 +73,15 @@ def get_usage(env):
         return None
 
 
+def get_templates(env):
+    """(plantillas aprobadas, error): las que sirven para escribirle a un cliente. Si el servicio o Meta no
+    responden devuelve una lista vacía y el motivo, para que el tablero deje escribir el nombre a mano."""
+    try:
+        return _request(env, "GET", "/api/templates", timeout=10).get("templates", []), None
+    except UserError as exc:
+        return [], str(exc.args[0]) if exc.args else str(exc)
+
+
 def search_messages(env, query):
     """Conversaciones (de cualquier estado) con mensajes que contienen el texto."""
     return _request(env, "GET", "/api/messages/search", params={"q": query}).get("results", [])

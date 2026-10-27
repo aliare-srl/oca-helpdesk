@@ -20,7 +20,7 @@ Agrega a la Mesa de Ayuda de Odoo la pantalla donde el equipo ve y atiende las c
 - Si el cliente no vuelve a escribir dentro del tiempo configurado, la conversación se cierra sola y se avisa por WhatsApp.
 - Botón **Abrir ticket** (header del chat, visible también en celular, y en la ficha del cliente).
 - Desde la ficha de un ticket del Helpdesk: botón **Iniciar WhatsApp** si el contacto tiene celular cargado y todavía no hay conversación, con el mismo modal de "Iniciar conversación" (vincula la conversación nueva a ese ticket).
-- Menú **Helpdesk → Iniciar conversación**: para escribirle primero a cualquier cliente con una plantilla aprobada por Meta.
+- Botón **+ Iniciar conversación** del tablero: para escribirle primero a cualquier cliente con una plantilla aprobada por Meta. El modal trae las plantillas aprobadas en un **desplegable** (las de los avisos al equipo no aparecen), muestra el texto con una vista previa y pide un campo por cada variable; la primera se completa sola con el nombre del contacto. Las lee el servicio desde Meta (`GET /api/templates`, necesita `WHATSAPP_BUSINESS_ACCOUNT_ID` en su `.env`); si no pueden leerse, el modal deja escribir el nombre y los parámetros a mano como antes. Se descartan las plantillas con imagen o con variables en el encabezado o en botones, que el servicio no sabe mandar.
 
 ## Instalación
 

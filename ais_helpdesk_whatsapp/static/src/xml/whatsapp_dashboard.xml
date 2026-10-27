@@ -325,10 +325,30 @@
                 <input type="text" t-model="state.startPhone" placeholder="5493794000000" />
                 <label>Nombre (opcional)</label>
                 <input type="text" t-model="state.startName" placeholder="Nombre del contacto" />
-                <label>Plantilla aprobada por Meta</label>
-                <input type="text" t-model="state.startTemplate" placeholder="nombre_de_la_plantilla" />
-                <label>Parámetros de la plantilla (separados por coma, opcional)</label>
-                <input type="text" t-model="state.startParams" placeholder="Laura, #2417" />
+                <t t-if="state.startTemplatesLoading">
+                    <div class="o_ais_whatsapp_muted">Leyendo las plantillas aprobadas…</div>
+                </t>
+                <t t-elif="startManual">
+                    <div class="o_ais_whatsapp_muted">
+                        No se pudo leer la lista de plantillas<t t-if="state.startTemplatesError">: <t t-esc="state.startTemplatesError" /></t>. Escribí el nombre a mano.
+                    </div>
+                    <label>Plantilla aprobada por Meta</label>
+                    <input type="text" t-model="state.startTemplate" placeholder="nombre_de_la_plantilla" />
+                    <label>Parámetros de la plantilla (separados por coma, opcional)</label>
+                    <input type="text" t-model="state.startParams" placeholder="Laura, #2417" />
+                </t>
+                <t t-else="">
+                    <label>Plantilla</label>
+                    <select t-model="state.startTemplateName" t-on-change="onStartTemplateChange">
+                        <option value="">Elegí una plantilla</option>
+                        <option t-foreach="state.startTemplates" t-as="template" t-key="template.name" t-att-value="template.name" t-esc="template.name" />
+                    </select>
+                    <div t-if="startTemplateSelected" class="o_ais_whatsapp_template_preview" t-esc="startPreview" />
+                    <t t-foreach="state.startValues" t-as="value" t-key="value_index">
+                        <label>Variable <t t-esc="value_index + 1" /></label>
+                        <input type="text" t-att-value="value" t-on-input="(ev) => this.setStartValue(value_index, ev.target.value)" />
+                    </t>
+                </t>
                 <div t-if="state.startError" class="o_ais_whatsapp_error" t-esc="state.startError" />
                 <div class="o_ais_whatsapp_modal_actions">
                     <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeStartModal">Cancelar</button>

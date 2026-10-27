@@ -244,6 +244,12 @@ class WhatsappDashboardController(http.Controller):
             "stage": ticket.stage_id.name,
         }
 
+    @http.route("/ais_helpdesk_whatsapp/templates", type="json", auth="user")
+    def templates(self):
+        _check_access()
+        templates, error = agent_client.get_templates(request.env)
+        return {"templates": templates, "error": error}
+
     @http.route("/ais_helpdesk_whatsapp/conversations/start", type="json", auth="user")
     def start(self, phone, template_name, params=None, profile_name=None, helpdesk_partner_id=None, ticket_id=None):
         _check_access()
