@@ -368,6 +368,13 @@ $ais-avatar-color: #5A3852;
         &.ai, &.human { align-items: flex-end; }
     }
     .o_ais_whatsapp_sender_label { font-size: 11px; font-weight: 600; color: $ais-muted; }
+    .o_ais_whatsapp_delivery {
+        font-size: 11px;
+        color: $ais-muted;
+
+        &.read { color: #1d72b8; }
+        &.failed { color: #b3261e; font-weight: 600; }
+    }
     .o_ais_whatsapp_bubble {
         max-width: 460px;
         padding: 7px 11px;

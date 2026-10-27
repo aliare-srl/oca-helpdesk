@@ -364,6 +364,15 @@ export class WhatsappDashboard extends Component {
         return new Date(iso).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
     }
 
+    // Estado de entrega de un mensaje saliente, según avisa Meta (solo hay para los mandados con el id guardado).
+    deliveryLabel(message) {
+        const labels = { sent: "✓ Enviado", delivered: "✓✓ Entregado", read: "✓✓ Leído" };
+        if (message.delivery_status === "failed") {
+            return "No entregado" + (message.delivery_error ? ": " + message.delivery_error : "");
+        }
+        return labels[message.delivery_status] || "";
+    }
+
     dateTimeLabel(iso) {
         if (!iso) {
             return "";

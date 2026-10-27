@@ -40,6 +40,7 @@
     <li>Tomar una conversación para responder en persona. Mientras tanto, la inteligencia artificial no contesta.</li>
     <li>El chat baja solo hasta el último mensaje cuando llegan o se envían mensajes (si estás leyendo mensajes anteriores, no se mueve).</li>
     <li>La lista muestra, en cada conversación, el día y la hora del último mensaje.</li>
+    <li>Debajo de cada mensaje que mandás al cliente se ve si WhatsApp lo entregó (✓ enviado, ✓✓ entregado, ✓✓ azul leído) o si no pudo entregarlo, con el motivo.</li>
     <li>El ticket se crea cuando el cliente cuenta qué necesita (no apenas empieza el chat). Si cerrás con resolución una conversación que todavía no tenía ticket, se crea uno ya resuelto para que el caso quede registrado.</li>
     <li>En el contacto de cada empresa cliente, solapa "Mesa de ayuda": versión de Odoo, plan de soporte (con lo que incluye), cantidad de tickets por mes (0 = ilimitado) y cuántos lleva usados este mes. Los planes se cargan en Helpdesk &gt; Configuración &gt; Planes de soporte. Si el cliente ya usó todos sus tickets del mes, el agente le avisa que debe comunicarse con la gerencia para adquirir más; las urgencias se atienden siempre.</li>
     <li>En Ajustes de Mesa de Ayuda se eligen las categorías de consultas (por ejemplo consultas, reclamos y errores de Odoo: solo esos tickets cuentan para el tope mensual) y las categorías de urgencias (no cuentan). El agente elige la categoría de cada ticket entre las cargadas. El módulo crea la categoría "Urgente".</li>
@@ -70,7 +71,7 @@
   <ul>
     <li>Las conversaciones aparecen solas en "Conversaciones de WhatsApp" de la Mesa de Ayuda.</li>
     <li>Se abre la que haga falta y se usan los botones: Tomar, Responder, Devolver a la IA, Cerrar con resolución.</li>
-    <li>Para escribirle a un cliente sin esperar a que escriba primero, se usa "Iniciar conversación": se busca el contacto entre los de Odoo que tienen celular (o se escribe el número a mano), se elige la plantilla de una lista, se ve cómo queda el mensaje y se completan los datos que pide (el nombre del contacto aparece ya cargado).</li>
+    <li>Para escribirle a un cliente sin esperar a que escriba primero, se usa "Iniciar conversación": se busca el contacto entre los de Odoo que tienen celular (o se escribe el número a mano), se elige la plantilla de una lista (en la conversación queda el texto que recibió el cliente), se ve cómo queda el mensaje y se completan los datos que pide (el nombre del contacto aparece ya cargado).</li>
   </ul>
 </main>
 </body>

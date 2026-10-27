@@ -239,6 +239,7 @@
                                 </a>
                                 <span t-if="message.body" t-raw="bodyHtml(message)" />
                             </div>
+                            <span t-if="message.delivery_status" t-attf-class="o_ais_whatsapp_delivery {{ message.delivery_status }}" t-esc="deliveryLabel(message)" />
                         </div>
                     </div>
 
