@@ -546,6 +546,28 @@ $ais-avatar-color: #5A3852;
         }
         input, select { height: 36px; }
         textarea { padding: 8px 10px; resize: vertical; }
+        .o_ais_whatsapp_partner_search { position: relative; display: flex; flex-direction: column; gap: 4px; }
+        .o_ais_whatsapp_partner_results {
+            position: absolute;
+            top: 38px;
+            left: 0;
+            right: 0;
+            z-index: 2;
+            background: #fff;
+            border: 1.5px solid $ais-border-strong;
+            border-radius: 8px;
+            box-shadow: 0 6px 16px rgba(33, 28, 38, 0.18);
+            max-height: 220px;
+            overflow-y: auto;
+        }
+        .o_ais_whatsapp_partner_result {
+            display: flex;
+            flex-direction: column;
+            padding: 6px 10px;
+            cursor: pointer;
+
+            &:hover { background: #f4f1f6; }
+        }
         .o_ais_whatsapp_template_preview {
             background: #f4f1f6;
             border-radius: 8px;

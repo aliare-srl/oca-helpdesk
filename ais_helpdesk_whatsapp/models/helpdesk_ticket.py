@@ -50,6 +50,7 @@ class HelpdeskTicket(models.Model):
                     "ticket_id": self.id,
                     "phone": self.partner_id.mobile,
                     "profile_name": self.partner_id.name,
+                    "partner_id": self.partner_id.id,
                 }
             },
         }

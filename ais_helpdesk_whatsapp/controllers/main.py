@@ -250,6 +250,27 @@ class WhatsappDashboardController(http.Controller):
         templates, error = agent_client.get_templates(request.env)
         return {"templates": templates, "error": error}
 
+    @http.route("/ais_helpdesk_whatsapp/partners/search", type="json", auth="user")
+    def partners_search(self, query=""):
+        """Contactos de Odoo con celular cargado (personas y empresas) para elegir a quién escribirle."""
+        _check_access()
+        query = (query or "").strip()
+        if len(query) < 2:
+            return []
+        domain = [
+            ("mobile", "!=", False),
+            "|",
+            "|",
+            ("name", "ilike", query),
+            ("parent_id.name", "ilike", query),
+            ("mobile", "ilike", query),
+        ]
+        partners = request.env["res.partner"].search(domain, limit=8, order="name")
+        return [
+            {"id": p.id, "name": p.name, "company": p.parent_id.name or "", "mobile": p.mobile}
+            for p in partners
+        ]
+
     @http.route("/ais_helpdesk_whatsapp/conversations/start", type="json", auth="user")
     def start(self, phone, template_name, params=None, profile_name=None, helpdesk_partner_id=None, ticket_id=None):
         _check_access()

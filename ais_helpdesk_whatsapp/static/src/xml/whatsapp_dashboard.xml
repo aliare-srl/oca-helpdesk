@@ -321,8 +321,19 @@
                 <div t-if="state.startTicketId" class="o_ais_whatsapp_muted">
                     Vinculada al ticket #<t t-esc="state.startTicketId" />
                 </div>
+                <label>Buscar contacto de Odoo (con celular cargado)</label>
+                <div class="o_ais_whatsapp_partner_search">
+                    <input type="text" t-att-value="state.startPartnerQuery" t-on-input="onPartnerQueryInput" placeholder="Nombre, empresa o celular" />
+                    <div t-if="state.startPartnerResults.length" class="o_ais_whatsapp_partner_results">
+                        <div t-foreach="state.startPartnerResults" t-as="partner" t-key="partner.id" class="o_ais_whatsapp_partner_result" t-on-click="() => this.pickPartner(partner)">
+                            <strong t-esc="partner.name" />
+                            <span class="o_ais_whatsapp_muted" t-esc="(partner.company ? partner.company + ' · ' : '') + partner.mobile" />
+                        </div>
+                    </div>
+                    <div t-elif="state.startPartnerEmpty" class="o_ais_whatsapp_muted">Ningún contacto con celular coincide. Podés escribir el número abajo.</div>
+                </div>
                 <label>Número de WhatsApp (con código de país)</label>
-                <input type="text" t-model="state.startPhone" placeholder="5493794000000" />
+                <input type="text" t-model="state.startPhone" t-on-input="onStartPhoneInput" placeholder="5493794000000" />
                 <label>Nombre (opcional)</label>
                 <input type="text" t-model="state.startName" placeholder="Nombre del contacto" />
                 <t t-if="state.startTemplatesLoading">

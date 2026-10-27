@@ -122,6 +122,10 @@ export class WhatsappDashboard extends Component {
             startTemplatesError: "",
             startTemplateName: "",
             startValues: [],
+            startPartnerId: null,
+            startPartnerQuery: "",
+            startPartnerResults: [],
+            startPartnerEmpty: false,
             startError: "",
             startSending: false,
             startTicketId: null,
@@ -807,9 +811,56 @@ export class WhatsappDashboard extends Component {
         this.state.startParams = "";
         this.state.startTemplateName = "";
         this.state.startValues = [];
+        this.state.startPartnerId = (prefill && prefill.partner_id) || null;
+        this.state.startPartnerQuery = this.state.startPartnerId ? this.state.startName : "";
+        this.state.startPartnerResults = [];
+        this.state.startPartnerEmpty = false;
         this.state.startError = "";
         this.state.startTicketId = (prefill && prefill.ticket_id) || null;
         this.loadStartTemplates();
+    }
+
+    // Buscador de contactos de Odoo con celular: espera a que se deje de escribir y descarta respuestas viejas.
+    onPartnerQueryInput(ev) {
+        const query = ev.target.value;
+        this.state.startPartnerQuery = query;
+        this.state.startPartnerId = null;
+        this.state.startPartnerEmpty = false;
+        clearTimeout(this.partnerSearchTimer);
+        if (query.trim().length < 2) {
+            this.state.startPartnerResults = [];
+            return;
+        }
+        this.partnerSearchTimer = setTimeout(async () => {
+            const requestId = (this.partnerSearchSeq = (this.partnerSearchSeq || 0) + 1);
+            try {
+                const results = await this.rpc("/ais_helpdesk_whatsapp/partners/search", { query });
+                if (requestId === this.partnerSearchSeq) {
+                    this.state.startPartnerResults = results;
+                    this.state.startPartnerEmpty = !results.length;
+                }
+            } catch (error) {
+                this.state.startPartnerResults = [];
+            }
+        }, 300);
+    }
+
+    pickPartner(partner) {
+        this.state.startPartnerId = partner.id;
+        this.state.startPartnerQuery = partner.name;
+        this.state.startPartnerResults = [];
+        this.state.startPartnerEmpty = false;
+        this.state.startPhone = partner.mobile;
+        this.state.startName = partner.name;
+        // Si ya hay una plantilla elegida, su primera variable (el nombre) se completa sola.
+        if (this.state.startValues.length && !this.state.startValues[0]) {
+            this.setStartValue(0, partner.name);
+        }
+    }
+
+    // Si se cambia el número a mano, deja de ser el del contacto elegido.
+    onStartPhoneInput() {
+        this.state.startPartnerId = null;
     }
 
     async loadStartTemplates() {
@@ -896,6 +947,7 @@ export class WhatsappDashboard extends Component {
                 phone,
                 template_name: templateName,
                 profile_name: this.state.startName.trim() || null,
+                helpdesk_partner_id: this.state.startPartnerId,
                 params,
                 ticket_id: this.state.startTicketId,
             });
