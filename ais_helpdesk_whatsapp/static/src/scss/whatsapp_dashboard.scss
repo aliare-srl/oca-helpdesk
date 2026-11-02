@@ -614,6 +614,16 @@ $ais-avatar-color: #5A3852;
         &.has-selection .o_ais_whatsapp_back { display: block; }
 
         .o_ais_whatsapp_topbar .o_ais_whatsapp_avatar_name span { display: none; }
+        // la barra crece en alto si el título pasa a dos líneas, en vez de cortarlo
+        .o_ais_whatsapp_topbar {
+            height: auto;
+            min-height: 52px;
+            padding: 6px 10px;
+            gap: 8px;
+            .o_ais_whatsapp_topbar_title { min-width: 0; flex-wrap: wrap; column-gap: 6px; row-gap: 0; }
+            .o_ais_whatsapp_title { line-height: 1.2; }
+            .o_ais_whatsapp_avatar { margin-top: 0; }
+        }
         .o_ais_whatsapp_bubble { max-width: 85%; }
 
         .o_ais_whatsapp_chat_header {
