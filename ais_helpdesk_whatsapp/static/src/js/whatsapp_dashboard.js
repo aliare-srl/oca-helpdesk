@@ -21,6 +21,50 @@ const QUICK_REPLIES = ["Ya lo reviso", "¿Me pasás una captura?", "Quedó resue
 // estado, de la más reciente a la más antigua.
 const STATUS_ORDER = { waiting_human: 0, ai: 1, human: 2, closed: 3 };
 
+// Sonidos del tablero, generados con la API de audio del navegador (sin archivos). "waiting": dos beeps
+// suaves cuando una conversación pasa a esperar a una persona; "urgent": un tono más grave, fuerte y largo.
+const SOUND_STORAGE_KEY = "ais_helpdesk_whatsapp.sound";
+const SOUNDS = {
+    waiting: { type: "sine", gain: 0.25, notes: [[880, 0, 0.16], [880, 0.24, 0.16]] },
+    urgent: { type: "sawtooth", gain: 0.7, notes: [[440, 0, 0.3], [660, 0.3, 0.3], [440, 0.6, 0.3], [660, 0.9, 0.5]] },
+};
+let audioContext = null;
+
+function playSound(kind) {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        audioContext = audioContext || new AudioCtx();
+        // Sin un clic previo en la página el navegador deja el audio suspendido y no suena.
+        if (audioContext.state === "suspended") audioContext.resume();
+        const sound = SOUNDS[kind];
+        const start = audioContext.currentTime + 0.02;
+        for (const [freq, offset, duration] of sound.notes) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.type = sound.type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.0001, start + offset);
+            gain.gain.exponentialRampToValueAtTime(sound.gain, start + offset + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + duration);
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.start(start + offset);
+            osc.stop(start + offset + duration + 0.05);
+        }
+    } catch (error) {
+        // Sin audio disponible, el tablero sigue funcionando sin sonido.
+    }
+}
+
+function readSoundPreference() {
+    try {
+        return window.localStorage.getItem(SOUND_STORAGE_KEY) !== "off";
+    } catch (error) {
+        return true;
+    }
+}
+
 function todayLocal() {
     const d = new Date();
     const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -101,6 +145,7 @@ export class WhatsappDashboard extends Component {
             panelQuery: "",
             panelIndex: 0,
             filterTab: "esperando",
+            soundOn: readSoundPreference(),
             dateFrom: todayLocal(),
             dateTo: todayLocal(),
             messages: [],
@@ -140,6 +185,8 @@ export class WhatsappDashboard extends Component {
         });
 
         this.pollIntervalMs = DEFAULT_POLL_INTERVAL_MS;
+        // Estado de la lista en la actualización anterior, para sonar solo con lo que cambió (null = primera carga).
+        this.previousStates = null;
 
         // Los mensajes nuevos bajan solos el scroll, salvo que se esté leyendo más arriba.
         this.messagesRef = useRef("messages");
@@ -235,6 +282,7 @@ export class WhatsappDashboard extends Component {
                 if (order !== 0) return order;
                 return (b.last_message_at || "").localeCompare(a.last_message_at || "");
             });
+            this.notifyChanges(conversations);
             this.state.conversations = conversations;
         } catch (error) {
             if (!silent) {
@@ -242,6 +290,42 @@ export class WhatsappDashboard extends Component {
             }
         } finally {
             this.state.loading = false;
+        }
+    }
+
+    notifyChanges(conversations) {
+        const previous = this.previousStates;
+        const current = new Map();
+        let becameWaiting = false;
+        let becameUrgent = false;
+        for (const c of conversations) {
+            const waiting = c.status === "waiting_human";
+            const urgent = waiting && Boolean(c.is_urgent);
+            current.set(c.id, { waiting, urgent });
+            if (previous) {
+                const before = previous.get(c.id) || { waiting: false, urgent: false };
+                becameWaiting = becameWaiting || (waiting && !before.waiting);
+                becameUrgent = becameUrgent || (urgent && !before.urgent);
+            }
+        }
+        this.previousStates = current;
+        // La primera carga no suena (lo que ya esperaba). Con una urgencia suena solo su aviso.
+        if (this.state.soundOn && becameUrgent) {
+            playSound("urgent");
+        } else if (this.state.soundOn && becameWaiting) {
+            playSound("waiting");
+        }
+    }
+
+    toggleSound() {
+        this.state.soundOn = !this.state.soundOn;
+        try {
+            window.localStorage.setItem(SOUND_STORAGE_KEY, this.state.soundOn ? "on" : "off");
+        } catch (error) {
+            // Si el navegador no guarda datos, la preferencia vale solo hasta recargar.
+        }
+        if (this.state.soundOn) {
+            playSound("waiting"); // el clic también habilita el audio del navegador
         }
     }
 
