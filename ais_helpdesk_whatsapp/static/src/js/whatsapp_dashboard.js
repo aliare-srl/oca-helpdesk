@@ -7,7 +7,8 @@ const { Component, hooks } = owl;
 const { useState, useRef, onWillStart, onWillUnmount, onWillPatch, onPatched } = hooks;
 
 const DEFAULT_POLL_INTERVAL_MS = 4000;
-const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // igual que MEDIA_MAX_BYTES del servicio
+const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // videos y documentos (MEDIA_MAX_BYTES del servicio)
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // las imágenes, 5 MB como Meta
 // Lo que se puede mandar desde el tablero: imágenes JPG/PNG, videos MP4/3GP y PDF, Word, Excel, PowerPoint o texto.
 const ATTACH_ACCEPT =
     "image/jpeg,image/png,video/mp4,video/3gpp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt";
@@ -648,8 +649,12 @@ export class WhatsappDashboard extends Component {
         if (!file) {
             return;
         }
-        if (file.size > MAX_UPLOAD_BYTES) {
-            this.state.messagesError = "El archivo supera el máximo de 15 MB.";
+        const isImage = (file.type || "").startsWith("image/");
+        const limit = isImage ? MAX_IMAGE_BYTES : MAX_UPLOAD_BYTES;
+        if (file.size > limit) {
+            this.state.messagesError =
+                (isImage ? "Las imágenes pueden pesar hasta 5 MB" : "Los videos y documentos pueden pesar hasta 15 MB") +
+                " (este pesa " + (file.size / 1048576).toFixed(1) + " MB).";
             return;
         }
         this.state.messagesError = "";

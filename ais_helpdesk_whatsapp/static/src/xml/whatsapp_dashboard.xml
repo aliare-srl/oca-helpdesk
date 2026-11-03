@@ -235,7 +235,10 @@
                             t-attf-class="o_ais_whatsapp_message_row {{ senderClass(message.sender) }}"
                         >
                             <span class="o_ais_whatsapp_sender_label" t-esc="senderLabel(message.sender, selectedConversation) + ' · ' + timeLabel(message.timestamp)" />
-                            <div t-if="!message.has_media" t-attf-class="o_ais_whatsapp_bubble {{ senderClass(message.sender) }}" t-raw="bodyHtml(message)" />
+                            <div t-if="!message.has_media" t-attf-class="o_ais_whatsapp_bubble {{ senderClass(message.sender) }}">
+                                <div t-if="message.media_missing" class="o_ais_whatsapp_muted">📎 Adjunto no disponible (demasiado grande o vencido en WhatsApp)</div>
+                                <span t-raw="bodyHtml(message)" />
+                            </div>
                             <div t-else="" t-attf-class="o_ais_whatsapp_bubble {{ senderClass(message.sender) }} attachment">
                                 <a t-if="message.msg_type === 'image'" t-att-href="mediaUrl(message)" target="_blank" rel="noopener" title="Abrir en otra ventana">
                                     <img class="o_ais_whatsapp_image" t-att-src="mediaUrl(message)" />
@@ -277,7 +280,7 @@
                             <button
                                 type="button"
                                 class="o_ais_whatsapp_btn_outline o_ais_whatsapp_attach_btn"
-                                title="Adjuntar imagen, video o documento (hasta 15 MB)"
+                                title="Adjuntar imagen (hasta 5 MB), video o documento (hasta 15 MB)"
                                 t-on-click="onAttachClick"
                                 t-att-disabled="state.sending"
                             >📎</button>
