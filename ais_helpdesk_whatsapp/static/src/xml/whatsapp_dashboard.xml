@@ -237,9 +237,15 @@
                             <span class="o_ais_whatsapp_sender_label" t-esc="senderLabel(message.sender, selectedConversation) + ' · ' + timeLabel(message.timestamp)" />
                             <div t-if="!message.has_media" t-attf-class="o_ais_whatsapp_bubble {{ senderClass(message.sender) }}" t-raw="bodyHtml(message)" />
                             <div t-else="" t-attf-class="o_ais_whatsapp_bubble {{ senderClass(message.sender) }} attachment">
-                                <img t-if="message.msg_type === 'image'" class="o_ais_whatsapp_image" t-att-src="mediaUrl(message)" />
+                                <a t-if="message.msg_type === 'image'" t-att-href="mediaUrl(message)" target="_blank" rel="noopener" title="Abrir en otra ventana">
+                                    <img class="o_ais_whatsapp_image" t-att-src="mediaUrl(message)" />
+                                </a>
+                                <a t-elif="message.msg_type === 'video'" class="o_ais_whatsapp_attachment video" t-att-href="mediaUrl(message)" target="_blank" rel="noopener">
+                                    ▶ Abrir video<t t-if="message.media_filename"> (<t t-esc="message.media_filename" />)</t>
+                                </a>
+                                <audio t-elif="message.msg_type === 'audio'" controls="controls" preload="none" class="o_ais_whatsapp_audio" t-att-src="mediaUrl(message)" />
                                 <a t-else="" class="o_ais_whatsapp_attachment" t-att-href="mediaUrl(message)" target="_blank" rel="noopener">
-                                    Ver adjunto (<t t-esc="message.msg_type" />)
+                                    📄 <t t-esc="message.media_filename or ('Ver adjunto (' + message.msg_type + ')')" />
                                 </a>
                                 <span t-if="message.body" t-raw="bodyHtml(message)" />
                             </div>
@@ -262,9 +268,21 @@
                                 t-att-disabled="state.sending"
                             ><t t-esc="qr" /></button>
                         </div>
+                        <div t-if="state.attachmentName" class="o_ais_whatsapp_attach_chip">
+                            <span>📎 <t t-esc="state.attachmentName" /> (<t t-esc="state.attachmentSize" />)</span>
+                            <button type="button" class="o_ais_whatsapp_attach_remove" title="Quitar el archivo" t-on-click="clearAttachment" t-att-disabled="state.sending">✕</button>
+                        </div>
                         <div class="o_ais_whatsapp_replyrow">
+                            <input type="file" class="d-none" t-ref="fileInput" t-att-accept="attachAccept" t-on-change="onFileSelected" />
+                            <button
+                                type="button"
+                                class="o_ais_whatsapp_btn_outline o_ais_whatsapp_attach_btn"
+                                title="Adjuntar imagen, video o documento (hasta 15 MB)"
+                                t-on-click="onAttachClick"
+                                t-att-disabled="state.sending"
+                            >📎</button>
                             <textarea
-                                placeholder="Escribí tu respuesta..."
+                                t-att-placeholder="state.attachmentName ? 'Pie del archivo (opcional)...' : 'Escribí tu respuesta...'"
                                 t-model="state.replyText"
                                 t-on-keydown="onReplyKeydown"
                                 t-att-disabled="state.sending"
@@ -273,7 +291,7 @@
                                 type="button"
                                 class="o_ais_whatsapp_btn_primary"
                                 t-on-click="() => this.sendReply()"
-                                t-att-disabled="state.sending or !state.replyText.trim()"
+                                t-att-disabled="state.sending or (!state.replyText.trim() and !state.attachmentName)"
                             >Enviar</button>
                         </div>
                     </div>

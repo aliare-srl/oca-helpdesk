@@ -407,6 +407,27 @@ $ais-avatar-color: #5A3852;
         background: rgba(0,0,0,0.06);
         font-size: 11px;
     }
+    .o_ais_whatsapp_attachment.video { width: auto; font-weight: 600; text-decoration: none; }
+    .o_ais_whatsapp_audio { max-width: 240px; height: 36px; }
+    .o_ais_whatsapp_attach_btn { width: 40px; padding: 0; font-size: 16px; }
+    .o_ais_whatsapp_attach_chip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: #f1eef2;
+        font-size: 12px;
+        word-break: break-all;
+    }
+    .o_ais_whatsapp_attach_remove {
+        border: 0;
+        background: transparent;
+        font-size: 14px;
+        line-height: 1;
+        padding: 2px 6px;
+    }
     .o_ais_whatsapp_image {
         max-width: 220px;
         max-height: 220px;

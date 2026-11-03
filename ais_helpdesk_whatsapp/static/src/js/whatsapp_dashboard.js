@@ -7,6 +7,10 @@ const { Component, hooks } = owl;
 const { useState, useRef, onWillStart, onWillUnmount, onWillPatch, onPatched } = hooks;
 
 const DEFAULT_POLL_INTERVAL_MS = 4000;
+const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // igual que MEDIA_MAX_BYTES del servicio
+// Lo que se puede mandar desde el tablero: imágenes JPG/PNG, videos MP4/3GP y PDF, Word, Excel, PowerPoint o texto.
+const ATTACH_ACCEPT =
+    "image/jpeg,image/png,video/mp4,video/3gpp,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt";
 
 const STATUS_PILL = {
     waiting_human: { label: "Espera a una persona", bg: "#FEF0D9", color: "#8A3B0C", border: "#F2C98A" },
@@ -153,6 +157,8 @@ export class WhatsappDashboard extends Component {
             messagesError: "",
             replyText: "",
             sending: false,
+            attachmentName: "",
+            attachmentSize: "",
             actionError: "",
             actionPending: false,
             ticketInfo: null,
@@ -185,6 +191,10 @@ export class WhatsappDashboard extends Component {
         });
 
         this.pollIntervalMs = DEFAULT_POLL_INTERVAL_MS;
+        // El archivo elegido para mandar va fuera del estado reactivo (OWL no puede envolver un File).
+        this.pendingFile = null;
+        this.fileInputRef = useRef("fileInput");
+        this.attachAccept = ATTACH_ACCEPT;
         // Estado de la lista en la actualización anterior, para sonar solo con lo que cambió (null = primera carga).
         this.previousStates = null;
 
@@ -626,7 +636,78 @@ export class WhatsappDashboard extends Component {
         }
     }
 
+    onAttachClick() {
+        if (this.fileInputRef.el) {
+            this.fileInputRef.el.click();
+        }
+    }
+
+    onFileSelected(ev) {
+        const file = ev.target.files && ev.target.files[0];
+        ev.target.value = "";
+        if (!file) {
+            return;
+        }
+        if (file.size > MAX_UPLOAD_BYTES) {
+            this.state.messagesError = "El archivo supera el máximo de 15 MB.";
+            return;
+        }
+        this.state.messagesError = "";
+        this.pendingFile = file;
+        this.state.attachmentName = file.name;
+        this.state.attachmentSize = file.size >= 1048576 ? (file.size / 1048576).toFixed(1) + " MB" : Math.ceil(file.size / 1024) + " KB";
+    }
+
+    clearAttachment() {
+        this.pendingFile = null;
+        this.state.attachmentName = "";
+        this.state.attachmentSize = "";
+    }
+
+    async sendAttachment() {
+        const id = this.state.selectedId;
+        const file = this.pendingFile;
+        if (!file || !id || this.state.sending) {
+            return;
+        }
+        this.state.sending = true;
+        this.state.messagesError = "";
+        try {
+            const form = new FormData();
+            form.append("csrf_token", odoo.csrf_token);
+            form.append("file", file);
+            form.append("caption", this.state.replyText.trim());
+            const response = await fetch(`/ais_helpdesk_whatsapp/conversations/${id}/reply_media`, {
+                method: "POST",
+                body: form,
+                credentials: "same-origin",
+            });
+            let data = {};
+            try {
+                data = await response.json();
+            } catch (error) {
+                data = { error: "El servidor devolvió una respuesta inesperada al mandar el archivo." };
+            }
+            if (!response.ok || data.error) {
+                throw new Error(data.error || "No se pudo mandar el archivo.");
+            }
+            this.clearAttachment();
+            this.state.replyText = "";
+            await this.loadMessages();
+            if (data.warning) {
+                this.state.messagesError = data.warning;
+            }
+        } catch (error) {
+            this.state.messagesError = error.message || "No se pudo mandar el archivo.";
+        } finally {
+            this.state.sending = false;
+        }
+    }
+
     async sendReply(text) {
+        if (text === undefined && this.pendingFile) {
+            return this.sendAttachment();
+        }
         const body = (text !== undefined ? text : this.state.replyText).trim();
         const id = this.state.selectedId;
         if (!body || !id || this.state.sending) {

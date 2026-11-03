@@ -1,10 +1,11 @@
 """Rutas JSON para la pantalla OWL del panel. Proxy fino a services/agent_client: la lógica
 y la autenticación contra el servicio viven ahí, esto solo expone esas funciones al navegador."""
 
+import json
 import logging
 
 from odoo import http
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 from odoo.http import request
 from odoo.tools import html_escape
 
@@ -142,13 +143,46 @@ class WhatsappDashboardController(http.Controller):
     )
     def message_media(self, remote_id, message_id):
         _check_access()
-        content_type, content = agent_client.get_message_media(request.env, remote_id, message_id)
-        return request.make_response(content, headers=[("Content-Type", content_type)])
+        content_type, content, disposition = agent_client.get_message_media(request.env, remote_id, message_id)
+        headers = [("Content-Type", content_type)]
+        if disposition:
+            headers.append(("Content-Disposition", disposition))
+        return request.make_response(content, headers=headers)
 
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/reply", type="json", auth="user")
     def reply(self, remote_id, text):
         _check_access()
         return agent_client.reply(request.env, remote_id, text)
+
+    @http.route(
+        "/ais_helpdesk_whatsapp/conversations/<int:remote_id>/reply_media",
+        type="http",
+        auth="user",
+        methods=["POST"],
+        csrf=True,
+    )
+    def reply_media(self, remote_id, caption="", **kwargs):
+        """Imagen, video o documento desde el tablero (formulario con archivo, no JSON)."""
+        _check_access()
+        upload = request.httprequest.files.get("file")
+        status, result = 200, {}
+        if upload is None:
+            status, result = 400, {"error": "Falta el archivo."}
+        else:
+            try:
+                result = agent_client.reply_media(
+                    request.env,
+                    remote_id,
+                    upload.filename or "archivo",
+                    upload.read(),
+                    upload.mimetype or "application/octet-stream",
+                    caption=(caption or "").strip(),
+                )
+            except UserError as exc:
+                status, result = 400, {"error": exc.args[0] if exc.args else str(exc)}
+        response = request.make_response(json.dumps(result), headers=[("Content-Type", "application/json")])
+        response.status_code = status
+        return response
 
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/take", type="json", auth="user")
     def take(self, remote_id, ticket_id=None):

@@ -28,12 +28,19 @@ def _config(env):
     return base_url, api_key
 
 
-def _request(env, method, path, json_body=None, params=None, timeout=TIMEOUT):
+def _request(env, method, path, json_body=None, params=None, timeout=TIMEOUT, data=None, files=None):
     base_url, api_key = _config(env)
     url = f"{base_url}{path}"
     try:
         response = requests.request(
-            method, url, json=json_body, params=params, headers={"X-Panel-Key": api_key}, timeout=timeout
+            method,
+            url,
+            json=json_body,
+            params=params,
+            data=data,
+            files=files,
+            headers={"X-Panel-Key": api_key},
+            timeout=timeout,
         )
     except requests.RequestException as exc:
         _logger.warning("Error llamando a %s: %s", url, exc)
@@ -92,18 +99,22 @@ def get_messages(env, remote_id):
 
 
 def get_message_media(env, remote_id, message_id):
-    """Devuelve (content_type, contenido) del adjunto real de un mensaje. No usa _request: esa
+    """Devuelve (content_type, contenido, Content-Disposition) del adjunto real de un mensaje. No usa _request: esa
     función siempre espera JSON, y esto es el archivo en bruto (ej. la imagen del cliente)."""
     base_url, api_key = _config(env)
     url = f"{base_url}/api/conversations/{remote_id}/messages/{message_id}/media"
     try:
-        response = requests.get(url, headers={"X-Panel-Key": api_key}, timeout=TIMEOUT)
+        response = requests.get(url, headers={"X-Panel-Key": api_key}, timeout=MEDIA_TIMEOUT)
     except requests.RequestException as exc:
         _logger.warning("Error llamando a %s: %s", url, exc)
         raise UserError(_("No se pudo conectar con el servicio de WhatsApp: %s") % exc) from exc
     if response.status_code != 200:
         raise UserError(_("No se encontró el adjunto en el servicio."))
-    return response.headers.get("Content-Type", "application/octet-stream"), response.content
+    return (
+        response.headers.get("Content-Type", "application/octet-stream"),
+        response.content,
+        response.headers.get("Content-Disposition", ""),
+    )
 
 
 def _actor(env):
@@ -123,6 +134,25 @@ def _action(env, remote_id, name, **extra):
 
 def reply(env, remote_id, text):
     return _action(env, remote_id, "reply", text=text)
+
+
+MEDIA_TIMEOUT = 120
+
+
+def reply_media(env, remote_id, filename, content, mime_type, caption=""):
+    """Manda una imagen, un video o un documento (con pie opcional). Va como formulario con el archivo, no JSON."""
+    actor = _actor(env)
+    form = {"user_id": actor["user_id"], "user_name": actor["user_name"], "caption": caption}
+    if actor["is_admin"]:
+        form["is_admin"] = "1"  # el servicio toma cualquier texto no vacío como verdadero: no mandar "False"
+    return _request(
+        env,
+        "POST",
+        f"/api/conversations/{remote_id}/reply_media",
+        data=form,
+        files={"file": (filename, content, mime_type)},
+        timeout=MEDIA_TIMEOUT,
+    )
 
 
 def take(env, remote_id, taken_by=None):
