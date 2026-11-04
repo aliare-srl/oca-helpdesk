@@ -853,6 +853,21 @@ export class WhatsappDashboard extends Component {
         return this.runAction("take", { ticket_id: ticketId });
     }
 
+    // Quien tiene la conversación puede confirmar que el contacto es de la empresa (datos de la cuenta desactualizados).
+    get canVerifyContact() {
+        const c = this.selectedConversation;
+        return !!c && !!c.contact && !!c.contact.company && !c.contact.verified && this.isMine;
+    }
+
+    verifyContact() {
+        const company = this.selectedConversation.contact.company;
+        const ok = window.confirm(
+            "¿Confirmás que esta persona es de " + company + "? Se va a dar de alta como contacto en Odoo y el agente " +
+                "la va a reconocer en las próximas conversaciones, sin pedirle datos."
+        );
+        return ok ? this.runAction("verify_contact") : undefined;
+    }
+
     returnToAi() {
         const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
         return this.runAction("return_to_ai", { ticket_id: ticketId });

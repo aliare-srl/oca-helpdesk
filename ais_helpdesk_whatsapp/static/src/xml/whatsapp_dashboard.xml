@@ -176,6 +176,15 @@
                             Soltar (administrador)
                         </button>
                     </div>
+                    <div t-if="canVerifyContact" class="o_ais_whatsapp_banner warn">
+                        <div>
+                            <strong>Contacto sin validar</strong>
+                            <div t-esc="'Dijo ser de ' + selectedConversation.contact.company + ' pero no se pudo validar con la URL y el usuario. Si es de esa empresa, validalo para que el agente lo reconozca la próxima vez.'" />
+                        </div>
+                        <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="verifyContact" t-att-disabled="state.actionPending">
+                            Validar contacto
+                        </button>
+                    </div>
                     <div t-if="incomingDelegation" class="o_ais_whatsapp_banner info">
                         <div>
                             <strong t-esc="(selectedConversation.delegated_by or 'Un compañero') + ' te delegó esta conversación'" />
@@ -317,6 +326,7 @@
                         <span class="o_ais_whatsapp_info_title" t-esc="(selectedConversation.contact and selectedConversation.contact.company) or 'Sin empresa'" />
                         <span t-esc="'Contacto: ' + contactName(selectedConversation)" />
                         <span t-esc="'WhatsApp: ' + ((selectedConversation.contact and selectedConversation.contact.wa_id) or '')" />
+                        <span t-if="selectedConversation.contact and selectedConversation.contact.company" class="o_ais_whatsapp_muted" t-esc="selectedConversation.contact.verified ? 'Contacto validado' : 'Contacto sin validar'" />
                     </div>
                     <div t-if="selectedConversation.helpdesk_ticket_id" class="o_ais_whatsapp_info_section">
                         <span class="o_ais_whatsapp_info_label">Ticket en el Helpdesk</span>

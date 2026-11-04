@@ -191,6 +191,11 @@ class WhatsappDashboardController(http.Controller):
         _reassign_ticket(ticket_id, request.env.user.id)
         return result
 
+    @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/verify_contact", type="json", auth="user")
+    def verify_contact(self, remote_id):
+        _check_access()
+        return agent_client.verify_contact(request.env, remote_id)
+
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/return_to_ai", type="json", auth="user")
     def return_to_ai(self, remote_id, ticket_id=None):
         _check_access()
