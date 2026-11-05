@@ -268,6 +268,10 @@
                                 <a t-else="" class="o_ais_whatsapp_attachment" t-att-href="mediaUrl(message)" target="_blank" rel="noopener">
                                     📄 <t t-esc="message.media_filename or ('Ver adjunto (' + message.msg_type + ')')" />
                                 </a>
+                                <div t-if="message.transcription" class="o_ais_whatsapp_muted">
+                                    <strong>Transcripción automática (puede tener errores):</strong>
+                                    <t t-esc="message.transcription" />
+                                </div>
                                 <span t-if="message.body" t-raw="bodyHtml(message)" />
                             </div>
                             <span t-if="message.delivery_status" t-attf-class="o_ais_whatsapp_delivery {{ message.delivery_status }}" t-esc="deliveryLabel(message)" />
