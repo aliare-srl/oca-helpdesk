@@ -168,9 +168,11 @@ def take(env, remote_id, taken_by=None):
     return _action(env, remote_id, "take", taken_by=taken_by)
 
 
-def verify_contact(env, remote_id):
-    """Una persona confirma que quien escribe es de la empresa: queda verificado y se da de alta en Odoo."""
-    return _action(env, remote_id, "verify_contact")
+def verify_contact(env, remote_id, url="", usuario=""):
+    """Una persona valida a quien escribe aportando la URL de su sistema y/o el usuario con el que ingresa
+    (alcanza con uno de los dos): completa esos datos en la empresa en Odoo, da de alta el contacto y la
+    conversación vuelve a la IA."""
+    return _action(env, remote_id, "verify_contact", url=url, usuario=usuario)
 
 
 def return_to_ai(env, remote_id):

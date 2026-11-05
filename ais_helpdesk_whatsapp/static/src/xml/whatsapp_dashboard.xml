@@ -119,6 +119,7 @@
                                 t-esc="statusLabel(conversation)"
                             />
                             <span t-if="conversation.is_urgent and conversation.status === 'waiting_human'" class="o_ais_whatsapp_pill o_ais_whatsapp_pill_urgent">🚨 URGENTE</span>
+                            <span t-if="conversation.resolved_by" class="o_ais_whatsapp_pill" t-esc="'Resuelta por ' + conversation.resolved_by" />
                         </div>
                     </div>
                 </div>
@@ -135,6 +136,7 @@
                         <div class="o_ais_whatsapp_chat_header_info">
                             <span class="o_ais_whatsapp_chat_name"><span class="o_ais_whatsapp_item_number" t-esc="'#' + selectedConversation.id" /> <t t-esc="contactLabel(selectedConversation)" /></span>
                             <span class="o_ais_whatsapp_muted" t-esc="(selectedConversation.contact and selectedConversation.contact.wa_id) or ''" />
+                            <span t-if="selectedConversation.resolved_by" class="o_ais_whatsapp_muted" t-esc="'Resuelta por ' + selectedConversation.resolved_by" />
                         </div>
                         <span
                             class="o_ais_whatsapp_pill lg"
@@ -188,7 +190,7 @@
                             <strong>Contacto sin validar</strong>
                             <div t-esc="'Dijo ser de ' + selectedConversation.contact.company + ' pero no se pudo validar con la URL y el usuario. Si es de esa empresa, validalo para que el agente lo reconozca la próxima vez.'" />
                         </div>
-                        <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="verifyContact" t-att-disabled="state.actionPending">
+                        <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="openVerifyModal" t-att-disabled="state.actionPending">
                             Validar contacto
                         </button>
                     </div>
@@ -430,6 +432,33 @@
                     <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeCloseModal">Cancelar</button>
                     <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="submitClose" t-att-disabled="state.actionPending">
                         Cerrar conversación
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div t-if="state.verifyOpen" class="o_ais_whatsapp_modal_backdrop" t-on-click="closeVerifyModal">
+            <div class="o_ais_whatsapp_modal" t-on-click.stop="">
+                <div class="o_ais_whatsapp_modal_header">
+                    <strong>Validar contacto</strong>
+                    <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeVerifyModal">×</button>
+                </div>
+                <label>Pedile la URL de su sistema y/o el usuario con el que ingresa (alcanza con uno de los dos)</label>
+                <input
+                    type="text"
+                    t-model="state.verifyUrl"
+                    placeholder="URL del sistema, ej. tuempresa.aliare.com.ar"
+                />
+                <input
+                    type="text"
+                    t-model="state.verifyUsuario"
+                    placeholder="Usuario con el que ingresa a Odoo"
+                />
+                <div t-if="state.verifyError" class="o_ais_whatsapp_error" t-esc="state.verifyError" />
+                <div class="o_ais_whatsapp_modal_actions">
+                    <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeVerifyModal">Cancelar</button>
+                    <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="submitVerify" t-att-disabled="state.actionPending">
+                        Validar y devolver a la IA
                     </button>
                 </div>
             </div>

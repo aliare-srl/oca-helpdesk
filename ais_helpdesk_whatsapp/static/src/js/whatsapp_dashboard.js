@@ -186,6 +186,10 @@ export class WhatsappDashboard extends Component {
             closeOpen: false,
             closeResolution: "",
             closeError: "",
+            verifyOpen: false,
+            verifyUrl: "",
+            verifyUsuario: "",
+            verifyError: "",
             myUserId: this.userService.userId,
             isAdmin: false,
             team: [],
@@ -870,19 +874,46 @@ export class WhatsappDashboard extends Component {
         return this.runAction("take", { ticket_id: ticketId });
     }
 
-    // Quien tiene la conversación puede confirmar que el contacto es de la empresa (datos de la cuenta desactualizados).
+    // No hace falta tomar la conversación para validar: alcanza con que esté esperando a una persona (sin tomar,
+    // "waiting_human") o que la tenga quien está validando ("isMine"); si la tiene otra persona, no se muestra.
     get canVerifyContact() {
         const c = this.selectedConversation;
-        return !!c && !!c.contact && !!c.contact.company && !c.contact.verified && this.isMine;
+        return !!c && !!c.contact && !!c.contact.company && !c.contact.verified && (c.status === "waiting_human" || this.isMine);
     }
 
-    verifyContact() {
-        const company = this.selectedConversation.contact.company;
-        const ok = window.confirm(
-            "¿Confirmás que esta persona es de " + company + "? Se va a dar de alta como contacto en Odoo y el agente " +
-                "la va a reconocer en las próximas conversaciones, sin pedirle datos."
-        );
-        return ok ? this.runAction("verify_contact") : undefined;
+    openVerifyModal() {
+        this.state.verifyOpen = true;
+        this.state.verifyUrl = "";
+        this.state.verifyUsuario = "";
+        this.state.verifyError = "";
+    }
+
+    closeVerifyModal() {
+        this.state.verifyOpen = false;
+    }
+
+    async submitVerify() {
+        const url = this.state.verifyUrl.trim();
+        const usuario = this.state.verifyUsuario.trim();
+        if (!url && !usuario) {
+            this.state.verifyError = "Indicá al menos la URL de su sistema o el usuario con el que ingresa.";
+            return;
+        }
+        const id = this.state.selectedId;
+        this.state.actionPending = true;
+        this.state.verifyError = "";
+        try {
+            await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/verify_contact`, { url, usuario });
+            this.state.verifyOpen = false;
+            await this.loadConversations();
+            if (this.state.selectedId) {
+                await this.loadMessages();
+            }
+        } catch (error) {
+            this.state.verifyError = error.message || "No se pudo validar el contacto.";
+        } finally {
+            this.state.actionPending = false;
+        }
     }
 
     returnToAi() {
