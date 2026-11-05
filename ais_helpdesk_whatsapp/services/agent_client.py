@@ -71,6 +71,15 @@ def list_conversations(env, status=None, limit=200):
     return _request(env, "GET", "/api/conversations", params=params).get("conversations", [])
 
 
+def get_status(env):
+    """Problemas detectados por el servicio en WhatsApp o en la IA (lista vacía si está todo bien). Es solo un
+    aviso: si el servicio no responde no debe romper el tablero."""
+    try:
+        return _request(env, "GET", "/api/status", timeout=3).get("problems", [])
+    except Exception:  # noqa: BLE001
+        return []
+
+
 def get_usage(env):
     """{limit, spent, exceeded} del gasto de IA del mes (USD), o None si el servicio no responde: el
     tope es solo informativo acá, no debe romper Ajustes ni el tablero."""

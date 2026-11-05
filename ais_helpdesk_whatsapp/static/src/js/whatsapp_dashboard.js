@@ -7,6 +7,7 @@ const { Component, hooks } = owl;
 const { useState, useRef, onWillStart, onWillUnmount, onWillPatch, onPatched } = hooks;
 
 const DEFAULT_POLL_INTERVAL_MS = 4000;
+const STATUS_REFRESH_MS = 5 * 60 * 1000; // el estado de WhatsApp y de la IA se controla pocas veces por día
 const MAX_UPLOAD_BYTES = 15 * 1024 * 1024; // videos y documentos (MEDIA_MAX_BYTES del servicio)
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // las imágenes, 5 MB como Meta
 // Lo que se puede mandar desde el tablero: imágenes JPG/PNG, videos MP4/3GP y PDF, Word, Excel, PowerPoint o texto.
@@ -160,6 +161,7 @@ export class WhatsappDashboard extends Component {
             sending: false,
             attachmentName: "",
             attachmentSize: "",
+            serviceProblems: [],
             actionError: "",
             actionPending: false,
             ticketInfo: null,
@@ -192,6 +194,7 @@ export class WhatsappDashboard extends Component {
         });
 
         this.pollIntervalMs = DEFAULT_POLL_INTERVAL_MS;
+        this.lastStatusAt = 0;
         // El archivo elegido para mandar va fuera del estado reactivo (OWL no puede envolver un File).
         this.pendingFile = null;
         this.fileInputRef = useRef("fileInput");
@@ -235,6 +238,7 @@ export class WhatsappDashboard extends Component {
 
         onWillStart(async () => {
             await this.loadConfig();
+            this.refreshStatus();
             await this.loadConversations();
             const params = this.props.action && this.props.action.params;
             if (params && params.conversation_id) {
@@ -274,7 +278,20 @@ export class WhatsappDashboard extends Component {
         }
     }
 
+    async refreshStatus() {
+        this.lastStatusAt = Date.now();
+        try {
+            const result = await this.rpc("/ais_helpdesk_whatsapp/status", {});
+            this.state.serviceProblems = (result && result.problems) || [];
+        } catch (error) {
+            // Es solo un aviso: si no se puede consultar, se deja el anterior.
+        }
+    }
+
     async poll() {
+        if (Date.now() - this.lastStatusAt > STATUS_REFRESH_MS) {
+            this.refreshStatus();
+        }
         await this.loadConversations({ silent: true });
         if (this.state.selectedId) {
             await this.loadMessages({ silent: true });

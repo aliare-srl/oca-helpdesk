@@ -154,6 +154,12 @@ class WhatsappDashboardController(http.Controller):
         _check_access()
         return agent_client.reply(request.env, remote_id, text)
 
+    @http.route("/ais_helpdesk_whatsapp/status", type="json", auth="user")
+    def status(self):
+        """Problemas del servicio del agente (WhatsApp sin pago o con el token vencido, IA sin crédito...)."""
+        _check_access()
+        return {"problems": agent_client.get_status(request.env)}
+
     @http.route(
         "/ais_helpdesk_whatsapp/conversations/<int:remote_id>/reply_media",
         type="http",
