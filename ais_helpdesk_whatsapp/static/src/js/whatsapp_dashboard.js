@@ -187,6 +187,7 @@ export class WhatsappDashboard extends Component {
             closeResolution: "",
             closeError: "",
             verifyOpen: false,
+            returnAiOpen: false,
             verifyUrl: "",
             verifyUsuario: "",
             verifyError: "",
@@ -916,9 +917,23 @@ export class WhatsappDashboard extends Component {
         }
     }
 
+    // Si la tenía tomada una persona, se le pregunta si resolvió ella la consulta: solo en ese caso el ticket queda a su nombre.
     returnToAi() {
+        if (this.isMine) {
+            this.state.returnAiOpen = true;
+            return;
+        }
+        return this.confirmReturnToAi(false);
+    }
+
+    async confirmReturnToAi(resolved) {
+        this.state.returnAiOpen = false;
         const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
-        return this.runAction("return_to_ai", { ticket_id: ticketId });
+        return this.runAction("return_to_ai", { ticket_id: ticketId, resolved });
+    }
+
+    closeReturnAiModal() {
+        this.state.returnAiOpen = false;
     }
 
     returnToWaiting() {

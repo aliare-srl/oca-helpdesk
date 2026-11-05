@@ -437,6 +437,24 @@
             </div>
         </div>
 
+        <div t-if="state.returnAiOpen" class="o_ais_whatsapp_modal_backdrop" t-on-click="closeReturnAiModal">
+            <div class="o_ais_whatsapp_modal" t-on-click.stop="">
+                <div class="o_ais_whatsapp_modal_header">
+                    <strong>Devolver a la IA</strong>
+                    <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeReturnAiModal">×</button>
+                </div>
+                <div>¿Resolviste vos la consulta del cliente? Si es así, el ticket queda asignado a tu nombre aunque después lo cierre la IA. Si la IA puede resolverla ella, elegí la segunda opción.</div>
+                <div class="o_ais_whatsapp_modal_actions">
+                    <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="() => this.confirmReturnToAi(false)" t-att-disabled="state.actionPending">
+                        No, que la resuelva la IA
+                    </button>
+                    <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="() => this.confirmReturnToAi(true)" t-att-disabled="state.actionPending">
+                        Sí, la resolví yo
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div t-if="state.verifyOpen" class="o_ais_whatsapp_modal_backdrop" t-on-click="closeVerifyModal">
             <div class="o_ais_whatsapp_modal" t-on-click.stop="">
                 <div class="o_ais_whatsapp_modal_header">

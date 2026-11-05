@@ -175,8 +175,9 @@ def verify_contact(env, remote_id, url="", usuario=""):
     return _action(env, remote_id, "verify_contact", url=url, usuario=usuario)
 
 
-def return_to_ai(env, remote_id):
-    return _action(env, remote_id, "return_to_ai")
+def return_to_ai(env, remote_id, resolved=False):
+    """resolved=True: quien la tenía tomada resolvió la consulta, y el ticket queda a su nombre aunque después lo cierre la IA."""
+    return _action(env, remote_id, "return_to_ai", resolved=resolved)
 
 
 def return_to_waiting(env, remote_id):
