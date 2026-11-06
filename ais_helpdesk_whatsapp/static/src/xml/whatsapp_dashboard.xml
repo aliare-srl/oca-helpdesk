@@ -261,6 +261,7 @@
                                 <a t-if="message.msg_type === 'image'" t-att-href="mediaUrl(message)" target="_blank" rel="noopener" title="Abrir en otra ventana">
                                     <img class="o_ais_whatsapp_image" t-att-src="mediaUrl(message)" />
                                 </a>
+                                <img t-elif="message.msg_type === 'sticker'" class="o_ais_whatsapp_sticker" t-att-src="mediaUrl(message)" />
                                 <a t-elif="message.msg_type === 'video'" class="o_ais_whatsapp_attachment video" t-att-href="mediaUrl(message)" target="_blank" rel="noopener">
                                     ▶ Abrir video<t t-if="message.media_filename"> (<t t-esc="message.media_filename" />)</t>
                                 </a>

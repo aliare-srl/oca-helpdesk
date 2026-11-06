@@ -428,6 +428,12 @@ $ais-avatar-color: #5A3852;
         line-height: 1;
         padding: 2px 6px;
     }
+    .o_ais_whatsapp_sticker {
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+        display: block;
+    }
     .o_ais_whatsapp_image {
         max-width: 220px;
         max-height: 220px;
