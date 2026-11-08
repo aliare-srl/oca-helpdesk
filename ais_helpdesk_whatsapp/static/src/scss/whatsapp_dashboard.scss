@@ -560,8 +560,11 @@ $ais-avatar-color: #5A3852;
         background: #fff;
         border-radius: 10px;
         padding: 18px;
-        width: 380px;
+        width: 460px;
         max-width: calc(100vw - 32px);
+        max-height: calc(100vh - 32px);
+        overflow-y: auto;
+        box-sizing: border-box;
         display: flex;
         flex-direction: column;
         gap: 8px;
@@ -621,6 +624,7 @@ $ais-avatar-color: #5A3852;
     .o_ais_whatsapp_modal_actions {
         display: flex;
         justify-content: flex-end;
+        flex-wrap: wrap;
         gap: 8px;
         margin-top: 6px;
     }
@@ -664,7 +668,18 @@ $ais-avatar-color: #5A3852;
             // junto al resto: evita que el nombre se parta en varias líneas dentro de los 60px fijos.
             .o_ais_whatsapp_chat_header_info { flex-basis: 100%; order: 3; }
             .o_ais_whatsapp_pill.lg { order: 1; }
-            .o_ais_whatsapp_btn_outline { order: 2; padding: 4px 8px; font-size: 11px; }
+            .o_ais_whatsapp_btn_outline, .o_ais_whatsapp_btn_primary { order: 2; padding: 4px 8px; font-size: 11px; }
+        }
+
+        // avisos (24 h, IA en pausa, etc.): el texto y el botón caen en filas separadas si no entran
+        .o_ais_whatsapp_banner { flex-wrap: wrap; padding: 8px 10px; }
+        .o_ais_whatsapp_banner > div:first-child { flex-basis: 100%; }
+
+        // modal con los botones apilados en el celular
+        .o_ais_whatsapp_modal_actions {
+            flex-direction: column-reverse;
+            align-items: stretch;
+            button { width: 100%; }
         }
     }
 }
