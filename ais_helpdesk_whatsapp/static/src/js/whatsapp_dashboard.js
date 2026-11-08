@@ -870,6 +870,33 @@ export class WhatsappDashboard extends Component {
         }
     }
 
+    // Una conversación cerrada se puede reabrir si su ticket sigue sin resolver (error, urgencia, nuevo requerimiento...).
+    get canReopen() {
+        const c = this.selectedConversation;
+        const ticket = this.state.ticketInfo;
+        return !!c && c.status === "closed" && !!c.helpdesk_ticket_id && !!ticket && ticket.closed === false;
+    }
+
+    reopenConversation() {
+        const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
+        return this.runAction("reopen", { ticket_id: ticketId });
+    }
+
+    // Pasadas 24 h del último mensaje del cliente, WhatsApp solo deja mandar una plantilla.
+    get needsTemplate() {
+        const c = this.selectedConversation;
+        return !!c && c.status === "human" && c.window_open === false;
+    }
+
+    sendTemplateToConversation() {
+        const c = this.selectedConversation;
+        this.openStartModal({
+            phone: c.contact.wa_id,
+            profile_name: c.contact.profile_name || c.contact.company || "",
+            ticket_id: c.helpdesk_ticket_id,
+        });
+    }
+
     takeConversation() {
         const ticketId = this.selectedConversation && this.selectedConversation.helpdesk_ticket_id;
         return this.runAction("take", { ticket_id: ticketId });

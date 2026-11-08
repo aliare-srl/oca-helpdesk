@@ -197,6 +197,13 @@ class WhatsappDashboardController(http.Controller):
         _reassign_ticket(ticket_id, request.env.user.id)
         return result
 
+    @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/reopen", type="json", auth="user")
+    def reopen(self, remote_id, ticket_id=None):
+        _check_access()
+        result = agent_client.reopen(request.env, remote_id)
+        _reassign_ticket(ticket_id, request.env.user.id)
+        return result
+
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/verify_contact", type="json", auth="user")
     def verify_contact(self, remote_id, url="", usuario=""):
         _check_access()
@@ -287,6 +294,7 @@ class WhatsappDashboardController(http.Controller):
             "number": ticket.number,
             "name": ticket.name,
             "stage": ticket.stage_id.name,
+            "closed": bool(ticket.stage_id.closed),
         }
 
     @http.route("/ais_helpdesk_whatsapp/templates", type="json", auth="user")

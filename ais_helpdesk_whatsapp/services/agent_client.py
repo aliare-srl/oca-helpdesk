@@ -168,6 +168,11 @@ def take(env, remote_id, taken_by=None):
     return _action(env, remote_id, "take", taken_by=taken_by)
 
 
+def reopen(env, remote_id):
+    """Reabre una conversación cerrada cuyo ticket sigue sin resolver: queda tomada por quien la reabre."""
+    return _action(env, remote_id, "reopen")
+
+
 def verify_contact(env, remote_id, url="", usuario=""):
     """Una persona valida a quien escribe aportando la URL de su sistema y/o el usuario con el que ingresa
     (alcanza con uno de los dos): completa esos datos en la empresa en Odoo, da de alta el contacto y la
