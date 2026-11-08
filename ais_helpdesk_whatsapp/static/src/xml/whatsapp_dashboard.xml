@@ -294,7 +294,7 @@
                     <div t-if="state.messagesError" class="o_ais_whatsapp_error m-2" t-esc="state.messagesError" />
                     <div t-if="state.actionError" class="o_ais_whatsapp_error m-2" t-esc="state.actionError" />
 
-                    <div t-if="canReply" class="o_ais_whatsapp_replybox">
+                    <div t-if="canWrite" class="o_ais_whatsapp_replybox">
                         <div class="o_ais_whatsapp_quickreplies">
                             <button
                                 t-foreach="quickReplies"

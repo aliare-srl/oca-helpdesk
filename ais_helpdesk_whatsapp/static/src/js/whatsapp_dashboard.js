@@ -799,6 +799,11 @@ export class WhatsappDashboard extends Component {
         return this.isMine;
     }
 
+    // Pasadas 24 h del último mensaje del cliente no se puede escribir texto libre, solo plantilla.
+    get canWrite() {
+        return this.canReply && !this.needsTemplate;
+    }
+
     get canTake() {
         const status = this.selectedConversation && this.selectedConversation.status;
         return status === "ai" || status === "waiting_human";
@@ -862,6 +867,11 @@ export class WhatsappDashboard extends Component {
             await this.loadConversations();
             if (this.state.selectedId) {
                 await this.loadMessages();
+            }
+            // El ticket pudo cambiar de etapa (p. ej. al cerrar la conversación): se vuelve a leer para que "Reabrir" no quede viejo.
+            const current = this.selectedConversation;
+            if (current && current.helpdesk_ticket_id) {
+                await this.loadTicketInfo(current.helpdesk_ticket_id);
             }
         } catch (error) {
             this.state.actionError = error.message || "No se pudo completar la acción.";
@@ -1062,6 +1072,10 @@ export class WhatsappDashboard extends Component {
             await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/close`, { resolution, ticket_id: ticketId });
             this.state.closeOpen = false;
             await this.loadConversations();
+            // El cierre resuelve el ticket: se vuelve a leer para que "Reabrir conversación" no quede ofrecido.
+            if (ticketId) {
+                await this.loadTicketInfo(ticketId);
+            }
         } catch (error) {
             this.state.closeError = error.message || "No se pudo cerrar la conversación.";
         } finally {
