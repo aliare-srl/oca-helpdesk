@@ -36,6 +36,16 @@ def _reassign_ticket(ticket_id, user_id):
         _logger.exception("No se pudo reasignar el ticket %s al usuario %s", ticket_id, user_id)
 
 
+def _link_ticket_conversation(ticket_id, remote_id):
+    """El ticket abre la conversación más reciente (un ticket puede tener varias a lo largo del tiempo)."""
+    if not ticket_id:
+        return
+    try:
+        request.env["helpdesk.ticket"].browse(int(ticket_id)).whatsapp_conversation_remote_id = remote_id
+    except Exception:  # noqa: BLE001
+        _logger.exception("No se pudo vincular el ticket %s a la conversación %s", ticket_id, remote_id)
+
+
 def _unassign_ticket(ticket_id):
     if not ticket_id:
         return
@@ -202,6 +212,7 @@ class WhatsappDashboardController(http.Controller):
         _check_access()
         result = agent_client.reopen(request.env, remote_id)
         _reassign_ticket(ticket_id, request.env.user.id)
+        _link_ticket_conversation(ticket_id, remote_id)
         return result
 
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/verify_contact", type="json", auth="user")
@@ -340,7 +351,7 @@ class WhatsappDashboardController(http.Controller):
             try:
                 ticket = request.env["helpdesk.ticket"].browse(int(ticket_id))
                 conversation = (result or {}).get("conversation") or {}
-                if ticket.exists() and not ticket.whatsapp_conversation_remote_id and conversation.get("id"):
+                if ticket.exists() and conversation.get("id"):
                     ticket.whatsapp_conversation_remote_id = conversation["id"]
             except Exception:  # noqa: BLE001
                 _logger.exception("No se pudo vincular el ticket %s a la conversación nueva", ticket_id)
