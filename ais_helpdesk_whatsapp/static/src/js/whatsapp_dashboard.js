@@ -1058,9 +1058,10 @@ export class WhatsappDashboard extends Component {
         this.state.closeOpen = false;
     }
 
-    async submitClose() {
+    // keepTicket: cierra solo la conversación; el ticket queda como está (sin resolución) y se puede reabrir después.
+    async submitClose(keepTicket = false) {
         const resolution = this.state.closeResolution.trim();
-        if (!resolution) {
+        if (!keepTicket && !resolution) {
             this.state.closeError = "Contá en pocas palabras cómo se resolvió, antes de cerrar.";
             return;
         }
@@ -1069,7 +1070,7 @@ export class WhatsappDashboard extends Component {
         this.state.actionPending = true;
         this.state.closeError = "";
         try {
-            await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/close`, { resolution, ticket_id: ticketId });
+            await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/close`, { resolution, ticket_id: ticketId, keep_ticket: keepTicket === true });
             this.state.closeOpen = false;
             await this.loadConversations();
             // El cierre resuelve el ticket: se vuelve a leer para que "Reabrir conversación" no quede ofrecido.

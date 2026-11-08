@@ -447,8 +447,11 @@
                 <div t-if="state.closeError" class="o_ais_whatsapp_error" t-esc="state.closeError" />
                 <div class="o_ais_whatsapp_modal_actions">
                     <button type="button" class="o_ais_whatsapp_btn_outline" t-on-click="closeCloseModal">Cancelar</button>
-                    <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="submitClose" t-att-disabled="state.actionPending">
-                        Cerrar conversación
+                    <button t-if="selectedConversation and selectedConversation.helpdesk_ticket_id" type="button" class="o_ais_whatsapp_btn_outline" t-on-click="() => this.submitClose(true)" t-att-disabled="state.actionPending" title="El ticket queda abierto, sin resolución; se puede reabrir la conversación después.">
+                        Cerrar solo la conversación
+                    </button>
+                    <button type="button" class="o_ais_whatsapp_btn_primary" t-on-click="() => this.submitClose(false)" t-att-disabled="state.actionPending">
+                        Cerrar conversación y ticket
                     </button>
                 </div>
             </div>

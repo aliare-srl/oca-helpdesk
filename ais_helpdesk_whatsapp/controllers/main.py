@@ -285,9 +285,11 @@ class WhatsappDashboardController(http.Controller):
         return agent_client.reject_delegation(request.env, remote_id)
 
     @http.route("/ais_helpdesk_whatsapp/conversations/<int:remote_id>/close", type="json", auth="user")
-    def close(self, remote_id, resolution=None, ticket_id=None):
+    def close(self, remote_id, resolution=None, ticket_id=None, keep_ticket=False):
         _check_access()
         result = agent_client.close(request.env, remote_id)
+        if keep_ticket:
+            return result
         if ticket_id:
             _close_ticket_with_resolution(ticket_id, resolution)
         elif resolution:
