@@ -155,6 +155,7 @@ export class WhatsappDashboard extends Component {
             dateFrom: todayLocal(),
             dateTo: todayLocal(),
             messages: [],
+            messagesConversationId: null,
             messagesLoading: false,
             messagesError: "",
             replyText: "",
@@ -649,7 +650,12 @@ export class WhatsappDashboard extends Component {
             this.state.messagesError = "";
         }
         try {
-            this.state.messages = await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/messages`, {});
+            const messages = await this.rpc(`/ais_helpdesk_whatsapp/conversations/${id}/messages`, {});
+            // Si mientras tanto se eligió otra conversación, esta respuesta ya no corresponde: se descarta.
+            if (id === this.state.selectedId) {
+                this.state.messages = messages;
+                this.state.messagesConversationId = id;
+            }
         } catch (error) {
             if (!silent) {
                 this.state.messagesError = error.message || "No se pudo leer la conversación.";
@@ -777,7 +783,9 @@ export class WhatsappDashboard extends Component {
     }
 
     mediaUrl(message) {
-        return `/ais_helpdesk_whatsapp/conversations/${this.state.selectedId}/messages/${message.id}/media`;
+        // Con el id de la conversación a la que pertenecen los mensajes que se ven, no el de la recién elegida.
+        const conversationId = this.state.messagesConversationId || this.state.selectedId;
+        return `/ais_helpdesk_whatsapp/conversations/${conversationId}/messages/${message.id}/media`;
     }
 
     get selectedConversation() {
